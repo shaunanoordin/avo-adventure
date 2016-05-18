@@ -39,6 +39,12 @@ var App = function () {
     this.height = this.canvas.height;
     //--------------------------------
 
+    //Initialise Game Objects
+    //--------------------------------
+    this.actors = [];
+    //--------------------------------
+
+    //Bind Events
     //--------------------------------
     if ("onresize" in window) {
       window.onresize = this.updateSize.bind(this);
@@ -46,9 +52,15 @@ var App = function () {
     this.updateSize();
     //--------------------------------
 
+    //TEST
+    //--------------------------------
+    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32, SHAPE_SQUARE));
+    //--------------------------------
+
     //Start!
     //--------------------------------
-    this.run();
+    this.runCycle = setInterval(this.run, 1 / FRAMES_PER_SECOND);
     //--------------------------------
   }
 
@@ -56,16 +68,49 @@ var App = function () {
     key: "run",
     value: function run() {
       this.paint();
-      this.runCycle = setTimeout(this.run, 1 / App.FRAMES_PER_SECOND);
     }
   }, {
     key: "paint",
     value: function paint() {
+      //Clear
       this.context.clearRect(0, 0, this.width, this.height);
-      this.context.beginPath();
-      this.context.arc(100, 75, 50, 0, 2 * Math.PI);
-      this.context.stroke();
-      this.context.closePath();
+
+      //Paint hitboxes
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.actors[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var actor = _step.value;
+
+          this.context.beginPath();
+          switch (actor.shape) {
+            case SHAPE_CIRCLE:
+              this.context.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+              this.context.stroke();
+              break;
+            case SHAPE_SQUARE:
+              this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+              this.context.stroke();
+              break;
+          }
+          this.context.closePath();
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
     }
   }, {
     key: "updateSize",
@@ -80,7 +125,35 @@ var App = function () {
   return App;
 }();
 
-App.FRAMES_PER_SECOND = 50;
+var FRAMES_PER_SECOND = 50;
+var INPUT_IDLE = 0;
+var INPUT_ACTIVE = 1;
+var INPUT_ENDED = 2;
+var MAX_KEYS = 128;
+//==============================================================================
+
+/*  Actor Class
+ */
+//==============================================================================
+
+var Actor = function Actor() {
+  var name = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+  var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+  var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+  var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+  var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
+
+  _classCallCheck(this, Actor);
+
+  this.name = name;
+  this.x = x;
+  this.y = y;
+  this.size = size;
+  this.shape = shape;
+};
+
+var SHAPE_SQUARE = 0;
+var SHAPE_CIRCLE = 1;
 //==============================================================================
 
 /*  Initialisations

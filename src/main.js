@@ -30,7 +30,12 @@ class App {
     this.height = this.canvas.height;
     //--------------------------------
     
+    //Initialise Game Objects
+    //--------------------------------
+    this.actors = [];
+    //--------------------------------
     
+    //Bind Events
     //--------------------------------
     if ("onresize" in window) {
       window.onresize = this.updateSize.bind(this);
@@ -38,23 +43,42 @@ class App {
     this.updateSize();
     //--------------------------------
     
+    //TEST
+    //--------------------------------
+    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32, SHAPE_SQUARE));
+    //--------------------------------
+    
     //Start!
     //--------------------------------
-    this.run();
+    this.runCycle = setInterval(this.run, 1 / FRAMES_PER_SECOND);
     //--------------------------------
   }
   
   run() {
     this.paint();
-    this.runCycle = setTimeout(this.run, 1/App.FRAMES_PER_SECOND);
   }
   
   paint() {
-    this.context.clearRect(0, 0, this.width, this.height);    
-    this.context.beginPath();
-    this.context.arc(100,75,50,0,2*Math.PI);
-    this.context.stroke();
-    this.context.closePath();
+    //Clear
+    this.context.clearRect(0, 0, this.width, this.height);
+    
+    //Paint hitboxes
+    for (let actor of this.actors) {
+      this.context.beginPath();
+      switch (actor.shape) {
+        case SHAPE_CIRCLE:
+          this.context.arc(actor.x, actor.y, actor.size/2, 0, 2 * Math.PI);
+          this.context.stroke();
+          break;
+        case SHAPE_SQUARE:
+          this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+          this.context.stroke();
+          break;
+      }
+      this.context.closePath();
+    }
+    
   }
   
   updateSize() {
@@ -67,7 +91,28 @@ class App {
   }
 }
 
-App.FRAMES_PER_SECOND = 50;
+const FRAMES_PER_SECOND = 50;
+const INPUT_IDLE = 0;
+const INPUT_ACTIVE = 1;
+const INPUT_ENDED = 2;
+const MAX_KEYS = 128;
+//==============================================================================
+
+/*  Actor Class
+ */
+//==============================================================================
+class Actor {
+  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE) {
+    this.name = name;
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.shape = shape;
+  }
+}
+
+const SHAPE_SQUARE = 0;
+const SHAPE_CIRCLE = 1;
 //==============================================================================
 
 /*  Initialisations
