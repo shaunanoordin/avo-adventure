@@ -14,6 +14,7 @@ class App {
     //Bind functions to 'this' reference.
     //--------------------------------
     this.run = this.run.bind(this);
+    this.physics = this.physics.bind(this);
     this.paint = this.paint.bind(this);
     //--------------------------------
 
@@ -93,7 +94,7 @@ class App {
   //----------------------------------------------------------------
   
   run() {
-    //TEST
+    //TEST: Input & Actions
     //--------------------------------
     if (this.pointer.state === INPUT_ACTIVE) {
       const distX = this.pointer.now.x - this.pointer.start.x;
@@ -118,21 +119,90 @@ class App {
     }
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-      this.actors[0].y -= 1
+      this.actors[0].y -= 2;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-      this.actors[0].y += 1
+      this.actors[0].y += 2;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-      this.actors[0].x -= 1
+      this.actors[0].x -= 2;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-      this.actors[0].x += 1
+      this.actors[0].x += 2;
     }
+    
+    if (this.keys[KEY_CODES.SPACE].duration === 2) {
+      this.actors[0].shape = (this.actors[0].shape === SHAPE_CIRCLE)
+        ? SHAPE_SQUARE
+        : SHAPE_CIRCLE;
+    }
+    //--------------------------------
+    
+    //Physics
+    //--------------------------------
+    this.physics();
     //--------------------------------
     
     //Visuals
     //--------------------------------
     this.paint();
     //--------------------------------
+    
+    //Cleanup Input
+    //--------------------------------
+    if (this.pointer.state === INPUT_ENDED) {
+      this.pointer.duration = 0;
+      this.pointer.state = INPUT_IDLE;
+    }
+    for (let i = 0; i < this.keys.length; i++) {
+      if (this.keys[i].state === INPUT_ACTIVE) {
+        this.keys[i].duration++;
+      } else if (this.keys[i].state === INPUT_ENDED) {
+        this.keys[i].duration = 0;
+        this.keys[i].state = INPUT_IDLE;
+      }
+    }
+    //--------------------------------
+  }
+  
+  physics() {
+    for (let a = 0; a < this.actors.length; a++) {
+      let actorA = this.actors[a];
+      for (let b = a + 1; b < this.actors.length; b++) {
+        let actorB = this.actors[b];
+        let collisionCorrection = this.checkCollision(actorA, actorB)
+        if (collisionCorrection) {
+          actorA.size += (actorA.size > 8) ? -1 : 0;
+          actorB.size += (actorB.size > 8) ? -1 : 0;
+        }
+      }
+    }
+  }
+  
+  checkCollision(actorA, actorB) {
+    if (!actorA || !actorB) return false;
+    
+    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorA.x - actorB.x;
+      const distY = actorA.y - actorB.y;
+      const minimumDist = (actorA.size + actorB.size) / 2;
+      if (distX * distX + distY * distY < minimumDist * minimumDist) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
+      if (actorA.x - actorA.size/2 < actorB.x + actorB.size/2 &&
+          actorA.x + actorA.size/2 > actorB.x - actorB.size/2 &&
+          actorA.y - actorA.size/2 < actorB.y + actorB.size/2 &&
+          actorA.y + actorA.size/2 > actorB.y - actorB.size/2) {
+        return true;
+      } else {
+        return false;
+      }
+    }    
+    
+    return false;
   }
   
   paint() {
