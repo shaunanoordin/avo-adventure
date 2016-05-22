@@ -87,14 +87,18 @@ var App = function () {
 
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE));
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_SQUARE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_CIRCLE));
+    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+
+    this.actors[0].canBeMoved = true;
+    this.actors[1].canBeMoved = true;
+    this.actors[2].canBeMoved = true;
     //--------------------------------
 
     //Start!
     //--------------------------------
-    this.runCycle = setInterval(this.run, 1 / FRAMES_PER_SECOND);
+    this.runCycle = setInterval(this.run, 1000 / FRAMES_PER_SECOND);
     //--------------------------------
   }
 
@@ -167,6 +171,9 @@ var App = function () {
       }
       //--------------------------------
     }
+
+    //----------------------------------------------------------------
+
   }, {
     key: "physics",
     value: function physics() {
@@ -174,10 +181,9 @@ var App = function () {
         var actorA = this.actors[a];
         for (var b = a + 1; b < this.actors.length; b++) {
           var actorB = this.actors[b];
-          var collisionCorrection = this.checkCollision(actorA, actorB);
-          if (collisionCorrection) {
-            actorA.size += actorA.size > 8 ? -1 : 0;
-            actorB.size += actorB.size > 8 ? -1 : 0;
+          if (this.checkCollision(actorA, actorB)) {
+            console.log("x");
+            this.correctCollision(actorA, actorB);
           }
         }
       }
@@ -190,22 +196,66 @@ var App = function () {
       if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
         var distX = actorA.x - actorB.x;
         var distY = actorA.y - actorB.y;
-        var minimumDist = (actorA.size + actorB.size) / 2;
+        var minimumDist = actorA.radius + actorB.radius;
         if (distX * distX + distY * distY < minimumDist * minimumDist) {
           return true;
-        } else {
-          return false;
         }
       } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-        if (actorA.x - actorA.size / 2 < actorB.x + actorB.size / 2 && actorA.x + actorA.size / 2 > actorB.x - actorB.size / 2 && actorA.y - actorA.size / 2 < actorB.y + actorB.size / 2 && actorA.y + actorA.size / 2 > actorB.y - actorB.size / 2) {
+        if (actorA.left < actorB.right && actorA.right > actorB.left && actorA.top < actorB.bottom && actorA.bottom > actorB.top) {
           return true;
-        } else {
-          return false;
+        }
+      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
+        var _distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
+        var _distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+        if (_distX * _distX + _distY * _distY < actorA.radius * actorA.radius) {
+          return true;
+        }
+      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
+        var _distX2 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
+        var _distY2 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+        if (_distX2 * _distX2 + _distY2 * _distY2 < actorB.radius * actorB.radius) {
+          return true;
         }
       }
 
       return false;
     }
+  }, {
+    key: "correctCollision",
+    value: function correctCollision(actorA, actorB) {
+      if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
+
+      if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
+        var distX = actorB.x - actorA.x;
+        var distY = actorB.y - actorA.y;
+        var dist = Math.sqrt(distX * distX + distY * distY);
+        var angle = Math.atan2(distY, distX);
+        var correctDist = actorA.radius + actorB.radius;
+        var cosAngle = Math.cos(angle);
+        var sinAngle = Math.sin(angle);
+        if (actorA.canBeMoved && actorB.canBeMoved) {
+          actorA.x -= cosAngle * (correctDist - dist) / 2;
+          actorA.y -= sinAngle * (correctDist - dist) / 2;
+          actorB.x += cosAngle * (correctDist - dist) / 2;
+          actorB.y += sinAngle * (correctDist - dist) / 2;
+        } else if (actorA.canBeMoved) {
+          actorA.x -= cosAngle * (correctDist - dist);
+          actorA.y -= sinAngle * (correctDist - dist);
+        } else if (actorB.canBeMoved) {
+          actorB.x += cosAngle * (correctDist - dist);
+          actorB.y += sinAngle * (correctDist - dist);
+        }
+      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
+        var _distX3 = actorB.x - actorA.x;
+        var _distY3 = actorB.y - actorA.y;
+        var midX = (actorA.x + actorB.x) / 2;
+        var midY = (actorA.y + actorB.y) / 2;
+        if (actorA.canBeMoved && actorB.canBeMoved) {} else if (actorA.canBeMoved) {} else if (actorB.canBeMoved) {}
+      }
+    }
+
+    //----------------------------------------------------------------
+
   }, {
     key: "paint",
     value: function paint() {
@@ -340,24 +390,58 @@ var MAX_KEYS = 128;
  */
 //==============================================================================
 
-var Actor = function Actor() {
-  var name = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
-  var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-  var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-  var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-  var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
+var Actor = function () {
+  function Actor() {
+    var name = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+    var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_NONE : arguments[4];
 
-  _classCallCheck(this, Actor);
+    _classCallCheck(this, Actor);
 
-  this.name = name;
-  this.x = x;
-  this.y = y;
-  this.size = size;
-  this.shape = shape;
-};
+    this.name = name;
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.shape = shape;
+    this.solid = shape !== SHAPE_NONE;
+    this.canBeMoved = true;
+  }
 
-var SHAPE_SQUARE = 0;
-var SHAPE_CIRCLE = 1;
+  _createClass(Actor, [{
+    key: "left",
+    get: function get() {
+      return this.x - this.size / 2;
+    }
+  }, {
+    key: "right",
+    get: function get() {
+      return this.x + this.size / 2;
+    }
+  }, {
+    key: "top",
+    get: function get() {
+      return this.y - this.size / 2;
+    }
+  }, {
+    key: "bottom",
+    get: function get() {
+      return this.y + this.size / 2;
+    }
+  }, {
+    key: "radius",
+    get: function get() {
+      return this.size / 2;
+    }
+  }]);
+
+  return Actor;
+}();
+
+var SHAPE_NONE = 0; //No shape = no collision
+var SHAPE_SQUARE = 1;
+var SHAPE_CIRCLE = 2;
 //==============================================================================
 
 /*  Utility Classes

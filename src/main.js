@@ -80,14 +80,18 @@ class App {
     
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE));
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_SQUARE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_CIRCLE));
+    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    
+    this.actors[0].canBeMoved = true;
+    this.actors[1].canBeMoved = true;
+    this.actors[2].canBeMoved = true;
     //--------------------------------
     
     //Start!
     //--------------------------------
-    this.runCycle = setInterval(this.run, 1 / FRAMES_PER_SECOND);
+    this.runCycle = setInterval(this.run, 1000 / FRAMES_PER_SECOND);
     //--------------------------------
   }
   
@@ -163,15 +167,16 @@ class App {
     //--------------------------------
   }
   
+  //----------------------------------------------------------------
+  
   physics() {
     for (let a = 0; a < this.actors.length; a++) {
       let actorA = this.actors[a];
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
-        let collisionCorrection = this.checkCollision(actorA, actorB)
-        if (collisionCorrection) {
-          actorA.size += (actorA.size > 8) ? -1 : 0;
-          actorB.size += (actorB.size > 8) ? -1 : 0;
+        if (this.checkCollision(actorA, actorB)) {
+          console.log("x");
+          this.correctCollision(actorA, actorB);
         }
       }
     }
@@ -183,27 +188,78 @@ class App {
     if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
       const distX = actorA.x - actorB.x;
       const distY = actorA.y - actorB.y;
-      const minimumDist = (actorA.size + actorB.size) / 2;
+      const minimumDist = actorA.radius + actorB.radius;
       if (distX * distX + distY * distY < minimumDist * minimumDist) {
         return true;
-      } else {
-        return false;
       }
     }
     
     else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-      if (actorA.x - actorA.size/2 < actorB.x + actorB.size/2 &&
-          actorA.x + actorA.size/2 > actorB.x - actorB.size/2 &&
-          actorA.y - actorA.size/2 < actorB.y + actorB.size/2 &&
-          actorA.y + actorA.size/2 > actorB.y - actorB.size/2) {
+      if (actorA.left < actorB.right &&
+          actorA.right > actorB.left &&
+          actorA.top < actorB.bottom &&
+          actorA.bottom > actorB.top) {
         return true;
-      } else {
-        return false;
       }
-    }    
+    }
+    
+    else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
+      const distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
+      const distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+      if (distX * distX + distY * distY < actorA.radius * actorA.radius) {
+        return true;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
+      const distY = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+      if (distX * distX + distY * distY < actorB.radius * actorB.radius) {
+        return true;
+      }
+    }
     
     return false;
   }
+  
+  correctCollision(actorA, actorB) {
+    if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
+    
+    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorB.x - actorA.x;
+      const distY = actorB.y - actorA.y;
+      const dist = Math.sqrt(distX * distX + distY * distY);
+      const angle = Math.atan2(distY, distX);
+      const correctDist = actorA.radius + actorB.radius;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      if (actorA.canBeMoved && actorB.canBeMoved) {
+        actorA.x -= cosAngle * (correctDist - dist) / 2;
+        actorA.y -= sinAngle * (correctDist - dist) / 2;
+        actorB.x += cosAngle * (correctDist - dist) / 2;
+        actorB.y += sinAngle * (correctDist - dist) / 2;
+      } else if (actorA.canBeMoved) {
+        actorA.x -= cosAngle * (correctDist - dist);
+        actorA.y -= sinAngle * (correctDist - dist);
+      } else if (actorB.canBeMoved) {
+        actorB.x += cosAngle * (correctDist - dist);
+        actorB.y += sinAngle * (correctDist - dist);
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
+      const distX = actorB.x - actorA.x;
+      const distY = actorB.y - actorA.y;
+      const midX = (actorA.x + actorB.x) / 2;
+      const midY = (actorA.y + actorB.y) / 2;
+      if (actorA.canBeMoved && actorB.canBeMoved) {
+      } else if (actorA.canBeMoved) {        
+      } else if (actorB.canBeMoved) {
+      }
+    }
+  }
+  
+  //----------------------------------------------------------------
   
   paint() {
     //Clear
@@ -307,17 +363,26 @@ const MAX_KEYS = 128;
  */
 //==============================================================================
 class Actor {
-  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE) {
+  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_NONE) {
     this.name = name;
     this.x = x;
     this.y = y;
     this.size = size;
     this.shape = shape;
+    this.solid = (shape !== SHAPE_NONE);
+    this.canBeMoved = true;
   }
+  
+  get left() { return this.x - this.size / 2; }
+  get right() { return this.x + this.size / 2; }
+  get top() { return this.y - this.size / 2; }
+  get bottom() { return this.y + this.size / 2; }
+  get radius() { return this.size / 2; }  
 }
 
-const SHAPE_SQUARE = 0;
-const SHAPE_CIRCLE = 1;
+const SHAPE_NONE = 0;  //No shape = no collision
+const SHAPE_SQUARE = 1;
+const SHAPE_CIRCLE = 2;
 //==============================================================================
 
 /*  Utility Classes
