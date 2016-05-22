@@ -87,9 +87,15 @@ var App = function () {
 
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor('c3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor('c4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
 
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
@@ -182,7 +188,6 @@ var App = function () {
         for (var b = a + 1; b < this.actors.length; b++) {
           var actorB = this.actors[b];
           if (this.checkCollision(actorA, actorB)) {
-            console.log("x");
             this.correctCollision(actorA, actorB);
           }
         }
@@ -225,6 +230,17 @@ var App = function () {
     value: function correctCollision(actorA, actorB) {
       if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
 
+      var fractionA = 0;
+      var fractionB = 0;
+      if (actorA.canBeMoved && actorB.canBeMoved) {
+        fractionA = 0.5;
+        fractionB = 0.5;
+      } else if (actorA.canBeMoved) {
+        fractionA = 1;
+      } else if (actorB.canBeMoved) {
+        fractionB = 1;
+      }
+
       if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
         var distX = actorB.x - actorA.x;
         var distY = actorB.y - actorA.y;
@@ -233,24 +249,23 @@ var App = function () {
         var correctDist = actorA.radius + actorB.radius;
         var cosAngle = Math.cos(angle);
         var sinAngle = Math.sin(angle);
-        if (actorA.canBeMoved && actorB.canBeMoved) {
-          actorA.x -= cosAngle * (correctDist - dist) / 2;
-          actorA.y -= sinAngle * (correctDist - dist) / 2;
-          actorB.x += cosAngle * (correctDist - dist) / 2;
-          actorB.y += sinAngle * (correctDist - dist) / 2;
-        } else if (actorA.canBeMoved) {
-          actorA.x -= cosAngle * (correctDist - dist);
-          actorA.y -= sinAngle * (correctDist - dist);
-        } else if (actorB.canBeMoved) {
-          actorB.x += cosAngle * (correctDist - dist);
-          actorB.y += sinAngle * (correctDist - dist);
-        }
+        actorA.x -= cosAngle * (correctDist - dist) * fractionA;
+        actorA.y -= sinAngle * (correctDist - dist) * fractionA;
+        actorB.x += cosAngle * (correctDist - dist) * fractionB;
+        actorB.y += sinAngle * (correctDist - dist) * fractionB;
       } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
         var _distX3 = actorB.x - actorA.x;
         var _distY3 = actorB.y - actorA.y;
-        var midX = (actorA.x + actorB.x) / 2;
-        var midY = (actorA.y + actorB.y) / 2;
-        if (actorA.canBeMoved && actorB.canBeMoved) {} else if (actorA.canBeMoved) {} else if (actorB.canBeMoved) {}
+        var _correctDist = (actorA.size + actorB.size) / 2;
+        console.log(_distX3 + " " + _distY3 + " " + _correctDist);
+
+        if (Math.abs(_distX3) > Math.abs(_distY3)) {
+          actorA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
+          actorB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
+        } else {
+          actorA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
+          actorB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
+        }
       }
     }
 
