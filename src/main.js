@@ -14,6 +14,7 @@ class App {
     //Bind functions to 'this' reference.
     //--------------------------------
     this.run = this.run.bind(this);
+    this.physics = this.physics.bind(this);
     this.paint = this.paint.bind(this);
     //--------------------------------
 
@@ -79,21 +80,29 @@ class App {
     
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('c1', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE));
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_SQUARE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 16 + Math.random() * 32, SHAPE_CIRCLE));
+    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    
+    this.actors[0].canBeMoved = true;
+    this.actors[1].canBeMoved = true;
+    this.actors[2].canBeMoved = true;
+    this.actors[3].canBeMoved = true;
+    this.actors[4].canBeMoved = true;
     //--------------------------------
     
     //Start!
     //--------------------------------
-    this.runCycle = setInterval(this.run, 1 / FRAMES_PER_SECOND);
+    this.runCycle = setInterval(this.run, 1000 / FRAMES_PER_SECOND);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
   run() {
-    //TEST
+    //TEST: Input & Actions
     //--------------------------------
     if (this.pointer.state === INPUT_ACTIVE) {
       const distX = this.pointer.now.x - this.pointer.start.x;
@@ -118,22 +127,175 @@ class App {
     }
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-      this.actors[0].y -= 1
+      this.actors[0].y -= 2;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-      this.actors[0].y += 1
+      this.actors[0].y += 2;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-      this.actors[0].x -= 1
+      this.actors[0].x -= 2;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-      this.actors[0].x += 1
+      this.actors[0].x += 2;
     }
+    
+    if (this.keys[KEY_CODES.SPACE].duration === 2) {
+      this.actors[0].shape = (this.actors[0].shape === SHAPE_CIRCLE)
+        ? SHAPE_SQUARE
+        : SHAPE_CIRCLE;
+    }
+    //--------------------------------
+    
+    //Physics
+    //--------------------------------
+    this.physics();
     //--------------------------------
     
     //Visuals
     //--------------------------------
     this.paint();
     //--------------------------------
+    
+    //Cleanup Input
+    //--------------------------------
+    if (this.pointer.state === INPUT_ENDED) {
+      this.pointer.duration = 0;
+      this.pointer.state = INPUT_IDLE;
+    }
+    for (let i = 0; i < this.keys.length; i++) {
+      if (this.keys[i].state === INPUT_ACTIVE) {
+        this.keys[i].duration++;
+      } else if (this.keys[i].state === INPUT_ENDED) {
+        this.keys[i].duration = 0;
+        this.keys[i].state = INPUT_IDLE;
+      }
+    }
+    //--------------------------------
   }
+  
+  //----------------------------------------------------------------
+  
+  physics() {
+    for (let a = 0; a < this.actors.length; a++) {
+      let actorA = this.actors[a];
+      for (let b = a + 1; b < this.actors.length; b++) {
+        let actorB = this.actors[b];
+        if (this.checkCollision(actorA, actorB)) {
+          this.correctCollision(actorA, actorB);
+        }
+      }
+    }
+  }
+  
+  checkCollision(actorA, actorB) {
+    if (!actorA || !actorB) return false;
+    
+    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorA.x - actorB.x;
+      const distY = actorA.y - actorB.y;
+      const minimumDist = actorA.radius + actorB.radius;
+      if (distX * distX + distY * distY < minimumDist * minimumDist) {
+        return true;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
+      if (actorA.left < actorB.right &&
+          actorA.right > actorB.left &&
+          actorA.top < actorB.bottom &&
+          actorA.bottom > actorB.top) {
+        return true;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
+      const distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
+      const distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+      if (distX * distX + distY * distY < actorA.radius * actorA.radius) {
+        return true;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
+      const distY = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+      if (distX * distX + distY * distY < actorB.radius * actorB.radius) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  correctCollision(actorA, actorB) {
+    if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
+    
+    let fractionA = 0;
+    let fractionB = 0;
+    if (actorA.canBeMoved && actorB.canBeMoved) {
+      fractionA = 0.5;
+      fractionB = 0.5;
+    } else if (actorA.canBeMoved) {
+      fractionA = 1;
+    } else if (actorB.canBeMoved) {
+      fractionB = 1;
+    }
+    
+    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorB.x - actorA.x;
+      const distY = actorB.y - actorA.y;
+      const dist = Math.sqrt(distX * distX + distY * distY);
+      const angle = Math.atan2(distY, distX);
+      const correctDist = actorA.radius + actorB.radius;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      actorA.x -= cosAngle * (correctDist - dist) * fractionA;
+      actorA.y -= sinAngle * (correctDist - dist) * fractionA;
+      actorB.x += cosAngle * (correctDist - dist) * fractionB;
+      actorB.y += sinAngle * (correctDist - dist) * fractionB;
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
+      const distX = actorB.x - actorA.x;
+      const distY = actorB.y - actorA.y;
+      const correctDist = (actorA.size + actorB.size) / 2;
+      if (Math.abs(distX) > Math.abs(distY)) {
+        actorA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
+        actorB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
+      } else {
+        actorA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
+        actorB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
+      }
+    }
+    
+    else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
+      const distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
+      const distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+      const dist = Math.sqrt(distX * distX + distY * distY);
+      const angle = Math.atan2(distY, distX);
+      const correctDist = actorA.radius;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      actorA.x += cosAngle * (correctDist - dist) * fractionA;
+      actorA.y += sinAngle * (correctDist - dist) * fractionA;
+      actorB.x -= cosAngle * (correctDist - dist) * fractionB;
+      actorB.y -= sinAngle * (correctDist - dist) * fractionB;
+    }
+    
+    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
+      const distX = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
+      const distY = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+      const dist = Math.sqrt(distX * distX + distY * distY);
+      const angle = Math.atan2(distY, distX);
+      const correctDist = actorB.radius;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      actorA.x -= cosAngle * (correctDist - dist) * fractionA;
+      actorA.y -= sinAngle * (correctDist - dist) * fractionA;
+      actorB.x += cosAngle * (correctDist - dist) * fractionB;
+      actorB.y += sinAngle * (correctDist - dist) * fractionB;
+    }
+  }
+  
+  //----------------------------------------------------------------
   
   paint() {
     //Clear
@@ -237,17 +399,26 @@ const MAX_KEYS = 128;
  */
 //==============================================================================
 class Actor {
-  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE) {
+  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_NONE) {
     this.name = name;
     this.x = x;
     this.y = y;
     this.size = size;
     this.shape = shape;
+    this.solid = (shape !== SHAPE_NONE);
+    this.canBeMoved = true;
   }
+  
+  get left() { return this.x - this.size / 2; }
+  get right() { return this.x + this.size / 2; }
+  get top() { return this.y - this.size / 2; }
+  get bottom() { return this.y + this.size / 2; }
+  get radius() { return this.size / 2; }  
 }
 
-const SHAPE_SQUARE = 0;
-const SHAPE_CIRCLE = 1;
+const SHAPE_NONE = 0;  //No shape = no collision
+const SHAPE_SQUARE = 1;
+const SHAPE_CIRCLE = 2;
 //==============================================================================
 
 /*  Utility Classes
