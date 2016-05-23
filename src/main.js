@@ -83,16 +83,14 @@ class App {
     this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
     this.actors[2].canBeMoved = true;
+    this.actors[3].canBeMoved = true;
+    this.actors[4].canBeMoved = true;
     //--------------------------------
     
     //Start!
@@ -259,8 +257,6 @@ class App {
       const distX = actorB.x - actorA.x;
       const distY = actorB.y - actorA.y;
       const correctDist = (actorA.size + actorB.size) / 2;
-      console.log(distX + " " + distY + " " + correctDist);
-      
       if (Math.abs(distX) > Math.abs(distY)) {
         actorA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
         actorB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
@@ -268,7 +264,6 @@ class App {
         actorA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
         actorB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
       }
-      
     }
   }
   

@@ -90,16 +90,14 @@ var App = function () {
     this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c3', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c4', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
 
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
     this.actors[2].canBeMoved = true;
+    this.actors[3].canBeMoved = true;
+    this.actors[4].canBeMoved = true;
     //--------------------------------
 
     //Start!
@@ -257,8 +255,6 @@ var App = function () {
         var _distX3 = actorB.x - actorA.x;
         var _distY3 = actorB.y - actorA.y;
         var _correctDist = (actorA.size + actorB.size) / 2;
-        console.log(_distX3 + " " + _distY3 + " " + _correctDist);
-
         if (Math.abs(_distX3) > Math.abs(_distY3)) {
           actorA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
           actorB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
