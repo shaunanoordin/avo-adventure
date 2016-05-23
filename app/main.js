@@ -88,8 +88,8 @@ var App = function () {
     //TEST
     //--------------------------------
     this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
 
@@ -262,6 +262,30 @@ var App = function () {
           actorA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
           actorB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
         }
+      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
+        var _distX4 = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
+        var _distY4 = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
+        var _angle = Math.atan2(_distY4, _distX4);
+        var _correctDist2 = actorA.radius;
+        var _cosAngle = Math.cos(_angle);
+        var _sinAngle = Math.sin(_angle);
+        actorA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
+        actorA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
+        actorB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
+        actorB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
+      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
+        var _distX5 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
+        var _distY5 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
+        var _angle2 = Math.atan2(_distY5, _distX5);
+        var _correctDist3 = actorB.radius;
+        var _cosAngle2 = Math.cos(_angle2);
+        var _sinAngle2 = Math.sin(_angle2);
+        actorA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
+        actorA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
+        actorB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
+        actorB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
       }
     }
 
