@@ -80,7 +80,10 @@ class App {
     
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
+    this.player.sprite = new ImageAsset("assets/actor.png");
+    
+    this.actors.push(this.player);
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
@@ -104,6 +107,7 @@ class App {
   run() {
     //TEST: Input & Actions
     //--------------------------------
+    const PLAYER_SPEED = 4;
     if (this.pointer.state === INPUT_ACTIVE) {
       const distX = this.pointer.now.x - this.pointer.start.x;
       const distY = this.pointer.now.y - this.pointer.start.y;
@@ -111,9 +115,9 @@ class App {
       
       if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
         const angle = Math.atan2(distY, distX);
-        const speed = 1;
-        this.actors[0].x += Math.cos(angle) * speed;
-        this.actors[0].y += Math.sin(angle) * speed;
+        const speed = PLAYER_SPEED;
+        this.player.x += Math.cos(angle) * speed;
+        this.player.y += Math.sin(angle) * speed;
         
         //UX improvement: reset the base point of the pointer so the player can
         //switch directions much more easily.
@@ -127,18 +131,18 @@ class App {
     }
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-      this.actors[0].y -= 2;
+      this.player.y -= PLAYER_SPEED;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-      this.actors[0].y += 2;
+      this.player.y += PLAYER_SPEED;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-      this.actors[0].x -= 2;
+      this.player.x -= PLAYER_SPEED;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-      this.actors[0].x += 2;
+      this.player.x += PLAYER_SPEED;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 2) {
-      this.actors[0].shape = (this.actors[0].shape === SHAPE_CIRCLE)
+      this.player.shape = (this.player.shape === SHAPE_CIRCLE)
         ? SHAPE_SQUARE
         : SHAPE_CIRCLE;
     }
@@ -151,6 +155,11 @@ class App {
     
     //Visuals
     //--------------------------------
+    //Arrange sprites by vertical order.
+    this.actors.sort((a, b) => {
+      return a.y < b.y;
+    });    
+    
     this.paint();
     //--------------------------------
     
@@ -317,6 +326,22 @@ class App {
       this.context.closePath();
     }
     
+    //Paint sprites
+    for (let actor of this.actors) {
+      if (!actor.sprite || !actor.sprite.loaded) continue;
+      
+      //TEST
+      const srcX = 0;
+      const srcY = 0;
+      const srcW = 64;
+      const srcH = 64;
+      const tgtX = Math.floor(actor.x - srcW / 2);
+      const tgtY = Math.floor(actor.y - srcH / 2);
+      const tgtW = 64;
+      const tgtH = 64;
+      
+      this.context.drawImage(actor.sprite.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+    }
   }
   
   //----------------------------------------------------------------
@@ -407,6 +432,7 @@ class Actor {
     this.shape = shape;
     this.solid = (shape !== SHAPE_NONE);
     this.canBeMoved = true;
+    this.sprite = null;
   }
   
   get left() { return this.x - this.size / 2; }

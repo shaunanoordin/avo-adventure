@@ -87,7 +87,10 @@ var App = function () {
 
     //TEST
     //--------------------------------
-    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
+    this.player.sprite = new ImageAsset("assets/actor.png");
+
+    this.actors.push(this.player);
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
@@ -113,6 +116,7 @@ var App = function () {
     value: function run() {
       //TEST: Input & Actions
       //--------------------------------
+      var PLAYER_SPEED = 4;
       if (this.pointer.state === INPUT_ACTIVE) {
         var distX = this.pointer.now.x - this.pointer.start.x;
         var distY = this.pointer.now.y - this.pointer.start.y;
@@ -120,9 +124,9 @@ var App = function () {
 
         if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
           var angle = Math.atan2(distY, distX);
-          var speed = 1;
-          this.actors[0].x += Math.cos(angle) * speed;
-          this.actors[0].y += Math.sin(angle) * speed;
+          var speed = PLAYER_SPEED;
+          this.player.x += Math.cos(angle) * speed;
+          this.player.y += Math.sin(angle) * speed;
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
@@ -134,18 +138,18 @@ var App = function () {
       }
 
       if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-        this.actors[0].y -= 2;
+        this.player.y -= PLAYER_SPEED;
       } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-        this.actors[0].y += 2;
+        this.player.y += PLAYER_SPEED;
       }
       if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-        this.actors[0].x -= 2;
+        this.player.x -= PLAYER_SPEED;
       } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-        this.actors[0].x += 2;
+        this.player.x += PLAYER_SPEED;
       }
 
       if (this.keys[KEY_CODES.SPACE].duration === 2) {
-        this.actors[0].shape = this.actors[0].shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
+        this.player.shape = this.player.shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
       }
       //--------------------------------
 
@@ -156,6 +160,11 @@ var App = function () {
 
       //Visuals
       //--------------------------------
+      //Arrange sprites by vertical order.
+      this.actors.sort(function (a, b) {
+        return a.y < b.y;
+      });
+
       this.paint();
       //--------------------------------
 
@@ -319,6 +328,8 @@ var App = function () {
           }
           this.context.closePath();
         }
+
+        //Paint sprites
       } catch (err) {
         _didIteratorError = true;
         _iteratorError = err;
@@ -330,6 +341,43 @@ var App = function () {
         } finally {
           if (_didIteratorError) {
             throw _iteratorError;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
+
+      try {
+        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var _actor = _step2.value;
+
+          if (!_actor.sprite || !_actor.sprite.loaded) continue;
+
+          //TEST
+          var srcX = 0;
+          var srcY = 0;
+          var srcW = 64;
+          var srcH = 64;
+          var tgtX = Math.floor(_actor.x - srcW / 2);
+          var tgtY = Math.floor(_actor.y - srcH / 2);
+          var tgtW = 64;
+          var tgtH = 64;
+
+          this.context.drawImage(_actor.sprite.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
           }
         }
       }
@@ -442,6 +490,7 @@ var Actor = function () {
     this.shape = shape;
     this.solid = shape !== SHAPE_NONE;
     this.canBeMoved = true;
+    this.sprite = null;
   }
 
   _createClass(Actor, [{
