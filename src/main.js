@@ -118,6 +118,7 @@ class App {
         const speed = PLAYER_SPEED;
         this.player.x += Math.cos(angle) * speed;
         this.player.y += Math.sin(angle) * speed;
+        this.player.rotation = angle;
         
         //UX improvement: reset the base point of the pointer so the player can
         //switch directions much more easily.
@@ -132,13 +133,28 @@ class App {
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
       this.player.y -= PLAYER_SPEED;
+      this.player.rotation = ROTATION_NORTH;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
       this.player.y += PLAYER_SPEED;
+      this.player.rotation = ROTATION_SOUTH;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
       this.player.x -= PLAYER_SPEED;
+      this.player.rotation = ROTATION_WEST;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
       this.player.x += PLAYER_SPEED;
+      this.player.rotation = ROTATION_EAST;
+    }
+    
+    if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
+      this.player.rotation -= Math.PI / 36;
+    } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
+      this.player.rotation += Math.PI / 36;
+    }
+    
+    if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
+      this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
+      this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 2) {
@@ -312,18 +328,25 @@ class App {
     
     //Paint hitboxes
     for (let actor of this.actors) {
-      this.context.beginPath();
       switch (actor.shape) {
         case SHAPE_CIRCLE:
+          this.context.beginPath();
           this.context.arc(actor.x, actor.y, actor.size/2, 0, 2 * Math.PI);
           this.context.stroke();
+          this.context.closePath();
+          this.context.beginPath();
+          this.context.moveTo(actor.x, actor.y);
+          this.context.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+          this.context.stroke();
+          this.context.closePath();
           break;
         case SHAPE_SQUARE:
+          this.context.beginPath();
           this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
           this.context.stroke();
+          this.context.closePath();
           break;
       }
-      this.context.closePath();
     }
     
     //Paint sprites
@@ -331,14 +354,14 @@ class App {
       if (!actor.sprite || !actor.sprite.loaded) continue;
       
       //TEST
-      const srcX = 0;
-      const srcY = 0;
       const srcW = 64;
       const srcH = 64;
+      const srcX = 0 + srcW * actor.direction;
+      const srcY = 0;
       const tgtX = Math.floor(actor.x - srcW / 2);
       const tgtY = Math.floor(actor.y - srcH / 2);
-      const tgtW = 64;
-      const tgtH = 64;
+      const tgtW = srcW;
+      const tgtH = srcH;
       
       this.context.drawImage(actor.sprite.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
     }
@@ -386,7 +409,7 @@ class App {
   //----------------------------------------------------------------
   
   onKeyDown(e) {
-    let keyCode = Utility.getKeyCode(e);    
+    let keyCode = Utility.getKeyCode(e);
     if (keyCode > 0 && keyCode < MAX_KEYS && this.keys[keyCode].state != INPUT_ACTIVE) {
       this.keys[keyCode].state = INPUT_ACTIVE;
       this.keys[keyCode].duration = 1;
@@ -432,6 +455,8 @@ class Actor {
     this.shape = shape;
     this.solid = (shape !== SHAPE_NONE);
     this.canBeMoved = true;
+    this.rotation = ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
+    
     this.sprite = null;
   }
   
@@ -439,12 +464,36 @@ class Actor {
   get right() { return this.x + this.size / 2; }
   get top() { return this.y - this.size / 2; }
   get bottom() { return this.y + this.size / 2; }
-  get radius() { return this.size / 2; }  
+  get radius() { return this.size / 2; }
+  
+  get rotation() { return this._rotation; }
+  set rotation(val) {
+    this._rotation = val;
+    while (this._rotation > Math.PI) { this._rotation -= Math.PI * 2; }
+    while (this._rotation <= -Math.PI) { this._rotation += Math.PI * 2; }
+  }
+  get direction() {  //Get cardinal direction
+    //Favour East and West when rotation is exactly SW, NW, SE or NE.
+    if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) { return DIRECTION_EAST; }
+    else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return DIRECTION_SOUTH; }
+    else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return DIRECTION_NORTH; }
+    else { return DIRECTION_WEST; }
+  }
 }
 
 const SHAPE_NONE = 0;  //No shape = no collision
 const SHAPE_SQUARE = 1;
 const SHAPE_CIRCLE = 2;
+
+const ROTATION_EAST = 0;
+const ROTATION_SOUTH = Math.PI / 2;
+const ROTATION_WEST = Math.PI;
+const ROTATION_NORTH = -Math.PI / 2;
+
+const DIRECTION_EAST = 0;
+const DIRECTION_SOUTH = 1;
+const DIRECTION_WEST = 2;
+const DIRECTION_NORTH = 3;
 //==============================================================================
 
 /*  Utility Classes
@@ -492,7 +541,47 @@ const KEY_CODES = {
   DOWN: 40,
   ENTER: 13,
   SPACE: 32,
-  ESCAPE: 27
+  ESCAPE: 27,
+  TAB: 9,
+  SHIFT: 16,
+  
+  A: 65,
+  B: 66,
+  C: 67,
+  D: 68,
+  E: 69,
+  F: 70,
+  G: 71,
+  H: 72,
+  I: 73,
+  J: 74,
+  K: 75,
+  L: 76,
+  M: 77,
+  N: 78,
+  O: 79,
+  P: 80,
+  Q: 81,
+  R: 82,
+  S: 83,
+  T: 84,
+  U: 85,
+  V: 86,
+  W: 87,
+  X: 88,
+  Y: 89,
+  Z: 90,
+
+  NUM0: 48,  
+  NUM1: 49,
+  NUM2: 50,
+  NUM3: 51,
+  NUM4: 52,
+  NUM5: 53,
+  NUM6: 54,
+  NUM7: 55,
+  NUM8: 56,
+  NUM9: 57,
 }
 
 const KEY_VALUES = {
@@ -508,7 +597,85 @@ const KEY_VALUES = {
   "Space": KEY_CODES.SPACE,
   " ": KEY_CODES.SPACE,
   "Esc": KEY_CODES.ESCAPE,
-  "Escape": KEY_CODES.ESCAPE
+  "Escape": KEY_CODES.ESCAPE,
+  "Tab": KEY_CODES.TAB,
+  "Shift": KEY_CODES.SHIFT,
+  "ShiftLeft": KEY_CODES.SHIFT,
+  "ShiftRight": KEY_CODES.SHIFT,
+  
+  "A": KEY_CODES.A,
+  "KeyA": KEY_CODES.A,
+  "B": KEY_CODES.B,
+  "KeyB": KEY_CODES.B,
+  "C": KEY_CODES.C,
+  "KeyC": KEY_CODES.C,
+  "D": KEY_CODES.D,
+  "KeyD": KEY_CODES.D,
+  "E": KEY_CODES.E,
+  "KeyE": KEY_CODES.E,
+  "F": KEY_CODES.F,
+  "KeyF": KEY_CODES.F,
+  "G": KEY_CODES.G,
+  "KeyG": KEY_CODES.G,
+  "H": KEY_CODES.H,
+  "KeyH": KEY_CODES.H,
+  "I": KEY_CODES.I,
+  "KeyI": KEY_CODES.I,
+  "J": KEY_CODES.J,
+  "KeyJ": KEY_CODES.J,
+  "K": KEY_CODES.K,
+  "KeyK": KEY_CODES.K,
+  "L": KEY_CODES.L,
+  "KeyL": KEY_CODES.L,
+  "M": KEY_CODES.M,
+  "KeyM": KEY_CODES.M,
+  "N": KEY_CODES.N,
+  "KeyN": KEY_CODES.N,
+  "O": KEY_CODES.O,
+  "KeyO": KEY_CODES.O,
+  "P": KEY_CODES.P,
+  "KeyP": KEY_CODES.P,
+  "Q": KEY_CODES.Q,
+  "KeyQ": KEY_CODES.Q,
+  "R": KEY_CODES.R,
+  "KeyR": KEY_CODES.R,
+  "S": KEY_CODES.S,
+  "KeyS": KEY_CODES.S,
+  "T": KEY_CODES.T,
+  "KeyT": KEY_CODES.T,
+  "U": KEY_CODES.U,
+  "KeyU": KEY_CODES.U,
+  "V": KEY_CODES.V,
+  "KeyV": KEY_CODES.V,
+  "W": KEY_CODES.W,
+  "KeyW": KEY_CODES.W,
+  "X": KEY_CODES.X,
+  "KeyX": KEY_CODES.X,
+  "Y": KEY_CODES.Y,
+  "KeyY": KEY_CODES.Y,
+  "Z": KEY_CODES.Z,
+  "KeyZ": KEY_CODES.Z,
+  
+  "0": KEY_CODES.NUM0,
+  "Digit0": KEY_CODES.NUM0,
+  "1": KEY_CODES.NUM1,
+  "Digit1": KEY_CODES.NUM1,
+  "2": KEY_CODES.NUM2,
+  "Digit2": KEY_CODES.NUM2,
+  "3": KEY_CODES.NUM3,
+  "Digit3": KEY_CODES.NUM3,
+  "4": KEY_CODES.NUM4,
+  "Digit4": KEY_CODES.NUM4,
+  "5": KEY_CODES.NUM5,
+  "Digit5": KEY_CODES.NUM5,
+  "6": KEY_CODES.NUM6,
+  "Digit6": KEY_CODES.NUM6,
+  "7": KEY_CODES.NUM7,
+  "Digit7": KEY_CODES.NUM7,
+  "8": KEY_CODES.NUM8,
+  "Digit8": KEY_CODES.NUM8,
+  "9": KEY_CODES.NUM9,
+  "Digit9": KEY_CODES.NUM9,
 }
 
 function ImageAsset(url) {
