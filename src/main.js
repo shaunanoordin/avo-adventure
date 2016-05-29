@@ -133,17 +133,17 @@ class App {
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
       this.player.y -= PLAYER_SPEED;
-      this.player.rotation = ROTATION_NORTH;
+      this.player.direction = DIRECTION_NORTH;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
       this.player.y += PLAYER_SPEED;
-      this.player.rotation = ROTATION_SOUTH;
+      this.player.direction = DIRECTION_SOUTH;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
       this.player.x -= PLAYER_SPEED;
-      this.player.rotation = ROTATION_WEST;
+      this.player.direction = DIRECTION_WEST;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
       this.player.x += PLAYER_SPEED;
-      this.player.rotation = ROTATION_EAST;
+      this.player.direction = DIRECTION_EAST;
     }
     
     if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
@@ -155,6 +155,9 @@ class App {
     if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
       this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
       this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+    } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
+      this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
+      this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 2) {
@@ -478,6 +481,22 @@ class Actor {
     else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return DIRECTION_SOUTH; }
     else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return DIRECTION_NORTH; }
     else { return DIRECTION_WEST; }
+  }
+  set direction(val) {
+    switch (val) {
+      case DIRECTION_EAST:
+        this._rotation = ROTATION_EAST;
+        break;
+      case DIRECTION_SOUTH:
+        this._rotation = ROTATION_SOUTH;
+        break;
+      case DIRECTION_WEST:
+        this._rotation = ROTATION_WEST;
+        break;
+      case DIRECTION_NORTH:
+        this._rotation = ROTATION_NORTH;
+        break;
+    }
   }
 }
 
