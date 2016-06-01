@@ -88,7 +88,7 @@ var App = function () {
     //TEST
     //--------------------------------
     this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
-    this.player.sprite = new ImageAsset("assets/actor.png");
+    this.player.spritesheet = new ImageAsset("assets/actor.png");
 
     this.actors.push(this.player);
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
@@ -379,7 +379,7 @@ var App = function () {
         for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
           var _actor = _step2.value;
 
-          if (!_actor.sprite || !_actor.sprite.loaded) continue;
+          if (!_actor.spritesheet || !_actor.spritesheet.loaded) continue;
 
           //TEST
           var srcW = 64;
@@ -391,7 +391,7 @@ var App = function () {
           var tgtW = srcW;
           var tgtH = srcH;
 
-          this.context.drawImage(_actor.sprite.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+          this.context.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
         }
       } catch (err) {
         _didIteratorError2 = true;
@@ -518,7 +518,7 @@ var Actor = function () {
     this.canBeMoved = true;
     this.rotation = ROTATION_SOUTH; //Rotation in radians; clockwise positive.
 
-    this.sprite = null;
+    this.spritesheet = null;
   }
 
   _createClass(Actor, [{

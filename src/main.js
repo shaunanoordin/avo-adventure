@@ -81,7 +81,7 @@ class App {
     //TEST
     //--------------------------------
     this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
-    this.player.sprite = new ImageAsset("assets/actor.png");
+    this.player.spritesheet = new ImageAsset("assets/actor.png");
     
     this.actors.push(this.player);
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
@@ -354,7 +354,7 @@ class App {
     
     //Paint sprites
     for (let actor of this.actors) {
-      if (!actor.sprite || !actor.sprite.loaded) continue;
+      if (!actor.spritesheet || !actor.spritesheet.loaded) continue;
       
       //TEST
       const srcW = 64;
@@ -366,7 +366,7 @@ class App {
       const tgtW = srcW;
       const tgtH = srcH;
       
-      this.context.drawImage(actor.sprite.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+      this.context.drawImage(actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
     }
   }
   
@@ -460,7 +460,7 @@ class Actor {
     this.canBeMoved = true;
     this.rotation = ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
     
-    this.sprite = null;
+    this.spritesheet = null;
   }
   
   get left() { return this.x - this.size / 2; }
