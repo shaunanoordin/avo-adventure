@@ -42,6 +42,11 @@ var App = function () {
 
     //Initialise Game Objects
     //--------------------------------
+    this.assets = {
+      images: {
+        actor: new ImageAsset("assets/actor.png")
+      }
+    };
     this.actors = [];
     //--------------------------------
 
@@ -89,8 +94,30 @@ var App = function () {
     //--------------------------------
     this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
-
+    this.player.step = 0;
+    this.player.animations = {
+      "idle": {
+        tileWidth: 64,
+        tileHeight: 64,
+        loop: true,
+        steps: [{ row: 0, duration: 1 }]
+      },
+      "walk": {
+        tileWidth: 64,
+        tileHeight: 64,
+        loop: true,
+        steps: [{ row: 1, duration: 1 }, { row: 2, duration: 1 }, { row: 3, duration: 1 }, { row: 2, duration: 1 }]
+      },
+      "attack": {
+        tileWidth: 64,
+        tileHeight: 64,
+        loop: false,
+        steps: [{ row: 6, duration: 3 }, { row: 7, duration: 1 }]
+      }
+    };
     this.actors.push(this.player);
+    //TODO
+
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
