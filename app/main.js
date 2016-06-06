@@ -92,29 +92,28 @@ var App = function () {
 
     //TEST
     //--------------------------------
-    this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
-    this.player.spritesheet = new ImageAsset("assets/actor.png");
-    this.player.step = 0;
-    this.player.animations = {
-      "idle": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: true,
-        steps: [{ row: 0, duration: 1 }]
-      },
-      "walk": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: true,
-        steps: [{ row: 1, duration: 1 }, { row: 2, duration: 1 }, { row: 3, duration: 1 }, { row: 2, duration: 1 }]
-      },
-      "attack": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: false,
-        steps: [{ row: 6, duration: 3 }, { row: 7, duration: 1 }]
+    this.animationSets = {
+      "actor": {
+        "idle": {
+          "tileWidth": 64,
+          "tileHeight": 64,
+          "loop": true,
+          "steps": [{ row: 0 }]
+        },
+        "walk": {
+          "tileWidth": 64,
+          "tileHeight": 64,
+          "loop": true,
+          "steps": [{ row: 1 }, { row: 2 }, { row: 3 }, { row: 2 }]
+        }
       }
     };
+
+    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player.spritesheet = new ImageAsset("assets/actor.png");
+    this.player.animationStep = 0;
+    this.player.animationSet = this.animationSets["actor"];
+    console.log(this.player);
     this.actors.push(this.player);
     //TODO
 
@@ -197,6 +196,9 @@ var App = function () {
       if (this.keys[KEY_CODES.SPACE].duration === 2) {
         this.player.shape = this.player.shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
       }
+
+      //Try animation!
+      this.player.playAnimation("walk");
       //--------------------------------
 
       //Physics
@@ -406,13 +408,14 @@ var App = function () {
         for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
           var _actor = _step2.value;
 
-          if (!_actor.spritesheet || !_actor.spritesheet.loaded) continue;
+          if (!_actor.spritesheet || !_actor.spritesheet.loaded || !_actor.animationSet || !_actor.animationSet[_actor.animationName]) continue;
 
           //TEST
-          var srcW = 64;
-          var srcH = 64;
-          var srcX = 0 + srcW * _actor.direction;
-          var srcY = 0;
+          var animationSet = _actor.animationSet[_actor.animationName];
+          var srcW = animationSet.tileWidth;
+          var srcH = animationSet.tileHeight;
+          var srcX = srcW * _actor.direction;
+          var srcY = animationSet.steps[_actor.animationStep].row * srcH;
           var tgtX = Math.floor(_actor.x - srcW / 2);
           var tgtY = Math.floor(_actor.y - srcH / 2);
           var tgtW = srcW;
@@ -546,9 +549,40 @@ var Actor = function () {
     this.rotation = ROTATION_SOUTH; //Rotation in radians; clockwise positive.
 
     this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
   }
 
   _createClass(Actor, [{
+    key: "playAnimation",
+    value: function playAnimation() {
+      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+      if (!this.animationSet || !this.animationSet[animationName]) return;
+
+      var animationSet = this.animationSet[animationName];
+
+      if (restart || this.animationName !== animationName) {
+        //Set this as the new animation
+        this.animationStep = 0;
+        this.animationName = animationName;
+      } else {
+        //Take a step through the current animation
+        this.animationStep++;
+        if (animationSet.steps.length === 0) {
+          this.animationStep = 0;
+        } else if (animationSet.loop) {
+          while (this.animationStep >= animationSet.steps.length) {
+            this.animationStep -= animationSet.steps.length;
+          }
+        } else {
+          this.animationStep = animationSet.steps.length - 1;
+        }
+      }
+    }
+  }, {
     key: "left",
     get: function get() {
       return this.x - this.size / 2;

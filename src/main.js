@@ -85,39 +85,37 @@ class App {
     
     //TEST
     //--------------------------------
-    this.player = new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true);
+    this.animationSets = {
+      "actor": {
+        "idle": {
+          "tileWidth": 64,
+          "tileHeight": 64,
+          "loop": true,
+          "steps": [
+            { row: 0 }
+          ],
+        },
+        "walk": {
+          "tileWidth": 64,
+          "tileHeight": 64,
+          "loop": true,
+          "steps": [
+            { row: 1 },
+            { row: 2 },
+            { row: 3 },
+            { row: 2 },
+          ],
+        },
+      }
+    }
+    
+    
+    
+    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
-    this.player.step = 0;
-    this.player.animations = {
-      "idle": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: true,
-        steps: [
-          { row: 0, duration: 1 }
-        ]
-      },
-      "walk": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: true,
-        steps: [
-          { row: 1, duration: 1 },
-          { row: 2, duration: 1 },
-          { row: 3, duration: 1 },
-          { row: 2, duration: 1 },
-        ]
-      },
-      "attack": {
-        tileWidth: 64,
-        tileHeight: 64,
-        loop: false,
-        steps: [
-          { row: 6, duration: 3 },
-          { row: 7, duration: 1 },
-        ]
-      },
-    };
+    this.player.animationStep = 0;
+    this.player.animationSet = this.animationSets["actor"];
+    console.log(this.player);
     this.actors.push(this.player);
     //TODO
     
@@ -202,6 +200,9 @@ class App {
         ? SHAPE_SQUARE
         : SHAPE_CIRCLE;
     }
+    
+    //Try animation!
+    this.player.playAnimation("walk");
     //--------------------------------
     
     //Physics
@@ -391,13 +392,16 @@ class App {
     
     //Paint sprites
     for (let actor of this.actors) {
-      if (!actor.spritesheet || !actor.spritesheet.loaded) continue;
+      if (!actor.spritesheet || !actor.spritesheet.loaded ||
+          !actor.animationSet || !actor.animationSet[actor.animationName])
+        continue;
       
       //TEST
-      const srcW = 64;
-      const srcH = 64;
-      const srcX = 0 + srcW * actor.direction;
-      const srcY = 0;
+      const animationSet = actor.animationSet[actor.animationName]
+      const srcW = animationSet.tileWidth;
+      const srcH = animationSet.tileHeight;
+      const srcX = srcW * actor.direction;
+      const srcY = animationSet.steps[actor.animationStep].row * srcH;
       const tgtX = Math.floor(actor.x - srcW / 2);
       const tgtY = Math.floor(actor.y - srcH / 2);
       const tgtW = srcW;
@@ -498,6 +502,29 @@ class Actor {
     this.rotation = ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
     
     this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
+  }
+  
+  playAnimation(animationName = "", restart = false) {
+    if (!this.animationSet || !this.animationSet[animationName]) return;
+    
+    let animationSet = this.animationSet[animationName];
+    
+    if (restart || this.animationName !== animationName) {  //Set this as the new animation
+      this.animationStep = 0;
+      this.animationName = animationName;
+    } else {  //Take a step through the current animation
+      this.animationStep++;
+      if (animationSet.steps.length === 0) {
+        this.animationStep = 0;
+      } else if (animationSet.loop) {
+        while (this.animationStep >= animationSet.steps.length) this.animationStep -= animationSet.steps.length;
+      } else {
+        this.animationStep = animationSet.steps.length - 1;
+      }
+    }
   }
   
   get left() { return this.x - this.size / 2; }
