@@ -98,7 +98,7 @@ var App = function () {
         "tileWidth": 64,
         "tileHeight": 64,
         "tileOffsetX": 0,
-        "tileOffsetY": 0,
+        "tileOffsetY": -16,
         "actions": {
           "idle": {
             "loop": true,
@@ -191,6 +191,7 @@ var App = function () {
     value: function run() {
       //TEST: Input & Actions
       //--------------------------------
+      var playerIsIdle = true;
       var PLAYER_SPEED = 4;
       if (this.pointer.state === INPUT_ACTIVE) {
         var distX = this.pointer.now.x - this.pointer.start.x;
@@ -203,6 +204,7 @@ var App = function () {
           this.player.x += Math.cos(angle) * speed;
           this.player.y += Math.sin(angle) * speed;
           this.player.rotation = angle;
+          playerIsIdle = false;
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
@@ -216,30 +218,38 @@ var App = function () {
       if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
         this.player.y -= PLAYER_SPEED;
         this.player.direction = DIRECTION_NORTH;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
         this.player.y += PLAYER_SPEED;
         this.player.direction = DIRECTION_SOUTH;
+        playerIsIdle = false;
       }
       if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
         this.player.x -= PLAYER_SPEED;
         this.player.direction = DIRECTION_WEST;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
         this.player.x += PLAYER_SPEED;
         this.player.direction = DIRECTION_EAST;
+        playerIsIdle = false;
       }
 
       if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
         this.player.rotation -= Math.PI / 36;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
         this.player.rotation += Math.PI / 36;
+        playerIsIdle = false;
       }
 
       if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
         this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
         this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
         this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
         this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
+        playerIsIdle = false;
       }
 
       if (this.keys[KEY_CODES.SPACE].duration === 2) {
@@ -247,7 +257,12 @@ var App = function () {
       }
 
       //Try animation!
-      this.player.playAnimation("walk");
+      if (playerIsIdle) {
+        this.player.playAnimation("idle");
+      } else {
+        this.player.playAnimation("walk");
+      }
+
       //--------------------------------
 
       //Physics
@@ -465,8 +480,8 @@ var App = function () {
           var srcH = animationSet.tileHeight;
           var srcX = srcW * _actor.direction;
           var srcY = animationSet.actions[_actor.animationName].steps[_actor.animationStep].row * srcH;
-          var tgtX = Math.floor(_actor.x - srcW / 2);
-          var tgtY = Math.floor(_actor.y - srcH / 2);
+          var tgtX = Math.floor(_actor.x - srcW / 2 + animationSet.tileOffsetX);
+          var tgtY = Math.floor(_actor.y - srcH / 2 + animationSet.tileOffsetY);
           var tgtW = srcW;
           var tgtH = srcH;
 

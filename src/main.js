@@ -91,7 +91,7 @@ class App {
         "tileWidth": 64,
         "tileHeight": 64,
         "tileOffsetX": 0,
-        "tileOffsetY": 0,        
+        "tileOffsetY": -16,        
         "actions": {
           "idle": {
             "loop": true,
@@ -166,6 +166,7 @@ class App {
   run() {
     //TEST: Input & Actions
     //--------------------------------
+    let playerIsIdle = true;
     const PLAYER_SPEED = 4;
     if (this.pointer.state === INPUT_ACTIVE) {
       const distX = this.pointer.now.x - this.pointer.start.x;
@@ -178,6 +179,7 @@ class App {
         this.player.x += Math.cos(angle) * speed;
         this.player.y += Math.sin(angle) * speed;
         this.player.rotation = angle;
+        playerIsIdle = false;
         
         //UX improvement: reset the base point of the pointer so the player can
         //switch directions much more easily.
@@ -193,30 +195,38 @@ class App {
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
       this.player.y -= PLAYER_SPEED;
       this.player.direction = DIRECTION_NORTH;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
       this.player.y += PLAYER_SPEED;
       this.player.direction = DIRECTION_SOUTH;
+      playerIsIdle = false;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
       this.player.x -= PLAYER_SPEED;
       this.player.direction = DIRECTION_WEST;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
       this.player.x += PLAYER_SPEED;
       this.player.direction = DIRECTION_EAST;
+      playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
       this.player.rotation -= Math.PI / 36;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
       this.player.rotation += Math.PI / 36;
+      playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
       this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
       this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
       this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
       this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
+      playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 2) {
@@ -226,7 +236,12 @@ class App {
     }
     
     //Try animation!
-    this.player.playAnimation("walk");
+    if (playerIsIdle) {
+      this.player.playAnimation("idle");
+    } else {
+      this.player.playAnimation("walk");
+    }
+    
     //--------------------------------
     
     //Physics
@@ -426,8 +441,8 @@ class App {
       const srcH = animationSet.tileHeight;
       const srcX = srcW * actor.direction;
       const srcY = animationSet.actions[actor.animationName].steps[actor.animationStep].row * srcH;
-      const tgtX = Math.floor(actor.x - srcW / 2);
-      const tgtY = Math.floor(actor.y - srcH / 2);
+      const tgtX = Math.floor(actor.x - srcW / 2 + animationSet.tileOffsetX);
+      const tgtY = Math.floor(actor.y - srcH / 2 + animationSet.tileOffsetY);
       const tgtW = srcW;
       const tgtH = srcH;
       
