@@ -83,34 +83,58 @@ class App {
     this.updateSize();
     //--------------------------------
     
-    //TEST
+    //TEST: ANIMATIONS
     //--------------------------------
+    const STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
     this.animationSets = {
       "actor": {
-        "idle": {
-          "tileWidth": 64,
-          "tileHeight": 64,
-          "loop": true,
-          "steps": [
-            { row: 0 }
-          ],
+        "tileWidth": 64,
+        "tileHeight": 64,
+        "tileOffsetX": 0,
+        "tileOffsetY": 0,        
+        "actions": {
+          "idle": {
+            "loop": true,
+            "steps": [
+              { row: 0, duration: STEPS_PER_SECOND }
+            ],
+          },
+          "walk": {
+            "tileWidth": 64,
+            "tileHeight": 64,
+            "tileOffsetX": 0,
+            "tileOffsetY": 0,
+            "loop": true,
+            "steps": [
+              { row: 1, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+              { row: 3, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+            ],
+          },
         },
-        "walk": {
-          "tileWidth": 64,
-          "tileHeight": 64,
-          "loop": true,
-          "steps": [
-            { row: 1 },
-            { row: 2 },
-            { row: 3 },
-            { row: 2 },
-          ],
-        },
+      },
+    };
+    
+    //Process Animations; expand steps to many frames per steps.
+    //----------------
+    for (let animationTitle in this.animationSets) {
+      let animationSet = this.animationSets[animationTitle];
+      for (let animationName in animationSet.actions) {
+        let animationAction = animationSet.actions[animationName];
+        let newSteps = [];
+        for (let step of animationAction.steps) {
+          for (let i = 0; i < step.duration; i++) { newSteps.push(step); }
+        }
+        animationAction.steps = newSteps;
       }
     }
+    //----------------
+    //--------------------------------
     
     
-    
+    //TEST: In-Game Objects
+    //--------------------------------
     this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
@@ -393,15 +417,15 @@ class App {
     //Paint sprites
     for (let actor of this.actors) {
       if (!actor.spritesheet || !actor.spritesheet.loaded ||
-          !actor.animationSet || !actor.animationSet[actor.animationName])
+          !actor.animationSet || !actor.animationSet.actions[actor.animationName])
         continue;
       
       //TEST
-      const animationSet = actor.animationSet[actor.animationName]
+      const animationSet = actor.animationSet;
       const srcW = animationSet.tileWidth;
       const srcH = animationSet.tileHeight;
       const srcX = srcW * actor.direction;
-      const srcY = animationSet.steps[actor.animationStep].row * srcH;
+      const srcY = animationSet.actions[actor.animationName].steps[actor.animationStep].row * srcH;
       const tgtX = Math.floor(actor.x - srcW / 2);
       const tgtY = Math.floor(actor.y - srcH / 2);
       const tgtW = srcW;
@@ -508,21 +532,22 @@ class Actor {
   }
   
   playAnimation(animationName = "", restart = false) {
-    if (!this.animationSet || !this.animationSet[animationName]) return;
+    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
     
-    let animationSet = this.animationSet[animationName];
+    //let animationSet = this.animationSet[animationName];
+    let animationAction = this.animationSet.actions[animationName];
     
     if (restart || this.animationName !== animationName) {  //Set this as the new animation
       this.animationStep = 0;
       this.animationName = animationName;
     } else {  //Take a step through the current animation
       this.animationStep++;
-      if (animationSet.steps.length === 0) {
+      if (animationAction.steps.length === 0) {
         this.animationStep = 0;
-      } else if (animationSet.loop) {
-        while (this.animationStep >= animationSet.steps.length) this.animationStep -= animationSet.steps.length;
+      } else if (animationAction.loop) {
+        while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
       } else {
-        this.animationStep = animationSet.steps.length - 1;
+        this.animationStep = animationAction.steps.length - 1;
       }
     }
   }
