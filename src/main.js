@@ -33,6 +33,11 @@ class App {
     
     //Initialise Game Objects
     //--------------------------------
+    this.assets = {
+      images: {
+        actor: new ImageAsset("assets/actor.png"),
+      }
+    }
     this.actors = [];
     //--------------------------------
     
@@ -78,9 +83,66 @@ class App {
     this.updateSize();
     //--------------------------------
     
-    //TEST
+    //TEST: ANIMATIONS
     //--------------------------------
-    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    const STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
+    this.animationSets = {
+      "actor": {
+        "tileWidth": 64,
+        "tileHeight": 64,
+        "tileOffsetX": 0,
+        "tileOffsetY": -16,        
+        "actions": {
+          "idle": {
+            "loop": true,
+            "steps": [
+              { row: 0, duration: STEPS_PER_SECOND }
+            ],
+          },
+          "walk": {
+            "tileWidth": 64,
+            "tileHeight": 64,
+            "tileOffsetX": 0,
+            "tileOffsetY": 0,
+            "loop": true,
+            "steps": [
+              { row: 1, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+              { row: 3, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+            ],
+          },
+        },
+      },
+    };
+    
+    //Process Animations; expand steps to many frames per steps.
+    //----------------
+    for (let animationTitle in this.animationSets) {
+      let animationSet = this.animationSets[animationTitle];
+      for (let animationName in animationSet.actions) {
+        let animationAction = animationSet.actions[animationName];
+        let newSteps = [];
+        for (let step of animationAction.steps) {
+          for (let i = 0; i < step.duration; i++) { newSteps.push(step); }
+        }
+        animationAction.steps = newSteps;
+      }
+    }
+    //----------------
+    //--------------------------------
+    
+    
+    //TEST: In-Game Objects
+    //--------------------------------
+    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player.spritesheet = new ImageAsset("assets/actor.png");
+    this.player.animationStep = 0;
+    this.player.animationSet = this.animationSets["actor"];
+    console.log(this.player);
+    this.actors.push(this.player);
+    //TODO
+    
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
@@ -104,6 +166,8 @@ class App {
   run() {
     //TEST: Input & Actions
     //--------------------------------
+    let playerIsIdle = true;
+    const PLAYER_SPEED = 4;
     if (this.pointer.state === INPUT_ACTIVE) {
       const distX = this.pointer.now.x - this.pointer.start.x;
       const distY = this.pointer.now.y - this.pointer.start.y;
@@ -111,9 +175,11 @@ class App {
       
       if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
         const angle = Math.atan2(distY, distX);
-        const speed = 1;
-        this.actors[0].x += Math.cos(angle) * speed;
-        this.actors[0].y += Math.sin(angle) * speed;
+        const speed = PLAYER_SPEED;
+        this.player.x += Math.cos(angle) * speed;
+        this.player.y += Math.sin(angle) * speed;
+        this.player.rotation = angle;
+        playerIsIdle = false;
         
         //UX improvement: reset the base point of the pointer so the player can
         //switch directions much more easily.
@@ -127,21 +193,55 @@ class App {
     }
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-      this.actors[0].y -= 2;
+      this.player.y -= PLAYER_SPEED;
+      this.player.direction = DIRECTION_NORTH;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-      this.actors[0].y += 2;
+      this.player.y += PLAYER_SPEED;
+      this.player.direction = DIRECTION_SOUTH;
+      playerIsIdle = false;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-      this.actors[0].x -= 2;
+      this.player.x -= PLAYER_SPEED;
+      this.player.direction = DIRECTION_WEST;
+      playerIsIdle = false;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-      this.actors[0].x += 2;
+      this.player.x += PLAYER_SPEED;
+      this.player.direction = DIRECTION_EAST;
+      playerIsIdle = false;
+    }
+    
+    if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
+      this.player.rotation -= Math.PI / 36;
+      playerIsIdle = false;
+    } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
+      this.player.rotation += Math.PI / 36;
+      playerIsIdle = false;
+    }
+    
+    if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
+      this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
+      this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+      playerIsIdle = false;
+    } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
+      this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
+      this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
+      playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 2) {
-      this.actors[0].shape = (this.actors[0].shape === SHAPE_CIRCLE)
+      this.player.shape = (this.player.shape === SHAPE_CIRCLE)
         ? SHAPE_SQUARE
         : SHAPE_CIRCLE;
     }
+    
+    //Try animation!
+    if (playerIsIdle) {
+      this.player.playAnimation("idle");
+    } else {
+      this.player.playAnimation("walk");
+    }
+    
     //--------------------------------
     
     //Physics
@@ -151,6 +251,11 @@ class App {
     
     //Visuals
     //--------------------------------
+    //Arrange sprites by vertical order.
+    this.actors.sort((a, b) => {
+      return a.y < b.y;
+    });    
+    
     this.paint();
     //--------------------------------
     
@@ -303,20 +408,46 @@ class App {
     
     //Paint hitboxes
     for (let actor of this.actors) {
-      this.context.beginPath();
       switch (actor.shape) {
         case SHAPE_CIRCLE:
+          this.context.beginPath();
           this.context.arc(actor.x, actor.y, actor.size/2, 0, 2 * Math.PI);
           this.context.stroke();
+          this.context.closePath();
+          this.context.beginPath();
+          this.context.moveTo(actor.x, actor.y);
+          this.context.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+          this.context.stroke();
+          this.context.closePath();
           break;
         case SHAPE_SQUARE:
+          this.context.beginPath();
           this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
           this.context.stroke();
+          this.context.closePath();
           break;
       }
-      this.context.closePath();
     }
     
+    //Paint sprites
+    for (let actor of this.actors) {
+      if (!actor.spritesheet || !actor.spritesheet.loaded ||
+          !actor.animationSet || !actor.animationSet.actions[actor.animationName])
+        continue;
+      
+      //TEST
+      const animationSet = actor.animationSet;
+      const srcW = animationSet.tileWidth;
+      const srcH = animationSet.tileHeight;
+      const srcX = srcW * actor.direction;
+      const srcY = animationSet.actions[actor.animationName].steps[actor.animationStep].row * srcH;
+      const tgtX = Math.floor(actor.x - srcW / 2 + animationSet.tileOffsetX);
+      const tgtY = Math.floor(actor.y - srcH / 2 + animationSet.tileOffsetY);
+      const tgtW = srcW;
+      const tgtH = srcH;
+      
+      this.context.drawImage(actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+    }
   }
   
   //----------------------------------------------------------------
@@ -361,7 +492,7 @@ class App {
   //----------------------------------------------------------------
   
   onKeyDown(e) {
-    let keyCode = Utility.getKeyCode(e);    
+    let keyCode = Utility.getKeyCode(e);
     if (keyCode > 0 && keyCode < MAX_KEYS && this.keys[keyCode].state != INPUT_ACTIVE) {
       this.keys[keyCode].state = INPUT_ACTIVE;
       this.keys[keyCode].duration = 1;
@@ -407,18 +538,85 @@ class Actor {
     this.shape = shape;
     this.solid = (shape !== SHAPE_NONE);
     this.canBeMoved = true;
+    this.rotation = ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
+    
+    this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
+  }
+  
+  playAnimation(animationName = "", restart = false) {
+    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+    
+    //let animationSet = this.animationSet[animationName];
+    let animationAction = this.animationSet.actions[animationName];
+    
+    if (restart || this.animationName !== animationName) {  //Set this as the new animation
+      this.animationStep = 0;
+      this.animationName = animationName;
+    } else {  //Take a step through the current animation
+      this.animationStep++;
+      if (animationAction.steps.length === 0) {
+        this.animationStep = 0;
+      } else if (animationAction.loop) {
+        while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
+      } else {
+        this.animationStep = animationAction.steps.length - 1;
+      }
+    }
   }
   
   get left() { return this.x - this.size / 2; }
   get right() { return this.x + this.size / 2; }
   get top() { return this.y - this.size / 2; }
   get bottom() { return this.y + this.size / 2; }
-  get radius() { return this.size / 2; }  
+  get radius() { return this.size / 2; }
+  
+  get rotation() { return this._rotation; }
+  set rotation(val) {
+    this._rotation = val;
+    while (this._rotation > Math.PI) { this._rotation -= Math.PI * 2; }
+    while (this._rotation <= -Math.PI) { this._rotation += Math.PI * 2; }
+  }
+  get direction() {  //Get cardinal direction
+    //Favour East and West when rotation is exactly SW, NW, SE or NE.
+    if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) { return DIRECTION_EAST; }
+    else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return DIRECTION_SOUTH; }
+    else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return DIRECTION_NORTH; }
+    else { return DIRECTION_WEST; }
+  }
+  set direction(val) {
+    switch (val) {
+      case DIRECTION_EAST:
+        this._rotation = ROTATION_EAST;
+        break;
+      case DIRECTION_SOUTH:
+        this._rotation = ROTATION_SOUTH;
+        break;
+      case DIRECTION_WEST:
+        this._rotation = ROTATION_WEST;
+        break;
+      case DIRECTION_NORTH:
+        this._rotation = ROTATION_NORTH;
+        break;
+    }
+  }
 }
 
 const SHAPE_NONE = 0;  //No shape = no collision
 const SHAPE_SQUARE = 1;
 const SHAPE_CIRCLE = 2;
+
+const ROTATION_EAST = 0;
+const ROTATION_SOUTH = Math.PI / 2;
+const ROTATION_WEST = Math.PI;
+const ROTATION_NORTH = -Math.PI / 2;
+
+const DIRECTION_EAST = 0;
+const DIRECTION_SOUTH = 1;
+const DIRECTION_WEST = 2;
+const DIRECTION_NORTH = 3;
 //==============================================================================
 
 /*  Utility Classes
@@ -466,7 +664,47 @@ const KEY_CODES = {
   DOWN: 40,
   ENTER: 13,
   SPACE: 32,
-  ESCAPE: 27
+  ESCAPE: 27,
+  TAB: 9,
+  SHIFT: 16,
+  
+  A: 65,
+  B: 66,
+  C: 67,
+  D: 68,
+  E: 69,
+  F: 70,
+  G: 71,
+  H: 72,
+  I: 73,
+  J: 74,
+  K: 75,
+  L: 76,
+  M: 77,
+  N: 78,
+  O: 79,
+  P: 80,
+  Q: 81,
+  R: 82,
+  S: 83,
+  T: 84,
+  U: 85,
+  V: 86,
+  W: 87,
+  X: 88,
+  Y: 89,
+  Z: 90,
+
+  NUM0: 48,  
+  NUM1: 49,
+  NUM2: 50,
+  NUM3: 51,
+  NUM4: 52,
+  NUM5: 53,
+  NUM6: 54,
+  NUM7: 55,
+  NUM8: 56,
+  NUM9: 57,
 }
 
 const KEY_VALUES = {
@@ -482,7 +720,85 @@ const KEY_VALUES = {
   "Space": KEY_CODES.SPACE,
   " ": KEY_CODES.SPACE,
   "Esc": KEY_CODES.ESCAPE,
-  "Escape": KEY_CODES.ESCAPE
+  "Escape": KEY_CODES.ESCAPE,
+  "Tab": KEY_CODES.TAB,
+  "Shift": KEY_CODES.SHIFT,
+  "ShiftLeft": KEY_CODES.SHIFT,
+  "ShiftRight": KEY_CODES.SHIFT,
+  
+  "A": KEY_CODES.A,
+  "KeyA": KEY_CODES.A,
+  "B": KEY_CODES.B,
+  "KeyB": KEY_CODES.B,
+  "C": KEY_CODES.C,
+  "KeyC": KEY_CODES.C,
+  "D": KEY_CODES.D,
+  "KeyD": KEY_CODES.D,
+  "E": KEY_CODES.E,
+  "KeyE": KEY_CODES.E,
+  "F": KEY_CODES.F,
+  "KeyF": KEY_CODES.F,
+  "G": KEY_CODES.G,
+  "KeyG": KEY_CODES.G,
+  "H": KEY_CODES.H,
+  "KeyH": KEY_CODES.H,
+  "I": KEY_CODES.I,
+  "KeyI": KEY_CODES.I,
+  "J": KEY_CODES.J,
+  "KeyJ": KEY_CODES.J,
+  "K": KEY_CODES.K,
+  "KeyK": KEY_CODES.K,
+  "L": KEY_CODES.L,
+  "KeyL": KEY_CODES.L,
+  "M": KEY_CODES.M,
+  "KeyM": KEY_CODES.M,
+  "N": KEY_CODES.N,
+  "KeyN": KEY_CODES.N,
+  "O": KEY_CODES.O,
+  "KeyO": KEY_CODES.O,
+  "P": KEY_CODES.P,
+  "KeyP": KEY_CODES.P,
+  "Q": KEY_CODES.Q,
+  "KeyQ": KEY_CODES.Q,
+  "R": KEY_CODES.R,
+  "KeyR": KEY_CODES.R,
+  "S": KEY_CODES.S,
+  "KeyS": KEY_CODES.S,
+  "T": KEY_CODES.T,
+  "KeyT": KEY_CODES.T,
+  "U": KEY_CODES.U,
+  "KeyU": KEY_CODES.U,
+  "V": KEY_CODES.V,
+  "KeyV": KEY_CODES.V,
+  "W": KEY_CODES.W,
+  "KeyW": KEY_CODES.W,
+  "X": KEY_CODES.X,
+  "KeyX": KEY_CODES.X,
+  "Y": KEY_CODES.Y,
+  "KeyY": KEY_CODES.Y,
+  "Z": KEY_CODES.Z,
+  "KeyZ": KEY_CODES.Z,
+  
+  "0": KEY_CODES.NUM0,
+  "Digit0": KEY_CODES.NUM0,
+  "1": KEY_CODES.NUM1,
+  "Digit1": KEY_CODES.NUM1,
+  "2": KEY_CODES.NUM2,
+  "Digit2": KEY_CODES.NUM2,
+  "3": KEY_CODES.NUM3,
+  "Digit3": KEY_CODES.NUM3,
+  "4": KEY_CODES.NUM4,
+  "Digit4": KEY_CODES.NUM4,
+  "5": KEY_CODES.NUM5,
+  "Digit5": KEY_CODES.NUM5,
+  "6": KEY_CODES.NUM6,
+  "Digit6": KEY_CODES.NUM6,
+  "7": KEY_CODES.NUM7,
+  "Digit7": KEY_CODES.NUM7,
+  "8": KEY_CODES.NUM8,
+  "Digit8": KEY_CODES.NUM8,
+  "9": KEY_CODES.NUM9,
+  "Digit9": KEY_CODES.NUM9,
 }
 
 function ImageAsset(url) {

@@ -42,6 +42,11 @@ var App = function () {
 
     //Initialise Game Objects
     //--------------------------------
+    this.assets = {
+      images: {
+        actor: new ImageAsset("assets/actor.png")
+      }
+    };
     this.actors = [];
     //--------------------------------
 
@@ -85,9 +90,82 @@ var App = function () {
     this.updateSize();
     //--------------------------------
 
-    //TEST
+    //TEST: ANIMATIONS
     //--------------------------------
-    this.actors.push(new Actor('player', this.width / 2, this.height / 2, 64, SHAPE_CIRCLE, true));
+    var STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
+    this.animationSets = {
+      "actor": {
+        "tileWidth": 64,
+        "tileHeight": 64,
+        "tileOffsetX": 0,
+        "tileOffsetY": -16,
+        "actions": {
+          "idle": {
+            "loop": true,
+            "steps": [{ row: 0, duration: STEPS_PER_SECOND }]
+          },
+          "walk": {
+            "tileWidth": 64,
+            "tileHeight": 64,
+            "tileOffsetX": 0,
+            "tileOffsetY": 0,
+            "loop": true,
+            "steps": [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+          }
+        }
+      }
+    };
+
+    //Process Animations; expand steps to many frames per steps.
+    //----------------
+    for (var animationTitle in this.animationSets) {
+      var animationSet = this.animationSets[animationTitle];
+      for (var animationName in animationSet.actions) {
+        var animationAction = animationSet.actions[animationName];
+        var newSteps = [];
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = animationAction.steps[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var step = _step.value;
+
+            for (var _i = 0; _i < step.duration; _i++) {
+              newSteps.push(step);
+            }
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
+
+        animationAction.steps = newSteps;
+      }
+    }
+    //----------------
+    //--------------------------------
+
+    //TEST: In-Game Objects
+    //--------------------------------
+    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player.spritesheet = new ImageAsset("assets/actor.png");
+    this.player.animationStep = 0;
+    this.player.animationSet = this.animationSets["actor"];
+    console.log(this.player);
+    this.actors.push(this.player);
+    //TODO
+
     this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
@@ -113,6 +191,8 @@ var App = function () {
     value: function run() {
       //TEST: Input & Actions
       //--------------------------------
+      var playerIsIdle = true;
+      var PLAYER_SPEED = 4;
       if (this.pointer.state === INPUT_ACTIVE) {
         var distX = this.pointer.now.x - this.pointer.start.x;
         var distY = this.pointer.now.y - this.pointer.start.y;
@@ -120,9 +200,11 @@ var App = function () {
 
         if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
           var angle = Math.atan2(distY, distX);
-          var speed = 1;
-          this.actors[0].x += Math.cos(angle) * speed;
-          this.actors[0].y += Math.sin(angle) * speed;
+          var speed = PLAYER_SPEED;
+          this.player.x += Math.cos(angle) * speed;
+          this.player.y += Math.sin(angle) * speed;
+          this.player.rotation = angle;
+          playerIsIdle = false;
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
@@ -134,19 +216,53 @@ var App = function () {
       }
 
       if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-        this.actors[0].y -= 2;
+        this.player.y -= PLAYER_SPEED;
+        this.player.direction = DIRECTION_NORTH;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-        this.actors[0].y += 2;
+        this.player.y += PLAYER_SPEED;
+        this.player.direction = DIRECTION_SOUTH;
+        playerIsIdle = false;
       }
       if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-        this.actors[0].x -= 2;
+        this.player.x -= PLAYER_SPEED;
+        this.player.direction = DIRECTION_WEST;
+        playerIsIdle = false;
       } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-        this.actors[0].x += 2;
+        this.player.x += PLAYER_SPEED;
+        this.player.direction = DIRECTION_EAST;
+        playerIsIdle = false;
+      }
+
+      if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
+        this.player.rotation -= Math.PI / 36;
+        playerIsIdle = false;
+      } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
+        this.player.rotation += Math.PI / 36;
+        playerIsIdle = false;
+      }
+
+      if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
+        this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
+        this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+        playerIsIdle = false;
+      } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
+        this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
+        this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
+        playerIsIdle = false;
       }
 
       if (this.keys[KEY_CODES.SPACE].duration === 2) {
-        this.actors[0].shape = this.actors[0].shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
+        this.player.shape = this.player.shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
       }
+
+      //Try animation!
+      if (playerIsIdle) {
+        this.player.playAnimation("idle");
+      } else {
+        this.player.playAnimation("walk");
+      }
+
       //--------------------------------
 
       //Physics
@@ -156,6 +272,11 @@ var App = function () {
 
       //Visuals
       //--------------------------------
+      //Arrange sprites by vertical order.
+      this.actors.sort(function (a, b) {
+        return a.y < b.y;
+      });
+
       this.paint();
       //--------------------------------
 
@@ -298,38 +419,85 @@ var App = function () {
       this.context.clearRect(0, 0, this.width, this.height);
 
       //Paint hitboxes
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator = this.actors[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var actor = _step.value;
+        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var actor = _step2.value;
 
-          this.context.beginPath();
           switch (actor.shape) {
             case SHAPE_CIRCLE:
+              this.context.beginPath();
               this.context.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
               this.context.stroke();
+              this.context.closePath();
+              this.context.beginPath();
+              this.context.moveTo(actor.x, actor.y);
+              this.context.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+              this.context.stroke();
+              this.context.closePath();
               break;
             case SHAPE_SQUARE:
+              this.context.beginPath();
               this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
               this.context.stroke();
+              this.context.closePath();
               break;
           }
-          this.context.closePath();
         }
+
+        //Paint sprites
       } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
           }
         } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _actor = _step3.value;
+
+          if (!_actor.spritesheet || !_actor.spritesheet.loaded || !_actor.animationSet || !_actor.animationSet.actions[_actor.animationName]) continue;
+
+          //TEST
+          var animationSet = _actor.animationSet;
+          var srcW = animationSet.tileWidth;
+          var srcH = animationSet.tileHeight;
+          var srcX = srcW * _actor.direction;
+          var srcY = animationSet.actions[_actor.animationName].steps[_actor.animationStep].row * srcH;
+          var tgtX = Math.floor(_actor.x - srcW / 2 + animationSet.tileOffsetX);
+          var tgtY = Math.floor(_actor.y - srcH / 2 + animationSet.tileOffsetY);
+          var tgtW = srcW;
+          var tgtH = srcH;
+
+          this.context.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
           }
         }
       }
@@ -442,9 +610,44 @@ var Actor = function () {
     this.shape = shape;
     this.solid = shape !== SHAPE_NONE;
     this.canBeMoved = true;
+    this.rotation = ROTATION_SOUTH; //Rotation in radians; clockwise positive.
+
+    this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
   }
 
   _createClass(Actor, [{
+    key: "playAnimation",
+    value: function playAnimation() {
+      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+      //let animationSet = this.animationSet[animationName];
+      var animationAction = this.animationSet.actions[animationName];
+
+      if (restart || this.animationName !== animationName) {
+        //Set this as the new animation
+        this.animationStep = 0;
+        this.animationName = animationName;
+      } else {
+        //Take a step through the current animation
+        this.animationStep++;
+        if (animationAction.steps.length === 0) {
+          this.animationStep = 0;
+        } else if (animationAction.loop) {
+          while (this.animationStep >= animationAction.steps.length) {
+            this.animationStep -= animationAction.steps.length;
+          }
+        } else {
+          this.animationStep = animationAction.steps.length - 1;
+        }
+      }
+    }
+  }, {
     key: "left",
     get: function get() {
       return this.x - this.size / 2;
@@ -469,6 +672,51 @@ var Actor = function () {
     get: function get() {
       return this.size / 2;
     }
+  }, {
+    key: "rotation",
+    get: function get() {
+      return this._rotation;
+    },
+    set: function set(val) {
+      this._rotation = val;
+      while (this._rotation > Math.PI) {
+        this._rotation -= Math.PI * 2;
+      }
+      while (this._rotation <= -Math.PI) {
+        this._rotation += Math.PI * 2;
+      }
+    }
+  }, {
+    key: "direction",
+    get: function get() {
+      //Get cardinal direction
+      //Favour East and West when rotation is exactly SW, NW, SE or NE.
+      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
+        return DIRECTION_EAST;
+      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
+        return DIRECTION_SOUTH;
+      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
+        return DIRECTION_NORTH;
+      } else {
+        return DIRECTION_WEST;
+      }
+    },
+    set: function set(val) {
+      switch (val) {
+        case DIRECTION_EAST:
+          this._rotation = ROTATION_EAST;
+          break;
+        case DIRECTION_SOUTH:
+          this._rotation = ROTATION_SOUTH;
+          break;
+        case DIRECTION_WEST:
+          this._rotation = ROTATION_WEST;
+          break;
+        case DIRECTION_NORTH:
+          this._rotation = ROTATION_NORTH;
+          break;
+      }
+    }
   }]);
 
   return Actor;
@@ -477,6 +725,16 @@ var Actor = function () {
 var SHAPE_NONE = 0; //No shape = no collision
 var SHAPE_SQUARE = 1;
 var SHAPE_CIRCLE = 2;
+
+var ROTATION_EAST = 0;
+var ROTATION_SOUTH = Math.PI / 2;
+var ROTATION_WEST = Math.PI;
+var ROTATION_NORTH = -Math.PI / 2;
+
+var DIRECTION_EAST = 0;
+var DIRECTION_SOUTH = 1;
+var DIRECTION_WEST = 2;
+var DIRECTION_NORTH = 3;
 //==============================================================================
 
 /*  Utility Classes
@@ -524,7 +782,47 @@ var KEY_CODES = {
   DOWN: 40,
   ENTER: 13,
   SPACE: 32,
-  ESCAPE: 27
+  ESCAPE: 27,
+  TAB: 9,
+  SHIFT: 16,
+
+  A: 65,
+  B: 66,
+  C: 67,
+  D: 68,
+  E: 69,
+  F: 70,
+  G: 71,
+  H: 72,
+  I: 73,
+  J: 74,
+  K: 75,
+  L: 76,
+  M: 77,
+  N: 78,
+  O: 79,
+  P: 80,
+  Q: 81,
+  R: 82,
+  S: 83,
+  T: 84,
+  U: 85,
+  V: 86,
+  W: 87,
+  X: 88,
+  Y: 89,
+  Z: 90,
+
+  NUM0: 48,
+  NUM1: 49,
+  NUM2: 50,
+  NUM3: 51,
+  NUM4: 52,
+  NUM5: 53,
+  NUM6: 54,
+  NUM7: 55,
+  NUM8: 56,
+  NUM9: 57
 };
 
 var KEY_VALUES = {
@@ -540,7 +838,85 @@ var KEY_VALUES = {
   "Space": KEY_CODES.SPACE,
   " ": KEY_CODES.SPACE,
   "Esc": KEY_CODES.ESCAPE,
-  "Escape": KEY_CODES.ESCAPE
+  "Escape": KEY_CODES.ESCAPE,
+  "Tab": KEY_CODES.TAB,
+  "Shift": KEY_CODES.SHIFT,
+  "ShiftLeft": KEY_CODES.SHIFT,
+  "ShiftRight": KEY_CODES.SHIFT,
+
+  "A": KEY_CODES.A,
+  "KeyA": KEY_CODES.A,
+  "B": KEY_CODES.B,
+  "KeyB": KEY_CODES.B,
+  "C": KEY_CODES.C,
+  "KeyC": KEY_CODES.C,
+  "D": KEY_CODES.D,
+  "KeyD": KEY_CODES.D,
+  "E": KEY_CODES.E,
+  "KeyE": KEY_CODES.E,
+  "F": KEY_CODES.F,
+  "KeyF": KEY_CODES.F,
+  "G": KEY_CODES.G,
+  "KeyG": KEY_CODES.G,
+  "H": KEY_CODES.H,
+  "KeyH": KEY_CODES.H,
+  "I": KEY_CODES.I,
+  "KeyI": KEY_CODES.I,
+  "J": KEY_CODES.J,
+  "KeyJ": KEY_CODES.J,
+  "K": KEY_CODES.K,
+  "KeyK": KEY_CODES.K,
+  "L": KEY_CODES.L,
+  "KeyL": KEY_CODES.L,
+  "M": KEY_CODES.M,
+  "KeyM": KEY_CODES.M,
+  "N": KEY_CODES.N,
+  "KeyN": KEY_CODES.N,
+  "O": KEY_CODES.O,
+  "KeyO": KEY_CODES.O,
+  "P": KEY_CODES.P,
+  "KeyP": KEY_CODES.P,
+  "Q": KEY_CODES.Q,
+  "KeyQ": KEY_CODES.Q,
+  "R": KEY_CODES.R,
+  "KeyR": KEY_CODES.R,
+  "S": KEY_CODES.S,
+  "KeyS": KEY_CODES.S,
+  "T": KEY_CODES.T,
+  "KeyT": KEY_CODES.T,
+  "U": KEY_CODES.U,
+  "KeyU": KEY_CODES.U,
+  "V": KEY_CODES.V,
+  "KeyV": KEY_CODES.V,
+  "W": KEY_CODES.W,
+  "KeyW": KEY_CODES.W,
+  "X": KEY_CODES.X,
+  "KeyX": KEY_CODES.X,
+  "Y": KEY_CODES.Y,
+  "KeyY": KEY_CODES.Y,
+  "Z": KEY_CODES.Z,
+  "KeyZ": KEY_CODES.Z,
+
+  "0": KEY_CODES.NUM0,
+  "Digit0": KEY_CODES.NUM0,
+  "1": KEY_CODES.NUM1,
+  "Digit1": KEY_CODES.NUM1,
+  "2": KEY_CODES.NUM2,
+  "Digit2": KEY_CODES.NUM2,
+  "3": KEY_CODES.NUM3,
+  "Digit3": KEY_CODES.NUM3,
+  "4": KEY_CODES.NUM4,
+  "Digit4": KEY_CODES.NUM4,
+  "5": KEY_CODES.NUM5,
+  "Digit5": KEY_CODES.NUM5,
+  "6": KEY_CODES.NUM6,
+  "Digit6": KEY_CODES.NUM6,
+  "7": KEY_CODES.NUM7,
+  "Digit7": KEY_CODES.NUM7,
+  "8": KEY_CODES.NUM8,
+  "Digit8": KEY_CODES.NUM8,
+  "9": KEY_CODES.NUM9,
+  "Digit9": KEY_CODES.NUM9
 };
 
 function ImageAsset(url) {
