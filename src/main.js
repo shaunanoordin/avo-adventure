@@ -39,6 +39,7 @@ class App {
       }
     }
     this.actors = [];
+    this.areasOfEffect = [];
     //--------------------------------
     
     //Prepare Input
@@ -229,10 +230,19 @@ class App {
       playerIsIdle = false;
     }
     
-    if (this.keys[KEY_CODES.SPACE].duration === 2) {
+    if (this.keys[KEY_CODES.Z].duration === 1) {
       this.player.shape = (this.player.shape === SHAPE_CIRCLE)
         ? SHAPE_SQUARE
         : SHAPE_CIRCLE;
+    }
+    
+    if (this.keys[KEY_CODES.SPACE].duration === 1) {
+      const AOE_SIZE = this.player.size;
+      let distance = this.player.radius + AOE_SIZE / 2;
+      let x = this.player.x + Math.cos(this.player.rotation) * distance;
+      let y = this.player.y + Math.sin(this.player.rotation) * distance;;
+      let newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5 * FRAMES_PER_SECOND, [], this.player);
+      this.areasOfEffect.push(newAoE);
     }
     
     //Try animation!
@@ -249,6 +259,17 @@ class App {
     this.physics();
     //--------------------------------
     
+    //AoE cleanup
+    //--------------------------------
+    for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
+      var aoe = this.areasOfEffect[i];
+      aoe.duration--;
+      if (aoe.duration <= 0) {
+        this.areasOfEffect.splice(i, 1);
+      }
+    }
+    //--------------------------------
+    
     //Visuals
     //--------------------------------
     //Arrange sprites by vertical order.
@@ -257,6 +278,13 @@ class App {
     });    
     
     this.paint();
+    //--------------------------------
+    
+    //Cleanup AoEs
+    //--------------------------------
+    for (aoe in this.areasOfEffect) {
+      
+    }
     //--------------------------------
     
     //Cleanup Input
@@ -406,7 +434,29 @@ class App {
     //Clear
     this.context.clearRect(0, 0, this.width, this.height);
     
-    //Paint hitboxes
+    //Pain Areas of Effects
+    for (let aoe of this.areasOfEffect) {
+      switch (aoe.shape) {
+        case SHAPE_CIRCLE:
+          this.context.beginPath();
+          this.context.arc(aoe.x, aoe.y, aoe.size/2, 0, 2 * Math.PI);
+          this.context.stroke();
+          this.context.closePath();
+          this.context.beginPath();
+          this.context.moveTo(aoe.x, aoe.y);
+          this.context.stroke();
+          this.context.closePath();
+          break;
+        case SHAPE_SQUARE:
+          this.context.beginPath();
+          this.context.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+          this.context.stroke();
+          this.context.closePath();
+          break;
+      }
+    }
+    
+    //Paint Actor hitboxes
     for (let actor of this.actors) {
       switch (actor.shape) {
         case SHAPE_CIRCLE:
@@ -617,6 +667,28 @@ const DIRECTION_EAST = 0;
 const DIRECTION_SOUTH = 1;
 const DIRECTION_WEST = 2;
 const DIRECTION_NORTH = 3;
+//==============================================================================
+
+/*  Area of Effect Class
+ */
+//==============================================================================
+class AoE {
+  constructor(x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, payload = [], source = null) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.shape = shape;
+    this.duration = duration;
+    this.payload = payload;
+    this.source = source
+  }
+  
+  get left() { return this.x - this.size / 2; }
+  get right() { return this.x + this.size / 2; }
+  get top() { return this.y - this.size / 2; }
+  get bottom() { return this.y + this.size / 2; }
+  get radius() { return this.size / 2; }
+}
 //==============================================================================
 
 /*  Utility Classes

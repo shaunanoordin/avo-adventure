@@ -48,6 +48,7 @@ var App = function () {
       }
     };
     this.actors = [];
+    this.areasOfEffect = [];
     //--------------------------------
 
     //Prepare Input
@@ -252,8 +253,17 @@ var App = function () {
         playerIsIdle = false;
       }
 
-      if (this.keys[KEY_CODES.SPACE].duration === 2) {
+      if (this.keys[KEY_CODES.Z].duration === 1) {
         this.player.shape = this.player.shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
+      }
+
+      if (this.keys[KEY_CODES.SPACE].duration === 1) {
+        var AOE_SIZE = this.player.size;
+        var distance = this.player.radius + AOE_SIZE / 2;
+        var x = this.player.x + Math.cos(this.player.rotation) * distance;
+        var y = this.player.y + Math.sin(this.player.rotation) * distance;;
+        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5 * FRAMES_PER_SECOND, [], this.player);
+        this.areasOfEffect.push(newAoE);
       }
 
       //Try animation!
@@ -270,6 +280,17 @@ var App = function () {
       this.physics();
       //--------------------------------
 
+      //AoE cleanup
+      //--------------------------------
+      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
+        var aoe = this.areasOfEffect[i];
+        aoe.duration--;
+        if (aoe.duration <= 0) {
+          this.areasOfEffect.splice(i, 1);
+        }
+      }
+      //--------------------------------
+
       //Visuals
       //--------------------------------
       //Arrange sprites by vertical order.
@@ -280,18 +301,23 @@ var App = function () {
       this.paint();
       //--------------------------------
 
+      //Cleanup AoEs
+      //--------------------------------
+      for (aoe in this.areasOfEffect) {}
+      //--------------------------------
+
       //Cleanup Input
       //--------------------------------
       if (this.pointer.state === INPUT_ENDED) {
         this.pointer.duration = 0;
         this.pointer.state = INPUT_IDLE;
       }
-      for (var i = 0; i < this.keys.length; i++) {
-        if (this.keys[i].state === INPUT_ACTIVE) {
-          this.keys[i].duration++;
-        } else if (this.keys[i].state === INPUT_ENDED) {
-          this.keys[i].duration = 0;
-          this.keys[i].state = INPUT_IDLE;
+      for (var _i2 = 0; _i2 < this.keys.length; _i2++) {
+        if (this.keys[_i2].state === INPUT_ACTIVE) {
+          this.keys[_i2].duration++;
+        } else if (this.keys[_i2].state === INPUT_ENDED) {
+          this.keys[_i2].duration = 0;
+          this.keys[_i2].state = INPUT_IDLE;
         }
       }
       //--------------------------------
@@ -418,14 +444,58 @@ var App = function () {
       //Clear
       this.context.clearRect(0, 0, this.width, this.height);
 
-      //Paint hitboxes
+      //Pain Areas of Effects
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var actor = _step2.value;
+        for (var _iterator2 = this.areasOfEffect[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var aoe = _step2.value;
+
+          switch (aoe.shape) {
+            case SHAPE_CIRCLE:
+              this.context.beginPath();
+              this.context.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+              this.context.stroke();
+              this.context.closePath();
+              this.context.beginPath();
+              this.context.moveTo(aoe.x, aoe.y);
+              this.context.stroke();
+              this.context.closePath();
+              break;
+            case SHAPE_SQUARE:
+              this.context.beginPath();
+              this.context.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+              this.context.stroke();
+              this.context.closePath();
+              break;
+          }
+        }
+
+        //Paint Actor hitboxes
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var actor = _step3.value;
 
           switch (actor.shape) {
             case SHAPE_CIRCLE:
@@ -450,27 +520,27 @@ var App = function () {
 
         //Paint sprites
       } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
           }
         } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
+          if (_didIteratorError3) {
+            throw _iteratorError3;
           }
         }
       }
 
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
 
       try {
-        for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var _actor = _step3.value;
+        for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var _actor = _step4.value;
 
           if (!_actor.spritesheet || !_actor.spritesheet.loaded || !_actor.animationSet || !_actor.animationSet.actions[_actor.animationName]) continue;
 
@@ -488,16 +558,16 @@ var App = function () {
           this.context.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
         }
       } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
           }
         } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
       }
@@ -737,9 +807,67 @@ var DIRECTION_WEST = 2;
 var DIRECTION_NORTH = 3;
 //==============================================================================
 
+/*  Area of Effect Class
+ */
+//==============================================================================
+
+var AoE = function () {
+  function AoE() {
+    var x = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
+    var y = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+    var size = arguments.length <= 2 || arguments[2] === undefined ? 32 : arguments[2];
+    var shape = arguments.length <= 3 || arguments[3] === undefined ? SHAPE_CIRCLE : arguments[3];
+    var duration = arguments.length <= 4 || arguments[4] === undefined ? 1 : arguments[4];
+    var payload = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
+    var source = arguments.length <= 6 || arguments[6] === undefined ? null : arguments[6];
+
+    _classCallCheck(this, AoE);
+
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.shape = shape;
+    this.duration = duration;
+    this.payload = payload;
+    this.source = source;
+  }
+
+  _createClass(AoE, [{
+    key: "left",
+    get: function get() {
+      return this.x - this.size / 2;
+    }
+  }, {
+    key: "right",
+    get: function get() {
+      return this.x + this.size / 2;
+    }
+  }, {
+    key: "top",
+    get: function get() {
+      return this.y - this.size / 2;
+    }
+  }, {
+    key: "bottom",
+    get: function get() {
+      return this.y + this.size / 2;
+    }
+  }, {
+    key: "radius",
+    get: function get() {
+      return this.size / 2;
+    }
+  }]);
+
+  return AoE;
+}();
+//==============================================================================
+
 /*  Utility Classes
  */
 //==============================================================================
+
+
 var Utility = {
   randomInt: function randomInt(min, max) {
     var a = min < max ? min : max;
