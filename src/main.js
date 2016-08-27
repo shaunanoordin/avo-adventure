@@ -138,7 +138,6 @@ class App {
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
-    console.log(this.player);
     this.actors.push(this.player);
     //TODO
     
@@ -235,13 +234,16 @@ class App {
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 1) {
+      const PUSH_POWER = 12;
       const AOE_SIZE = this.player.size;
       let distance = this.player.radius + AOE_SIZE / 2;
       let x = this.player.x + Math.cos(this.player.rotation) * distance;
       let y = this.player.y + Math.sin(this.player.rotation) * distance;;
       let newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5,
         [
-          new Effect("push", { x: 0, y : 0 }, 2, STACKING_RULE_ADD, this.player)
+          new Effect("push",
+            { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER },
+            2, STACKING_RULE_ADD, this.player)
         ],
         this.player);
       this.areasOfEffect.push(newAoE);
@@ -258,10 +260,25 @@ class App {
     
     //AoEs apply Effects
     //--------------------------------
+    for (let aoe of this.areasOfEffect) {
+      for (let actor of this.actors) {
+        if (this.checkCollision(aoe, actor)) {
+          actor.effects.push(...aoe.effects);  //Array.push can push multiple elements.
+        }
+      }
+    }
     //--------------------------------
     
     //Actors react to Effects
     //--------------------------------
+    for (let actor of this.actors) {
+      for (let effect of actor.effects) {
+        if (effect.name === "push") {
+          actor.x += effect.data.x || 0;
+          actor.y += effect.data.y || 0;
+        }
+      }
+    }
     //--------------------------------
     
     //Physics
@@ -269,18 +286,6 @@ class App {
     this.physics();
     //--------------------------------
     
-    //AoE cleanup
-    //--------------------------------
-    for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
-      var aoe = this.areasOfEffect[i];
-      if (!aoe.hasInfiniteDuration()) {
-        aoe.duration--;
-        if (aoe.duration <= 0) {
-          this.areasOfEffect.splice(i, 1);
-        }
-      }
-    }
-    //--------------------------------
     
     //Visuals
     //--------------------------------
@@ -294,8 +299,28 @@ class App {
     
     //Cleanup AoEs
     //--------------------------------
-    for (aoe in this.areasOfEffect) {
-      
+    for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
+      var aoe = this.areasOfEffect[i];
+      if (!aoe.hasInfiniteDuration()) {
+        aoe.duration--;
+        if (aoe.duration <= 0) {
+          this.areasOfEffect.splice(i, 1);
+        }
+      }
+    }
+    //--------------------------------
+    
+    //Cleanup Effects
+    //--------------------------------
+    for (let actor of this.actors) {
+      for (let i = actor.effects.length - 1; i >= 0; i--) {        
+        if (!actor.effects[i].hasInfiniteDuration()) {
+          actor.effects[i].duration--;
+          if (actor.effects[i].duration <= 0) {
+            actor.effects.splice(i, 1);
+          }
+        }
+      }
     }
     //--------------------------------
     
@@ -613,6 +638,8 @@ class Actor {
     this.animationStep = 0;
     this.animationSet = null;
     this.animationName = "";
+    
+    this.effects = [];
   }
   
   playAnimation(animationName = "", restart = false) {
@@ -718,7 +745,7 @@ class AoE {
   }
 }
 
-const DURATION_INFINITE = -1000;
+const DURATION_INFINITE = 0;
 //==============================================================================
 
 /*  Effect Class
@@ -732,6 +759,12 @@ class Effect {
     this.stackingRule = stackingRule;
     this.startDuration = duration;
     this.source = source;
+    
+    this.hasInfiniteDuration = this.hasInfiniteDuration.bind(this);
+  }
+  
+  hasInfiniteDuration() {
+    return this.startDuration === DURATION_INFINITE;
   }
 }
 

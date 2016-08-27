@@ -2,6 +2,8 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /*  
@@ -161,7 +163,6 @@ var App = function () {
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
-    console.log(this.player);
     this.actors.push(this.player);
     //TODO
 
@@ -256,11 +257,12 @@ var App = function () {
       }
 
       if (this.keys[KEY_CODES.SPACE].duration === 1) {
+        var PUSH_POWER = 12;
         var AOE_SIZE = this.player.size;
         var distance = this.player.radius + AOE_SIZE / 2;
         var x = this.player.x + Math.cos(this.player.rotation) * distance;
         var y = this.player.y + Math.sin(this.player.rotation) * distance;;
-        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: 0, y: 0 }, 2, STACKING_RULE_ADD, this.player)], this.player);
+        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD, this.player)], this.player);
         this.areasOfEffect.push(newAoE);
       }
 
@@ -275,28 +277,116 @@ var App = function () {
 
       //AoEs apply Effects
       //--------------------------------
-      //--------------------------------
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
 
-      //Actors react to Effects
-      //--------------------------------
-      //--------------------------------
+      try {
+        for (var _iterator2 = this.areasOfEffect[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var _aoe = _step2.value;
+          var _iteratorNormalCompletion5 = true;
+          var _didIteratorError5 = false;
+          var _iteratorError5 = undefined;
 
-      //Physics
-      //--------------------------------
-      this.physics();
-      //--------------------------------
+          try {
+            for (var _iterator5 = this.actors[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+              var actor = _step5.value;
 
-      //AoE cleanup
-      //--------------------------------
-      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
-        var aoe = this.areasOfEffect[i];
-        if (!aoe.hasInfiniteDuration()) {
-          aoe.duration--;
-          if (aoe.duration <= 0) {
-            this.areasOfEffect.splice(i, 1);
+              if (this.checkCollision(_aoe, actor)) {
+                var _actor$effects;
+
+                (_actor$effects = actor.effects).push.apply(_actor$effects, _toConsumableArray(_aoe.effects)); //Array.push can push multiple elements.
+              }
+            }
+          } catch (err) {
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
+              }
+            } finally {
+              if (_didIteratorError5) {
+                throw _iteratorError5;
+              }
+            }
+          }
+        }
+        //--------------------------------
+
+        //Actors react to Effects
+        //--------------------------------
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
           }
         }
       }
+
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _actor = _step3.value;
+          var _iteratorNormalCompletion6 = true;
+          var _didIteratorError6 = false;
+          var _iteratorError6 = undefined;
+
+          try {
+            for (var _iterator6 = _actor.effects[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+              var effect = _step6.value;
+
+              if (effect.name === "push") {
+                _actor.x += effect.data.x || 0;
+                _actor.y += effect.data.y || 0;
+              }
+            }
+          } catch (err) {
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
+              }
+            } finally {
+              if (_didIteratorError6) {
+                throw _iteratorError6;
+              }
+            }
+          }
+        }
+        //--------------------------------
+
+        //Physics
+        //--------------------------------
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+
+      this.physics();
       //--------------------------------
 
       //Visuals
@@ -311,11 +401,55 @@ var App = function () {
 
       //Cleanup AoEs
       //--------------------------------
-      for (aoe in this.areasOfEffect) {}
+      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
+        var aoe = this.areasOfEffect[i];
+        if (!aoe.hasInfiniteDuration()) {
+          aoe.duration--;
+          if (aoe.duration <= 0) {
+            this.areasOfEffect.splice(i, 1);
+          }
+        }
+      }
       //--------------------------------
 
-      //Cleanup Input
+      //Cleanup Effects
       //--------------------------------
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
+
+      try {
+        for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var _actor2 = _step4.value;
+
+          for (var _i3 = _actor2.effects.length - 1; _i3 >= 0; _i3--) {
+            if (!_actor2.effects[_i3].hasInfiniteDuration()) {
+              _actor2.effects[_i3].duration--;
+              if (_actor2.effects[_i3].duration <= 0) {
+                _actor2.effects.splice(_i3, 1);
+              }
+            }
+          }
+        }
+        //--------------------------------
+
+        //Cleanup Input
+        //--------------------------------
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
+          }
+        } finally {
+          if (_didIteratorError4) {
+            throw _iteratorError4;
+          }
+        }
+      }
+
       if (this.pointer.state === INPUT_ENDED) {
         this.pointer.duration = 0;
         this.pointer.state = INPUT_IDLE;
@@ -453,13 +587,13 @@ var App = function () {
       this.context2d.clearRect(0, 0, this.width, this.height);
 
       //Pain Areas of Effects
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
+      var _iteratorNormalCompletion7 = true;
+      var _didIteratorError7 = false;
+      var _iteratorError7 = undefined;
 
       try {
-        for (var _iterator2 = this.areasOfEffect[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var aoe = _step2.value;
+        for (var _iterator7 = this.areasOfEffect[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+          var aoe = _step7.value;
 
           var durationPercentage = 1;
           if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
@@ -489,28 +623,28 @@ var App = function () {
 
         //Paint Actor hitboxes
       } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
+          if (!_iteratorNormalCompletion7 && _iterator7.return) {
+            _iterator7.return();
           }
         } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
+          if (_didIteratorError7) {
+            throw _iteratorError7;
           }
         }
       }
 
       this.context2d.strokeStyle = "rgba(0,0,0,1)";
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
 
       try {
-        for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var actor = _step3.value;
+        for (var _iterator8 = this.actors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var actor = _step8.value;
 
           switch (actor.shape) {
             case SHAPE_CIRCLE:
@@ -535,54 +669,54 @@ var App = function () {
 
         //Paint sprites
       } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
           }
         } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
+          if (_didIteratorError8) {
+            throw _iteratorError8;
           }
         }
       }
 
-      var _iteratorNormalCompletion4 = true;
-      var _didIteratorError4 = false;
-      var _iteratorError4 = undefined;
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
 
       try {
-        for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-          var _actor = _step4.value;
+        for (var _iterator9 = this.actors[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _actor3 = _step9.value;
 
-          if (!_actor.spritesheet || !_actor.spritesheet.loaded || !_actor.animationSet || !_actor.animationSet.actions[_actor.animationName]) continue;
+          if (!_actor3.spritesheet || !_actor3.spritesheet.loaded || !_actor3.animationSet || !_actor3.animationSet.actions[_actor3.animationName]) continue;
 
           //TEST
-          var animationSet = _actor.animationSet;
+          var animationSet = _actor3.animationSet;
           var srcW = animationSet.tileWidth;
           var srcH = animationSet.tileHeight;
-          var srcX = srcW * _actor.direction;
-          var srcY = animationSet.actions[_actor.animationName].steps[_actor.animationStep].row * srcH;
-          var tgtX = Math.floor(_actor.x - srcW / 2 + animationSet.tileOffsetX);
-          var tgtY = Math.floor(_actor.y - srcH / 2 + animationSet.tileOffsetY);
+          var srcX = srcW * _actor3.direction;
+          var srcY = animationSet.actions[_actor3.animationName].steps[_actor3.animationStep].row * srcH;
+          var tgtX = Math.floor(_actor3.x - srcW / 2 + animationSet.tileOffsetX);
+          var tgtY = Math.floor(_actor3.y - srcH / 2 + animationSet.tileOffsetY);
           var tgtW = srcW;
           var tgtH = srcH;
 
-          this.context2d.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+          this.context2d.drawImage(_actor3.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
         }
       } catch (err) {
-        _didIteratorError4 = true;
-        _iteratorError4 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion4 && _iterator4.return) {
-            _iterator4.return();
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
           }
         } finally {
-          if (_didIteratorError4) {
-            throw _iteratorError4;
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
@@ -701,6 +835,8 @@ var Actor = function () {
     this.animationStep = 0;
     this.animationSet = null;
     this.animationName = "";
+
+    this.effects = [];
   }
 
   _createClass(Actor, [{
@@ -887,29 +1023,42 @@ var AoE = function () {
   return AoE;
 }();
 
-var DURATION_INFINITE = -1000;
+var DURATION_INFINITE = 0;
 //==============================================================================
 
 /*  Effect Class
  */
 //==============================================================================
 
-var Effect = function Effect() {
-  var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-  var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-  var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
-  var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
-  var source = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
+var Effect = function () {
+  function Effect() {
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
+    var source = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
 
-  _classCallCheck(this, Effect);
+    _classCallCheck(this, Effect);
 
-  this.name = name;
-  this.data = data;
-  this.duration = duration;
-  this.stackingRule = stackingRule;
-  this.startDuration = duration;
-  this.source = source;
-};
+    this.name = name;
+    this.data = data;
+    this.duration = duration;
+    this.stackingRule = stackingRule;
+    this.startDuration = duration;
+    this.source = source;
+
+    this.hasInfiniteDuration = this.hasInfiniteDuration.bind(this);
+  }
+
+  _createClass(Effect, [{
+    key: "hasInfiniteDuration",
+    value: function hasInfiniteDuration() {
+      return this.startDuration === DURATION_INFINITE;
+    }
+  }]);
+
+  return Effect;
+}();
 
 var STACKING_RULE_ADD = 0;
 var STACKING_RULE_REPLACE = 1;
