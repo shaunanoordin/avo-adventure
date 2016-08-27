@@ -32,7 +32,7 @@ var App = function () {
     this.runCycle = undefined;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
-    this.context = this.canvas.getContext("2d");
+    this.context2d = this.canvas.getContext("2d");
     this.boundingBox = undefined; //To be defined by this.updateSize().
     this.sizeRatioX = 1;
     this.sizeRatioY = 1;
@@ -118,7 +118,6 @@ var App = function () {
     };
 
     //Process Animations; expand steps to many frames per steps.
-    //----------------
     for (var animationTitle in this.animationSets) {
       var animationSet = this.animationSets[animationTitle];
       for (var animationName in animationSet.actions) {
@@ -154,7 +153,6 @@ var App = function () {
         animationAction.steps = newSteps;
       }
     }
-    //----------------
     //--------------------------------
 
     //TEST: In-Game Objects
@@ -262,7 +260,7 @@ var App = function () {
         var distance = this.player.radius + AOE_SIZE / 2;
         var x = this.player.x + Math.cos(this.player.rotation) * distance;
         var y = this.player.y + Math.sin(this.player.rotation) * distance;;
-        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5 * FRAMES_PER_SECOND, [], this.player);
+        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: 0, y: 0 }, 2, STACKING_RULE_ADD, this.player)], this.player);
         this.areasOfEffect.push(newAoE);
       }
 
@@ -275,6 +273,14 @@ var App = function () {
 
       //--------------------------------
 
+      //AoEs apply Effects
+      //--------------------------------
+      //--------------------------------
+
+      //Actors react to Effects
+      //--------------------------------
+      //--------------------------------
+
       //Physics
       //--------------------------------
       this.physics();
@@ -284,9 +290,11 @@ var App = function () {
       //--------------------------------
       for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
         var aoe = this.areasOfEffect[i];
-        aoe.duration--;
-        if (aoe.duration <= 0) {
-          this.areasOfEffect.splice(i, 1);
+        if (!aoe.hasInfiniteDuration()) {
+          aoe.duration--;
+          if (aoe.duration <= 0) {
+            this.areasOfEffect.splice(i, 1);
+          }
         }
       }
       //--------------------------------
@@ -442,7 +450,7 @@ var App = function () {
     key: "paint",
     value: function paint() {
       //Clear
-      this.context.clearRect(0, 0, this.width, this.height);
+      this.context2d.clearRect(0, 0, this.width, this.height);
 
       //Pain Areas of Effects
       var _iteratorNormalCompletion2 = true;
@@ -453,22 +461,28 @@ var App = function () {
         for (var _iterator2 = this.areasOfEffect[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
           var aoe = _step2.value;
 
+          var durationPercentage = 1;
+          if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
+            durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+          }
+          this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
+
           switch (aoe.shape) {
             case SHAPE_CIRCLE:
-              this.context.beginPath();
-              this.context.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
-              this.context.stroke();
-              this.context.closePath();
-              this.context.beginPath();
-              this.context.moveTo(aoe.x, aoe.y);
-              this.context.stroke();
-              this.context.closePath();
+              this.context2d.beginPath();
+              this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              this.context2d.beginPath();
+              this.context2d.moveTo(aoe.x, aoe.y);
+              this.context2d.stroke();
+              this.context2d.closePath();
               break;
             case SHAPE_SQUARE:
-              this.context.beginPath();
-              this.context.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
-              this.context.stroke();
-              this.context.closePath();
+              this.context2d.beginPath();
+              this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
               break;
           }
         }
@@ -489,6 +503,7 @@ var App = function () {
         }
       }
 
+      this.context2d.strokeStyle = "rgba(0,0,0,1)";
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
       var _iteratorError3 = undefined;
@@ -499,21 +514,21 @@ var App = function () {
 
           switch (actor.shape) {
             case SHAPE_CIRCLE:
-              this.context.beginPath();
-              this.context.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
-              this.context.stroke();
-              this.context.closePath();
-              this.context.beginPath();
-              this.context.moveTo(actor.x, actor.y);
-              this.context.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
-              this.context.stroke();
-              this.context.closePath();
+              this.context2d.beginPath();
+              this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              this.context2d.beginPath();
+              this.context2d.moveTo(actor.x, actor.y);
+              this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
               break;
             case SHAPE_SQUARE:
-              this.context.beginPath();
-              this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
-              this.context.stroke();
-              this.context.closePath();
+              this.context2d.beginPath();
+              this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
               break;
           }
         }
@@ -555,7 +570,7 @@ var App = function () {
           var tgtW = srcW;
           var tgtH = srcH;
 
-          this.context.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+          this.context2d.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
         }
       } catch (err) {
         _didIteratorError4 = true;
@@ -818,7 +833,7 @@ var AoE = function () {
     var size = arguments.length <= 2 || arguments[2] === undefined ? 32 : arguments[2];
     var shape = arguments.length <= 3 || arguments[3] === undefined ? SHAPE_CIRCLE : arguments[3];
     var duration = arguments.length <= 4 || arguments[4] === undefined ? 1 : arguments[4];
-    var payload = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
+    var effects = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
     var source = arguments.length <= 6 || arguments[6] === undefined ? null : arguments[6];
 
     _classCallCheck(this, AoE);
@@ -828,11 +843,21 @@ var AoE = function () {
     this.size = size;
     this.shape = shape;
     this.duration = duration;
-    this.payload = payload;
-    this.source = source;
+    this.startDuration = duration;
+    this.effects = effects;
+
+    this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
   }
 
   _createClass(AoE, [{
+    key: "hasInfiniteDuration",
+    value: function hasInfiniteDuration() {
+      return this.startDuration === DURATION_INFINITE;
+    }
+  }, {
     key: "left",
     get: function get() {
       return this.x - this.size / 2;
@@ -861,13 +886,38 @@ var AoE = function () {
 
   return AoE;
 }();
+
+var DURATION_INFINITE = -1000;
+//==============================================================================
+
+/*  Effect Class
+ */
+//==============================================================================
+
+var Effect = function Effect() {
+  var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+  var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+  var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+  var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
+  var source = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
+
+  _classCallCheck(this, Effect);
+
+  this.name = name;
+  this.data = data;
+  this.duration = duration;
+  this.stackingRule = stackingRule;
+  this.startDuration = duration;
+  this.source = source;
+};
+
+var STACKING_RULE_ADD = 0;
+var STACKING_RULE_REPLACE = 1;
 //==============================================================================
 
 /*  Utility Classes
  */
 //==============================================================================
-
-
 var Utility = {
   randomInt: function randomInt(min, max) {
     var a = min < max ? min : max;
