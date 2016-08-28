@@ -13,9 +13,9 @@ class App {
   constructor() {
     //Bind functions to 'this' reference.
     //--------------------------------
-    this.run = this.run.bind(this);
-    this.physics = this.physics.bind(this);
-    this.paint = this.paint.bind(this);
+    //this.run = this.run.bind(this);
+    //this.physics = this.physics.bind(this);
+    //this.paint = this.paint.bind(this);
     //--------------------------------
 
     //Initialise properties
@@ -40,6 +40,10 @@ class App {
     }
     this.actors = [];
     this.areasOfEffect = [];
+    this.refs = {};
+    this.scripts = {
+      onRun: [checkIfPlayerIsAtGoal],
+    }
     //--------------------------------
     
     //Prepare Input
@@ -134,11 +138,11 @@ class App {
     
     //TEST: In-Game Objects
     //--------------------------------
-    this.player = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
-    this.player.spritesheet = new ImageAsset("assets/actor.png");
-    this.player.animationStep = 0;
-    this.player.animationSet = this.animationSets["actor"];
-    this.actors.push(this.player);
+    this.refs["player"] = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.refs["player"].spritesheet = new ImageAsset("assets/actor.png");
+    this.refs["player"].animationStep = 0;
+    this.refs["player"].animationSet = this.animationSets["actor"];
+    this.actors.push(this.refs["player"]);
     
     this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
     this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
@@ -157,29 +161,28 @@ class App {
     wallN.canBeMoved = false;
     this.actors.push(wallE, wallS, wallW, wallN);
     
-    
-    
-    this.actors[0].canBeMoved = true;
-    this.actors[1].canBeMoved = true;
-    this.actors[2].canBeMoved = true;
-    this.actors[3].canBeMoved = true;
-    this.actors[4].canBeMoved = true;
-    
     this.areasOfEffect.push(
-      new AoE("aoe1", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
+      new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
         [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null)
     );
+    
+    this.refs["goal"] = new AoE("goal", this.width / 2, this.height / 2 - 256, 64, SHAPE_SQUARE, DURATION_INFINITE, [], null);
+    this.areasOfEffect.push(this.refs["goal"]);
     //--------------------------------
     
     //Start!
     //--------------------------------
-    this.runCycle = setInterval(this.run, 1000 / FRAMES_PER_SECOND);
+    this.runCycle = setInterval(this.run.bind(this), 1000 / FRAMES_PER_SECOND);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
   run() {
+    this.run_game();
+  }    
+    
+  run_game() {
     //TEST: Input & Actions
     //--------------------------------
     let playerIsIdle = true;
@@ -192,9 +195,9 @@ class App {
       if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
         const angle = Math.atan2(distY, distX);
         const speed = PLAYER_SPEED;
-        this.player.x += Math.cos(angle) * speed;
-        this.player.y += Math.sin(angle) * speed;
-        this.player.rotation = angle;
+        this.refs["player"].x += Math.cos(angle) * speed;
+        this.refs["player"].y += Math.sin(angle) * speed;
+        this.refs["player"].rotation = angle;
         playerIsIdle = false;
         
         //UX improvement: reset the base point of the pointer so the player can
@@ -209,71 +212,77 @@ class App {
     }
     
     if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
-      this.player.y -= PLAYER_SPEED;
-      this.player.direction = DIRECTION_NORTH;
+      this.refs["player"].y -= PLAYER_SPEED;
+      this.refs["player"].direction = DIRECTION_NORTH;
       playerIsIdle = false;
     } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
-      this.player.y += PLAYER_SPEED;
-      this.player.direction = DIRECTION_SOUTH;
+      this.refs["player"].y += PLAYER_SPEED;
+      this.refs["player"].direction = DIRECTION_SOUTH;
       playerIsIdle = false;
     }
     if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
-      this.player.x -= PLAYER_SPEED;
-      this.player.direction = DIRECTION_WEST;
+      this.refs["player"].x -= PLAYER_SPEED;
+      this.refs["player"].direction = DIRECTION_WEST;
       playerIsIdle = false;
     } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
-      this.player.x += PLAYER_SPEED;
-      this.player.direction = DIRECTION_EAST;
+      this.refs["player"].x += PLAYER_SPEED;
+      this.refs["player"].direction = DIRECTION_EAST;
       playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
-      this.player.rotation -= Math.PI / 36;
+      this.refs["player"].rotation -= Math.PI / 36;
       playerIsIdle = false;
     } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
-      this.player.rotation += Math.PI / 36;
+      this.refs["player"].rotation += Math.PI / 36;
       playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
-      this.player.x += Math.cos(this.player.rotation) * PLAYER_SPEED;
-      this.player.y += Math.sin(this.player.rotation) * PLAYER_SPEED;
+      this.refs["player"].x += Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
+      this.refs["player"].y += Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
       playerIsIdle = false;
     } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
-      this.player.x -= Math.cos(this.player.rotation) * PLAYER_SPEED;
-      this.player.y -= Math.sin(this.player.rotation) * PLAYER_SPEED;
+      this.refs["player"].x -= Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
+      this.refs["player"].y -= Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
       playerIsIdle = false;
     }
     
     if (this.keys[KEY_CODES.Z].duration === 1) {
-      this.player.shape = (this.player.shape === SHAPE_CIRCLE)
+      this.refs["player"].shape = (this.refs["player"].shape === SHAPE_CIRCLE)
         ? SHAPE_SQUARE
         : SHAPE_CIRCLE;
     }
     
     if (this.keys[KEY_CODES.SPACE].duration === 1) {
       const PUSH_POWER = 12;
-      const AOE_SIZE = this.player.size;
-      let distance = this.player.radius + AOE_SIZE / 2;
-      let x = this.player.x + Math.cos(this.player.rotation) * distance;
-      let y = this.player.y + Math.sin(this.player.rotation) * distance;;
+      const AOE_SIZE = this.refs["player"].size;
+      let distance = this.refs["player"].radius + AOE_SIZE / 2;
+      let x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
+      let y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
       let newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5,
         [
           new Effect("push",
-            { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER },
-            2, STACKING_RULE_ADD, this.player)
+            { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER },
+            2, STACKING_RULE_ADD, this.refs["player"])
         ],
-        this.player);
+        this.refs["player"]);
       this.areasOfEffect.push(newAoE);
     }
     
     //Try animation!
     if (playerIsIdle) {
-      this.player.playAnimation("idle");
+      this.refs["player"].playAnimation("idle");
     } else {
-      this.player.playAnimation("walk");
+      this.refs["player"].playAnimation("walk");
     }
+    //--------------------------------
     
+    //Run Global Scripts
+    //--------------------------------
+    for (let script of this.scripts.onRun) {
+      script.apply(this);
+    }
     //--------------------------------
     
     //AoEs apply Effects
@@ -309,7 +318,7 @@ class App {
     //--------------------------------
     //Arrange sprites by vertical order.
     this.actors.sort((a, b) => {
-      return a.y < b.y;
+      return a.bottom < b.bottom;
     });    
     
     this.paint();
@@ -990,4 +999,13 @@ var app;
 window.onload = function() {
   window.app = new App();
 };
+//==============================================================================
+
+
+/*  Global Scripts
+ */
+//==============================================================================
+function checkIfPlayerIsAtGoal() {
+  console.log(this.isATouchingB(this.refs["player"], this.refs["goal"]));
+}
 //==============================================================================
