@@ -159,23 +159,25 @@ var App = function () {
 
     //TEST: In-Game Objects
     //--------------------------------
-    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
     this.actors.push(this.player);
     //TODO
 
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
 
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
     this.actors[2].canBeMoved = true;
     this.actors[3].canBeMoved = true;
     this.actors[4].canBeMoved = true;
+
+    this.areasOfEffect.push(new AoE("aoe1", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null));
     //--------------------------------
 
     //Start!
@@ -262,7 +264,7 @@ var App = function () {
         var distance = this.player.radius + AOE_SIZE / 2;
         var x = this.player.x + Math.cos(this.player.rotation) * distance;
         var y = this.player.y + Math.sin(this.player.rotation) * distance;;
-        var newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD, this.player)], this.player);
+        var newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD, this.player)], this.player);
         this.areasOfEffect.push(newAoE);
       }
 
@@ -814,7 +816,7 @@ var MAX_KEYS = 128;
 
 var Actor = function () {
   function Actor() {
-    var name = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
     var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
     var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
     var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
@@ -964,16 +966,18 @@ var DIRECTION_NORTH = 3;
 
 var AoE = function () {
   function AoE() {
-    var x = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
-    var y = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-    var size = arguments.length <= 2 || arguments[2] === undefined ? 32 : arguments[2];
-    var shape = arguments.length <= 3 || arguments[3] === undefined ? SHAPE_CIRCLE : arguments[3];
-    var duration = arguments.length <= 4 || arguments[4] === undefined ? 1 : arguments[4];
-    var effects = arguments.length <= 5 || arguments[5] === undefined ? [] : arguments[5];
-    var source = arguments.length <= 6 || arguments[6] === undefined ? null : arguments[6];
+    var id = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+    var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
+    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
+    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
+    var source = arguments.length <= 7 || arguments[7] === undefined ? null : arguments[7];
 
     _classCallCheck(this, AoE);
 
+    this.id = id;
     this.x = x;
     this.y = y;
     this.size = size;
@@ -1046,8 +1050,6 @@ var Effect = function () {
     this.stackingRule = stackingRule;
     this.startDuration = duration;
     this.source = source;
-
-    this.hasInfiniteDuration = this.hasInfiniteDuration.bind(this);
   }
 
   _createClass(Effect, [{

@@ -134,23 +134,28 @@ class App {
     
     //TEST: In-Game Objects
     //--------------------------------
-    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
     this.actors.push(this.player);
     //TODO
     
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
     
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
     this.actors[2].canBeMoved = true;
     this.actors[3].canBeMoved = true;
     this.actors[4].canBeMoved = true;
+    
+    this.areasOfEffect.push(
+      new AoE("aoe1", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
+        [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null)
+    );
     //--------------------------------
     
     //Start!
@@ -239,7 +244,7 @@ class App {
       let distance = this.player.radius + AOE_SIZE / 2;
       let x = this.player.x + Math.cos(this.player.rotation) * distance;
       let y = this.player.y + Math.sin(this.player.rotation) * distance;;
-      let newAoE = new AoE(x, y, AOE_SIZE, SHAPE_CIRCLE, 5,
+      let newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5,
         [
           new Effect("push",
             { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER },
@@ -624,7 +629,7 @@ const MAX_KEYS = 128;
  */
 //==============================================================================
 class Actor {
-  constructor(name = '', x = 0, y = 0, size = 32, shape = SHAPE_NONE) {
+  constructor(name = "", x = 0, y = 0, size = 32, shape = SHAPE_NONE) {
     this.name = name;
     this.x = x;
     this.y = y;
@@ -719,7 +724,8 @@ const DIRECTION_NORTH = 3;
  */
 //==============================================================================
 class AoE {
-  constructor(x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, effects = [], source = null) {
+  constructor(id = "", x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, effects = [], source = null) {
+    this.id = id; 
     this.x = x;
     this.y = y;
     this.size = size;
@@ -759,8 +765,6 @@ class Effect {
     this.stackingRule = stackingRule;
     this.startDuration = duration;
     this.source = source;
-    
-    this.hasInfiniteDuration = this.hasInfiniteDuration.bind(this);
   }
   
   hasInfiniteDuration() {
