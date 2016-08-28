@@ -2,6 +2,8 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /*  
@@ -32,7 +34,7 @@ var App = function () {
     this.runCycle = undefined;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
-    this.context = this.canvas.getContext("2d");
+    this.context2d = this.canvas.getContext("2d");
     this.boundingBox = undefined; //To be defined by this.updateSize().
     this.sizeRatioX = 1;
     this.sizeRatioY = 1;
@@ -48,6 +50,7 @@ var App = function () {
       }
     };
     this.actors = [];
+    this.areasOfEffect = [];
     //--------------------------------
 
     //Prepare Input
@@ -117,7 +120,6 @@ var App = function () {
     };
 
     //Process Animations; expand steps to many frames per steps.
-    //----------------
     for (var animationTitle in this.animationSets) {
       var animationSet = this.animationSets[animationTitle];
       for (var animationName in animationSet.actions) {
@@ -153,29 +155,40 @@ var App = function () {
         animationAction.steps = newSteps;
       }
     }
-    //----------------
     //--------------------------------
 
     //TEST: In-Game Objects
     //--------------------------------
-    this.player = new Actor('player', this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
+    this.player = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
     this.player.spritesheet = new ImageAsset("assets/actor.png");
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
-    console.log(this.player);
     this.actors.push(this.player);
-    //TODO
 
-    this.actors.push(new Actor('s1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('s2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor('c1', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor('c2', Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+
+    var wallN = new Actor("wallN", this.width / 2, this.height * -0.65, this.width, SHAPE_SQUARE);
+    var wallS = new Actor("wallS", this.width / 2, this.height * +1.65, this.width, SHAPE_SQUARE);
+    var wallE = new Actor("wallE", this.width * +1.35, this.height / 2, this.height, SHAPE_SQUARE);
+    var wallW = new Actor("wallW", this.width * -0.35, this.height / 2, this.height, SHAPE_SQUARE);
+    //let wallE = new Actor();
+    //let wallW = new Actor();
+    wallE.canBeMoved = false;
+    wallS.canBeMoved = false;
+    wallW.canBeMoved = false;
+    wallN.canBeMoved = false;
+    this.actors.push(wallE, wallS, wallW, wallN);
 
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
     this.actors[2].canBeMoved = true;
     this.actors[3].canBeMoved = true;
     this.actors[4].canBeMoved = true;
+
+    this.areasOfEffect.push(new AoE("aoe1", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null));
     //--------------------------------
 
     //Start!
@@ -252,8 +265,18 @@ var App = function () {
         playerIsIdle = false;
       }
 
-      if (this.keys[KEY_CODES.SPACE].duration === 2) {
+      if (this.keys[KEY_CODES.Z].duration === 1) {
         this.player.shape = this.player.shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
+      }
+
+      if (this.keys[KEY_CODES.SPACE].duration === 1) {
+        var PUSH_POWER = 12;
+        var AOE_SIZE = this.player.size;
+        var distance = this.player.radius + AOE_SIZE / 2;
+        var x = this.player.x + Math.cos(this.player.rotation) * distance;
+        var y = this.player.y + Math.sin(this.player.rotation) * distance;;
+        var newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.player.rotation) * PUSH_POWER, y: Math.sin(this.player.rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD, this.player)], this.player);
+        this.areasOfEffect.push(newAoE);
       }
 
       //Try animation!
@@ -265,190 +288,48 @@ var App = function () {
 
       //--------------------------------
 
-      //Physics
+      //AoEs apply Effects
       //--------------------------------
-      this.physics();
-      //--------------------------------
-
-      //Visuals
-      //--------------------------------
-      //Arrange sprites by vertical order.
-      this.actors.sort(function (a, b) {
-        return a.y < b.y;
-      });
-
-      this.paint();
-      //--------------------------------
-
-      //Cleanup Input
-      //--------------------------------
-      if (this.pointer.state === INPUT_ENDED) {
-        this.pointer.duration = 0;
-        this.pointer.state = INPUT_IDLE;
-      }
-      for (var i = 0; i < this.keys.length; i++) {
-        if (this.keys[i].state === INPUT_ACTIVE) {
-          this.keys[i].duration++;
-        } else if (this.keys[i].state === INPUT_ENDED) {
-          this.keys[i].duration = 0;
-          this.keys[i].state = INPUT_IDLE;
-        }
-      }
-      //--------------------------------
-    }
-
-    //----------------------------------------------------------------
-
-  }, {
-    key: "physics",
-    value: function physics() {
-      for (var a = 0; a < this.actors.length; a++) {
-        var actorA = this.actors[a];
-        for (var b = a + 1; b < this.actors.length; b++) {
-          var actorB = this.actors[b];
-          if (this.checkCollision(actorA, actorB)) {
-            this.correctCollision(actorA, actorB);
-          }
-        }
-      }
-    }
-  }, {
-    key: "checkCollision",
-    value: function checkCollision(actorA, actorB) {
-      if (!actorA || !actorB) return false;
-
-      if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-        var distX = actorA.x - actorB.x;
-        var distY = actorA.y - actorB.y;
-        var minimumDist = actorA.radius + actorB.radius;
-        if (distX * distX + distY * distY < minimumDist * minimumDist) {
-          return true;
-        }
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-        if (actorA.left < actorB.right && actorA.right > actorB.left && actorA.top < actorB.bottom && actorA.bottom > actorB.top) {
-          return true;
-        }
-      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-        var _distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-        var _distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
-        if (_distX * _distX + _distY * _distY < actorA.radius * actorA.radius) {
-          return true;
-        }
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-        var _distX2 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-        var _distY2 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
-        if (_distX2 * _distX2 + _distY2 * _distY2 < actorB.radius * actorB.radius) {
-          return true;
-        }
-      }
-
-      return false;
-    }
-  }, {
-    key: "correctCollision",
-    value: function correctCollision(actorA, actorB) {
-      if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
-
-      var fractionA = 0;
-      var fractionB = 0;
-      if (actorA.canBeMoved && actorB.canBeMoved) {
-        fractionA = 0.5;
-        fractionB = 0.5;
-      } else if (actorA.canBeMoved) {
-        fractionA = 1;
-      } else if (actorB.canBeMoved) {
-        fractionB = 1;
-      }
-
-      if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-        var distX = actorB.x - actorA.x;
-        var distY = actorB.y - actorA.y;
-        var dist = Math.sqrt(distX * distX + distY * distY);
-        var angle = Math.atan2(distY, distX);
-        var correctDist = actorA.radius + actorB.radius;
-        var cosAngle = Math.cos(angle);
-        var sinAngle = Math.sin(angle);
-        actorA.x -= cosAngle * (correctDist - dist) * fractionA;
-        actorA.y -= sinAngle * (correctDist - dist) * fractionA;
-        actorB.x += cosAngle * (correctDist - dist) * fractionB;
-        actorB.y += sinAngle * (correctDist - dist) * fractionB;
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-        var _distX3 = actorB.x - actorA.x;
-        var _distY3 = actorB.y - actorA.y;
-        var _correctDist = (actorA.size + actorB.size) / 2;
-        if (Math.abs(_distX3) > Math.abs(_distY3)) {
-          actorA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
-          actorB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
-        } else {
-          actorA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
-          actorB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
-        }
-      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-        var _distX4 = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-        var _distY4 = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
-        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
-        var _angle = Math.atan2(_distY4, _distX4);
-        var _correctDist2 = actorA.radius;
-        var _cosAngle = Math.cos(_angle);
-        var _sinAngle = Math.sin(_angle);
-        actorA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
-        actorA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
-        actorB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
-        actorB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-        var _distX5 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-        var _distY5 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
-        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
-        var _angle2 = Math.atan2(_distY5, _distX5);
-        var _correctDist3 = actorB.radius;
-        var _cosAngle2 = Math.cos(_angle2);
-        var _sinAngle2 = Math.sin(_angle2);
-        actorA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
-        actorA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
-        actorB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
-        actorB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
-      }
-    }
-
-    //----------------------------------------------------------------
-
-  }, {
-    key: "paint",
-    value: function paint() {
-      //Clear
-      this.context.clearRect(0, 0, this.width, this.height);
-
-      //Paint hitboxes
       var _iteratorNormalCompletion2 = true;
       var _didIteratorError2 = false;
       var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var actor = _step2.value;
+        for (var _iterator2 = this.areasOfEffect[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var _aoe = _step2.value;
+          var _iteratorNormalCompletion5 = true;
+          var _didIteratorError5 = false;
+          var _iteratorError5 = undefined;
 
-          switch (actor.shape) {
-            case SHAPE_CIRCLE:
-              this.context.beginPath();
-              this.context.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
-              this.context.stroke();
-              this.context.closePath();
-              this.context.beginPath();
-              this.context.moveTo(actor.x, actor.y);
-              this.context.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
-              this.context.stroke();
-              this.context.closePath();
-              break;
-            case SHAPE_SQUARE:
-              this.context.beginPath();
-              this.context.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
-              this.context.stroke();
-              this.context.closePath();
-              break;
+          try {
+            for (var _iterator5 = this.actors[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+              var actor = _step5.value;
+
+              if (this.isATouchingB(_aoe, actor)) {
+                var _actor$effects;
+
+                (_actor$effects = actor.effects).push.apply(_actor$effects, _toConsumableArray(_aoe.effects)); //Array.push can push multiple elements.
+              }
+            }
+          } catch (err) {
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                _iterator5.return();
+              }
+            } finally {
+              if (_didIteratorError5) {
+                throw _iteratorError5;
+              }
+            }
           }
         }
+        //--------------------------------
 
-        //Paint sprites
+        //Actors react to Effects
+        //--------------------------------
       } catch (err) {
         _didIteratorError2 = true;
         _iteratorError2 = err;
@@ -471,22 +352,38 @@ var App = function () {
       try {
         for (var _iterator3 = this.actors[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
           var _actor = _step3.value;
+          var _iteratorNormalCompletion6 = true;
+          var _didIteratorError6 = false;
+          var _iteratorError6 = undefined;
 
-          if (!_actor.spritesheet || !_actor.spritesheet.loaded || !_actor.animationSet || !_actor.animationSet.actions[_actor.animationName]) continue;
+          try {
+            for (var _iterator6 = _actor.effects[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+              var effect = _step6.value;
 
-          //TEST
-          var animationSet = _actor.animationSet;
-          var srcW = animationSet.tileWidth;
-          var srcH = animationSet.tileHeight;
-          var srcX = srcW * _actor.direction;
-          var srcY = animationSet.actions[_actor.animationName].steps[_actor.animationStep].row * srcH;
-          var tgtX = Math.floor(_actor.x - srcW / 2 + animationSet.tileOffsetX);
-          var tgtY = Math.floor(_actor.y - srcH / 2 + animationSet.tileOffsetY);
-          var tgtW = srcW;
-          var tgtH = srcH;
-
-          this.context.drawImage(_actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+              if (effect.name === "push" && _actor.canBeMoved) {
+                _actor.x += effect.data.x || 0;
+                _actor.y += effect.data.y || 0;
+              }
+            }
+          } catch (err) {
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
+              }
+            } finally {
+              if (_didIteratorError6) {
+                throw _iteratorError6;
+              }
+            }
+          }
         }
+        //--------------------------------
+
+        //Physics
+        //--------------------------------
       } catch (err) {
         _didIteratorError3 = true;
         _iteratorError3 = err;
@@ -498,6 +395,341 @@ var App = function () {
         } finally {
           if (_didIteratorError3) {
             throw _iteratorError3;
+          }
+        }
+      }
+
+      this.physics();
+      //--------------------------------
+
+      //Visuals
+      //--------------------------------
+      //Arrange sprites by vertical order.
+      this.actors.sort(function (a, b) {
+        return a.y < b.y;
+      });
+
+      this.paint();
+      //--------------------------------
+
+      //Cleanup AoEs
+      //--------------------------------
+      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
+        var aoe = this.areasOfEffect[i];
+        if (!aoe.hasInfiniteDuration()) {
+          aoe.duration--;
+          if (aoe.duration <= 0) {
+            this.areasOfEffect.splice(i, 1);
+          }
+        }
+      }
+      //--------------------------------
+
+      //Cleanup Effects
+      //--------------------------------
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
+
+      try {
+        for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var _actor2 = _step4.value;
+
+          for (var _i3 = _actor2.effects.length - 1; _i3 >= 0; _i3--) {
+            if (!_actor2.effects[_i3].hasInfiniteDuration()) {
+              _actor2.effects[_i3].duration--;
+              if (_actor2.effects[_i3].duration <= 0) {
+                _actor2.effects.splice(_i3, 1);
+              }
+            }
+          }
+        }
+        //--------------------------------
+
+        //Cleanup Input
+        //--------------------------------
+      } catch (err) {
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
+          }
+        } finally {
+          if (_didIteratorError4) {
+            throw _iteratorError4;
+          }
+        }
+      }
+
+      if (this.pointer.state === INPUT_ENDED) {
+        this.pointer.duration = 0;
+        this.pointer.state = INPUT_IDLE;
+      }
+      for (var _i2 = 0; _i2 < this.keys.length; _i2++) {
+        if (this.keys[_i2].state === INPUT_ACTIVE) {
+          this.keys[_i2].duration++;
+        } else if (this.keys[_i2].state === INPUT_ENDED) {
+          this.keys[_i2].duration = 0;
+          this.keys[_i2].state = INPUT_IDLE;
+        }
+      }
+      //--------------------------------
+    }
+
+    //----------------------------------------------------------------
+
+  }, {
+    key: "physics",
+    value: function physics() {
+      for (var a = 0; a < this.actors.length; a++) {
+        var actorA = this.actors[a];
+        for (var b = a + 1; b < this.actors.length; b++) {
+          var actorB = this.actors[b];
+          if (this.isATouchingB(actorA, actorB)) {
+            this.correctCollision(actorA, actorB);
+          }
+        }
+      }
+    }
+  }, {
+    key: "isATouchingB",
+    value: function isATouchingB(objA, objB) {
+      if (!objA || !objB) return false;
+
+      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+        var distX = objA.x - objB.x;
+        var distY = objA.y - objB.y;
+        var minimumDist = objA.radius + objB.radius;
+        if (distX * distX + distY * distY < minimumDist * minimumDist) {
+          return true;
+        }
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+        if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
+          return true;
+        }
+      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+        var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+        var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+        if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
+          return true;
+        }
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+        var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+        var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+        if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+  }, {
+    key: "correctCollision",
+    value: function correctCollision(objA, objB) {
+      if (!objA || !objB || !objA.solid || !objB.solid) return;
+
+      var fractionA = 0;
+      var fractionB = 0;
+      if (objA.canBeMoved && objB.canBeMoved) {
+        fractionA = 0.5;
+        fractionB = 0.5;
+      } else if (objA.canBeMoved) {
+        fractionA = 1;
+      } else if (objB.canBeMoved) {
+        fractionB = 1;
+      }
+
+      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+        var distX = objB.x - objA.x;
+        var distY = objB.y - objA.y;
+        var dist = Math.sqrt(distX * distX + distY * distY);
+        var angle = Math.atan2(distY, distX);
+        var correctDist = objA.radius + objB.radius;
+        var cosAngle = Math.cos(angle);
+        var sinAngle = Math.sin(angle);
+        objA.x -= cosAngle * (correctDist - dist) * fractionA;
+        objA.y -= sinAngle * (correctDist - dist) * fractionA;
+        objB.x += cosAngle * (correctDist - dist) * fractionB;
+        objB.y += sinAngle * (correctDist - dist) * fractionB;
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+        var _distX3 = objB.x - objA.x;
+        var _distY3 = objB.y - objA.y;
+        var _correctDist = (objA.size + objB.size) / 2;
+        if (Math.abs(_distX3) > Math.abs(_distY3)) {
+          objA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
+          objB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
+        } else {
+          objA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
+          objB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
+        }
+      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+        var _distX4 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+        var _distY4 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
+        var _angle = Math.atan2(_distY4, _distX4);
+        var _correctDist2 = objA.radius;
+        var _cosAngle = Math.cos(_angle);
+        var _sinAngle = Math.sin(_angle);
+        objA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
+        objA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
+        objB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
+        objB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+        var _distX5 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+        var _distY5 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
+        var _angle2 = Math.atan2(_distY5, _distX5);
+        var _correctDist3 = objB.radius;
+        var _cosAngle2 = Math.cos(_angle2);
+        var _sinAngle2 = Math.sin(_angle2);
+        objA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
+        objA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
+        objB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
+        objB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
+      }
+    }
+
+    //----------------------------------------------------------------
+
+  }, {
+    key: "paint",
+    value: function paint() {
+      //Clear
+      this.context2d.clearRect(0, 0, this.width, this.height);
+
+      //Pain Areas of Effects
+      var _iteratorNormalCompletion7 = true;
+      var _didIteratorError7 = false;
+      var _iteratorError7 = undefined;
+
+      try {
+        for (var _iterator7 = this.areasOfEffect[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+          var aoe = _step7.value;
+
+          var durationPercentage = 1;
+          if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
+            durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+          }
+          this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
+
+          switch (aoe.shape) {
+            case SHAPE_CIRCLE:
+              this.context2d.beginPath();
+              this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              this.context2d.beginPath();
+              this.context2d.moveTo(aoe.x, aoe.y);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              break;
+            case SHAPE_SQUARE:
+              this.context2d.beginPath();
+              this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              break;
+          }
+        }
+
+        //Paint Actor hitboxes
+      } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion7 && _iterator7.return) {
+            _iterator7.return();
+          }
+        } finally {
+          if (_didIteratorError7) {
+            throw _iteratorError7;
+          }
+        }
+      }
+
+      this.context2d.strokeStyle = "rgba(0,0,0,1)";
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
+
+      try {
+        for (var _iterator8 = this.actors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var actor = _step8.value;
+
+          switch (actor.shape) {
+            case SHAPE_CIRCLE:
+              this.context2d.beginPath();
+              this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              this.context2d.beginPath();
+              this.context2d.moveTo(actor.x, actor.y);
+              this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              break;
+            case SHAPE_SQUARE:
+              this.context2d.beginPath();
+              this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+              this.context2d.stroke();
+              this.context2d.closePath();
+              break;
+          }
+        }
+
+        //Paint sprites
+      } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion8 && _iterator8.return) {
+            _iterator8.return();
+          }
+        } finally {
+          if (_didIteratorError8) {
+            throw _iteratorError8;
+          }
+        }
+      }
+
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
+
+      try {
+        for (var _iterator9 = this.actors[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _actor3 = _step9.value;
+
+          if (!_actor3.spritesheet || !_actor3.spritesheet.loaded || !_actor3.animationSet || !_actor3.animationSet.actions[_actor3.animationName]) continue;
+
+          //TEST
+          var animationSet = _actor3.animationSet;
+          var srcW = animationSet.tileWidth;
+          var srcH = animationSet.tileHeight;
+          var srcX = srcW * _actor3.direction;
+          var srcY = animationSet.actions[_actor3.animationName].steps[_actor3.animationStep].row * srcH;
+          var tgtX = Math.floor(_actor3.x - srcW / 2 + animationSet.tileOffsetX);
+          var tgtY = Math.floor(_actor3.y - srcH / 2 + animationSet.tileOffsetY);
+          var tgtW = srcW;
+          var tgtH = srcH;
+
+          this.context2d.drawImage(_actor3.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+        }
+      } catch (err) {
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
+          }
+        } finally {
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
@@ -595,7 +827,7 @@ var MAX_KEYS = 128;
 
 var Actor = function () {
   function Actor() {
-    var name = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
     var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
     var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
     var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
@@ -616,6 +848,8 @@ var Actor = function () {
     this.animationStep = 0;
     this.animationSet = null;
     this.animationName = "";
+
+    this.effects = [];
   }
 
   _createClass(Actor, [{
@@ -735,6 +969,112 @@ var DIRECTION_EAST = 0;
 var DIRECTION_SOUTH = 1;
 var DIRECTION_WEST = 2;
 var DIRECTION_NORTH = 3;
+//==============================================================================
+
+/*  Area of Effect Class
+ */
+//==============================================================================
+
+var AoE = function () {
+  function AoE() {
+    var id = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+    var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
+    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
+    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
+    var source = arguments.length <= 7 || arguments[7] === undefined ? null : arguments[7];
+
+    _classCallCheck(this, AoE);
+
+    this.id = id;
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.shape = shape;
+    this.duration = duration;
+    this.startDuration = duration;
+    this.effects = effects;
+
+    this.spritesheet = null;
+    this.animationStep = 0;
+    this.animationSet = null;
+    this.animationName = "";
+  }
+
+  _createClass(AoE, [{
+    key: "hasInfiniteDuration",
+    value: function hasInfiniteDuration() {
+      return this.startDuration === DURATION_INFINITE;
+    }
+  }, {
+    key: "left",
+    get: function get() {
+      return this.x - this.size / 2;
+    }
+  }, {
+    key: "right",
+    get: function get() {
+      return this.x + this.size / 2;
+    }
+  }, {
+    key: "top",
+    get: function get() {
+      return this.y - this.size / 2;
+    }
+  }, {
+    key: "bottom",
+    get: function get() {
+      return this.y + this.size / 2;
+    }
+  }, {
+    key: "radius",
+    get: function get() {
+      return this.size / 2;
+    }
+  }]);
+
+  return AoE;
+}();
+
+var DURATION_INFINITE = 0;
+//==============================================================================
+
+/*  Effect Class
+ */
+//==============================================================================
+
+var Effect = function () {
+  function Effect() {
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
+    var source = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
+
+    _classCallCheck(this, Effect);
+
+    this.name = name;
+    this.data = data;
+    this.duration = duration;
+    this.stackingRule = stackingRule;
+    this.startDuration = duration;
+    this.source = source;
+  }
+
+  _createClass(Effect, [{
+    key: "hasInfiniteDuration",
+    value: function hasInfiniteDuration() {
+      return this.startDuration === DURATION_INFINITE;
+    }
+  }]);
+
+  return Effect;
+}();
+
+var STACKING_RULE_ADD = 0;
+var STACKING_RULE_REPLACE = 1;
 //==============================================================================
 
 /*  Utility Classes
