@@ -164,12 +164,23 @@ var App = function () {
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
     this.actors.push(this.player);
-    //TODO
 
-    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+
+    var wallN = new Actor("wallN", this.width / 2, this.height * -0.65, this.width, SHAPE_SQUARE);
+    var wallS = new Actor("wallS", this.width / 2, this.height * +1.65, this.width, SHAPE_SQUARE);
+    var wallE = new Actor("wallE", this.width * +1.35, this.height / 2, this.height, SHAPE_SQUARE);
+    var wallW = new Actor("wallW", this.width * -0.35, this.height / 2, this.height, SHAPE_SQUARE);
+    //let wallE = new Actor();
+    //let wallW = new Actor();
+    wallE.canBeMoved = false;
+    wallS.canBeMoved = false;
+    wallW.canBeMoved = false;
+    wallN.canBeMoved = false;
+    this.actors.push(wallE, wallS, wallW, wallN);
 
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
@@ -294,7 +305,7 @@ var App = function () {
             for (var _iterator5 = this.actors[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
               var actor = _step5.value;
 
-              if (this.checkCollision(_aoe, actor)) {
+              if (this.isATouchingB(_aoe, actor)) {
                 var _actor$effects;
 
                 (_actor$effects = actor.effects).push.apply(_actor$effects, _toConsumableArray(_aoe.effects)); //Array.push can push multiple elements.
@@ -349,7 +360,7 @@ var App = function () {
             for (var _iterator6 = _actor.effects[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
               var effect = _step6.value;
 
-              if (effect.name === "push") {
+              if (effect.name === "push" && _actor.canBeMoved) {
                 _actor.x += effect.data.x || 0;
                 _actor.y += effect.data.y || 0;
               }
@@ -476,38 +487,38 @@ var App = function () {
         var actorA = this.actors[a];
         for (var b = a + 1; b < this.actors.length; b++) {
           var actorB = this.actors[b];
-          if (this.checkCollision(actorA, actorB)) {
+          if (this.isATouchingB(actorA, actorB)) {
             this.correctCollision(actorA, actorB);
           }
         }
       }
     }
   }, {
-    key: "checkCollision",
-    value: function checkCollision(actorA, actorB) {
-      if (!actorA || !actorB) return false;
+    key: "isATouchingB",
+    value: function isATouchingB(objA, objB) {
+      if (!objA || !objB) return false;
 
-      if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-        var distX = actorA.x - actorB.x;
-        var distY = actorA.y - actorB.y;
-        var minimumDist = actorA.radius + actorB.radius;
+      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+        var distX = objA.x - objB.x;
+        var distY = objA.y - objB.y;
+        var minimumDist = objA.radius + objB.radius;
         if (distX * distX + distY * distY < minimumDist * minimumDist) {
           return true;
         }
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-        if (actorA.left < actorB.right && actorA.right > actorB.left && actorA.top < actorB.bottom && actorA.bottom > actorB.top) {
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+        if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
           return true;
         }
-      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-        var _distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-        var _distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
-        if (_distX * _distX + _distY * _distY < actorA.radius * actorA.radius) {
+      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+        var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+        var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+        if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
           return true;
         }
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-        var _distX2 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-        var _distY2 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
-        if (_distX2 * _distX2 + _distY2 * _distY2 < actorB.radius * actorB.radius) {
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+        var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+        var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+        if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
           return true;
         }
       }
@@ -516,67 +527,67 @@ var App = function () {
     }
   }, {
     key: "correctCollision",
-    value: function correctCollision(actorA, actorB) {
-      if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
+    value: function correctCollision(objA, objB) {
+      if (!objA || !objB || !objA.solid || !objB.solid) return;
 
       var fractionA = 0;
       var fractionB = 0;
-      if (actorA.canBeMoved && actorB.canBeMoved) {
+      if (objA.canBeMoved && objB.canBeMoved) {
         fractionA = 0.5;
         fractionB = 0.5;
-      } else if (actorA.canBeMoved) {
+      } else if (objA.canBeMoved) {
         fractionA = 1;
-      } else if (actorB.canBeMoved) {
+      } else if (objB.canBeMoved) {
         fractionB = 1;
       }
 
-      if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-        var distX = actorB.x - actorA.x;
-        var distY = actorB.y - actorA.y;
+      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+        var distX = objB.x - objA.x;
+        var distY = objB.y - objA.y;
         var dist = Math.sqrt(distX * distX + distY * distY);
         var angle = Math.atan2(distY, distX);
-        var correctDist = actorA.radius + actorB.radius;
+        var correctDist = objA.radius + objB.radius;
         var cosAngle = Math.cos(angle);
         var sinAngle = Math.sin(angle);
-        actorA.x -= cosAngle * (correctDist - dist) * fractionA;
-        actorA.y -= sinAngle * (correctDist - dist) * fractionA;
-        actorB.x += cosAngle * (correctDist - dist) * fractionB;
-        actorB.y += sinAngle * (correctDist - dist) * fractionB;
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-        var _distX3 = actorB.x - actorA.x;
-        var _distY3 = actorB.y - actorA.y;
-        var _correctDist = (actorA.size + actorB.size) / 2;
+        objA.x -= cosAngle * (correctDist - dist) * fractionA;
+        objA.y -= sinAngle * (correctDist - dist) * fractionA;
+        objB.x += cosAngle * (correctDist - dist) * fractionB;
+        objB.y += sinAngle * (correctDist - dist) * fractionB;
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+        var _distX3 = objB.x - objA.x;
+        var _distY3 = objB.y - objA.y;
+        var _correctDist = (objA.size + objB.size) / 2;
         if (Math.abs(_distX3) > Math.abs(_distY3)) {
-          actorA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
-          actorB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
+          objA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
+          objB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
         } else {
-          actorA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
-          actorB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
+          objA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
+          objB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
         }
-      } else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-        var _distX4 = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-        var _distY4 = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+        var _distX4 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+        var _distY4 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
         var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
         var _angle = Math.atan2(_distY4, _distX4);
-        var _correctDist2 = actorA.radius;
+        var _correctDist2 = objA.radius;
         var _cosAngle = Math.cos(_angle);
         var _sinAngle = Math.sin(_angle);
-        actorA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
-        actorA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
-        actorB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
-        actorB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
-      } else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-        var _distX5 = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-        var _distY5 = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+        objA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
+        objA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
+        objB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
+        objB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
+      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+        var _distX5 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+        var _distY5 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
         var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
         var _angle2 = Math.atan2(_distY5, _distX5);
-        var _correctDist3 = actorB.radius;
+        var _correctDist3 = objB.radius;
         var _cosAngle2 = Math.cos(_angle2);
         var _sinAngle2 = Math.sin(_angle2);
-        actorA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
-        actorA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
-        actorB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
-        actorB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
+        objA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
+        objA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
+        objB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
+        objB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
       }
     }
 

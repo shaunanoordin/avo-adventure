@@ -139,12 +139,25 @@ class App {
     this.player.animationStep = 0;
     this.player.animationSet = this.animationSets["actor"];
     this.actors.push(this.player);
-    //TODO
     
-    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_SQUARE));
-    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
-    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width), Math.floor(Math.random() * this.height), 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+    this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+    this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
+    
+    let wallN = new Actor("wallN", this.width / 2, this.height * -0.65, this.width, SHAPE_SQUARE);
+    let wallS = new Actor("wallS", this.width / 2, this.height * +1.65, this.width, SHAPE_SQUARE);
+    let wallE = new Actor("wallE", this.width * +1.35, this.height / 2, this.height, SHAPE_SQUARE);
+    let wallW = new Actor("wallW", this.width * -0.35, this.height / 2, this.height, SHAPE_SQUARE);
+    //let wallE = new Actor();
+    //let wallW = new Actor();
+    wallE.canBeMoved = false;
+    wallS.canBeMoved = false;
+    wallW.canBeMoved = false;
+    wallN.canBeMoved = false;
+    this.actors.push(wallE, wallS, wallW, wallN);
+    
+    
     
     this.actors[0].canBeMoved = true;
     this.actors[1].canBeMoved = true;
@@ -267,7 +280,7 @@ class App {
     //--------------------------------
     for (let aoe of this.areasOfEffect) {
       for (let actor of this.actors) {
-        if (this.checkCollision(aoe, actor)) {
+        if (this.isATouchingB(aoe, actor)) {
           actor.effects.push(...aoe.effects);  //Array.push can push multiple elements.
         }
       }
@@ -278,7 +291,7 @@ class App {
     //--------------------------------
     for (let actor of this.actors) {
       for (let effect of actor.effects) {
-        if (effect.name === "push") {
+        if (effect.name === "push" && actor.canBeMoved) {
           actor.x += effect.data.x || 0;
           actor.y += effect.data.y || 0;
         }
@@ -353,46 +366,46 @@ class App {
       let actorA = this.actors[a];
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
-        if (this.checkCollision(actorA, actorB)) {
+        if (this.isATouchingB(actorA, actorB)) {
           this.correctCollision(actorA, actorB);
         }
       }
     }
   }
   
-  checkCollision(actorA, actorB) {
-    if (!actorA || !actorB) return false;
+  isATouchingB(objA, objB) {
+    if (!objA || !objB) return false;
     
-    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-      const distX = actorA.x - actorB.x;
-      const distY = actorA.y - actorB.y;
-      const minimumDist = actorA.radius + actorB.radius;
+    if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+      const distX = objA.x - objB.x;
+      const distY = objA.y - objB.y;
+      const minimumDist = objA.radius + objB.radius;
       if (distX * distX + distY * distY < minimumDist * minimumDist) {
         return true;
       }
     }
     
-    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-      if (actorA.left < actorB.right &&
-          actorA.right > actorB.left &&
-          actorA.top < actorB.bottom &&
-          actorA.bottom > actorB.top) {
+    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+      if (objA.left < objB.right &&
+          objA.right > objB.left &&
+          objA.top < objB.bottom &&
+          objA.bottom > objB.top) {
         return true;
       }
     }
     
-    else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-      const distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-      const distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
-      if (distX * distX + distY * distY < actorA.radius * actorA.radius) {
+    else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+      const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+      const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+      if (distX * distX + distY * distY < objA.radius * objA.radius) {
         return true;
       }
     }
     
-    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-      const distX = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-      const distY = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
-      if (distX * distX + distY * distY < actorB.radius * actorB.radius) {
+    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+      const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+      const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+      if (distX * distX + distY * distY < objB.radius * objB.radius) {
         return true;
       }
     }
@@ -400,73 +413,73 @@ class App {
     return false;
   }
   
-  correctCollision(actorA, actorB) {
-    if (!actorA || !actorB || !actorA.solid || !actorB.solid) return;
+  correctCollision(objA, objB) {
+    if (!objA || !objB || !objA.solid || !objB.solid) return;
     
     let fractionA = 0;
     let fractionB = 0;
-    if (actorA.canBeMoved && actorB.canBeMoved) {
+    if (objA.canBeMoved && objB.canBeMoved) {
       fractionA = 0.5;
       fractionB = 0.5;
-    } else if (actorA.canBeMoved) {
+    } else if (objA.canBeMoved) {
       fractionA = 1;
-    } else if (actorB.canBeMoved) {
+    } else if (objB.canBeMoved) {
       fractionB = 1;
     }
     
-    if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_CIRCLE) {
-      const distX = actorB.x - actorA.x;
-      const distY = actorB.y - actorA.y;
+    if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+      const distX = objB.x - objA.x;
+      const distY = objB.y - objA.y;
       const dist = Math.sqrt(distX * distX + distY * distY);
       const angle = Math.atan2(distY, distX);
-      const correctDist = actorA.radius + actorB.radius;
+      const correctDist = objA.radius + objB.radius;
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
-      actorA.x -= cosAngle * (correctDist - dist) * fractionA;
-      actorA.y -= sinAngle * (correctDist - dist) * fractionA;
-      actorB.x += cosAngle * (correctDist - dist) * fractionB;
-      actorB.y += sinAngle * (correctDist - dist) * fractionB;
+      objA.x -= cosAngle * (correctDist - dist) * fractionA;
+      objA.y -= sinAngle * (correctDist - dist) * fractionA;
+      objB.x += cosAngle * (correctDist - dist) * fractionB;
+      objB.y += sinAngle * (correctDist - dist) * fractionB;
     }
     
-    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_SQUARE) {
-      const distX = actorB.x - actorA.x;
-      const distY = actorB.y - actorA.y;
-      const correctDist = (actorA.size + actorB.size) / 2;
+    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+      const distX = objB.x - objA.x;
+      const distY = objB.y - objA.y;
+      const correctDist = (objA.size + objB.size) / 2;
       if (Math.abs(distX) > Math.abs(distY)) {
-        actorA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
-        actorB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
+        objA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
+        objB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
       } else {
-        actorA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
-        actorB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
+        objA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
+        objB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
       }
     }
     
-    else if (actorA.shape === SHAPE_CIRCLE && actorB.shape === SHAPE_SQUARE) {
-      const distX = actorA.x - Math.max(actorB.left, Math.min(actorB.right, actorA.x));
-      const distY = actorA.y - Math.max(actorB.top, Math.min(actorB.bottom, actorA.y));
+    else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+      const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+      const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
       const dist = Math.sqrt(distX * distX + distY * distY);
       const angle = Math.atan2(distY, distX);
-      const correctDist = actorA.radius;
+      const correctDist = objA.radius;
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
-      actorA.x += cosAngle * (correctDist - dist) * fractionA;
-      actorA.y += sinAngle * (correctDist - dist) * fractionA;
-      actorB.x -= cosAngle * (correctDist - dist) * fractionB;
-      actorB.y -= sinAngle * (correctDist - dist) * fractionB;
+      objA.x += cosAngle * (correctDist - dist) * fractionA;
+      objA.y += sinAngle * (correctDist - dist) * fractionA;
+      objB.x -= cosAngle * (correctDist - dist) * fractionB;
+      objB.y -= sinAngle * (correctDist - dist) * fractionB;
     }
     
-    else if (actorA.shape === SHAPE_SQUARE && actorB.shape === SHAPE_CIRCLE) {
-      const distX = actorB.x - Math.max(actorA.left, Math.min(actorA.right, actorB.x));
-      const distY = actorB.y - Math.max(actorA.top, Math.min(actorA.bottom, actorB.y));
+    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+      const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+      const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
       const dist = Math.sqrt(distX * distX + distY * distY);
       const angle = Math.atan2(distY, distX);
-      const correctDist = actorB.radius;
+      const correctDist = objB.radius;
       const cosAngle = Math.cos(angle);
       const sinAngle = Math.sin(angle);
-      actorA.x -= cosAngle * (correctDist - dist) * fractionA;
-      actorA.y -= sinAngle * (correctDist - dist) * fractionA;
-      actorB.x += cosAngle * (correctDist - dist) * fractionB;
-      actorB.y += sinAngle * (correctDist - dist) * fractionB;
+      objA.x -= cosAngle * (correctDist - dist) * fractionA;
+      objA.y -= sinAngle * (correctDist - dist) * fractionA;
+      objB.x += cosAngle * (correctDist - dist) * fractionB;
+      objB.y += sinAngle * (correctDist - dist) * fractionB;
     }
   }
   
