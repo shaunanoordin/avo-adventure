@@ -1006,6 +1006,9 @@ window.onload = function() {
  */
 //==============================================================================
 function checkIfPlayerIsAtGoal() {
-  console.log(this.isATouchingB(this.refs["player"], this.refs["goal"]));
+  if (this.isATouchingB(this.refs["player"], this.refs["goal"])) {
+    alert("You win!");
+    clearInterval(this.runCycle);    
+  }
 }
 //==============================================================================
