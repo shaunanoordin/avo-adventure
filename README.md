@@ -2,7 +2,7 @@
 
 AvO is an Action RPG where each adventure is a short story in an anthology. Players are given options to finish each adventure in any way they want, from skillfully fighting enemies to cleverly solving puzzles.
 
-Developed by [Shaun A. Noordin](shaunanoordin.com)
+Developed by [Shaun A. Noordin](http://shaunanoordin.com)
 
 ## Development
 
