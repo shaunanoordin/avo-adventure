@@ -46,9 +46,9 @@
 
 	"use strict";
 
-	var _avo = __webpack_require__(1);
+	var _index = __webpack_require__(1);
 
-	var _exampleGame = __webpack_require__(4);
+	var _index2 = __webpack_require__(4);
 
 	/*  Initialisations
 	 */
@@ -63,7 +63,7 @@
 
 	var app;
 	window.onload = function () {
-	  window.app = new _avo.AvO(_exampleGame.initialise);
+	  window.app = new _index.AvO(_index2.initialise);
 	};
 	//==============================================================================
 
@@ -76,7 +76,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Effect = exports.ComicStrip = exports.AoE = exports.Actor = exports.AvO = undefined;
+	exports.Effect = exports.AoE = exports.Actor = exports.ComicStrip = exports.AvO = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Adventure Game Engine
@@ -1007,6 +1007,61 @@
 
 	//==============================================================================
 
+	/*  4-Koma Comic Strip Class
+	 */
+	//==============================================================================
+
+
+	var ComicStrip = exports.ComicStrip = function () {
+	  function ComicStrip() {
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+	    _classCallCheck(this, ComicStrip);
+
+	    this.name = name;
+	    this.panels = panels;
+	    this.onFinish = onFinish;
+
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.background = "#333";
+
+	    this.start();
+	  }
+
+	  _createClass(ComicStrip, [{
+	    key: "start",
+	    value: function start() {
+	      this.currentPanel = 0;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
+	      this.counter = 0;
+	    }
+	  }, {
+	    key: "getCurrentPanel",
+	    value: function getCurrentPanel() {
+	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel];
+	      }
+	    }
+	  }, {
+	    key: "getPreviousPanel",
+	    value: function getPreviousPanel() {
+	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel - 1];
+	      }
+	    }
+	  }]);
+
+	  return ComicStrip;
+	}();
+	//==============================================================================
+
 	/*  Actor Class
 	 */
 	//==============================================================================
@@ -1243,61 +1298,6 @@
 	  }]);
 
 	  return AoE;
-	}();
-	//==============================================================================
-
-	/*  4-Koma Comic Strip Class
-	 */
-	//==============================================================================
-
-
-	var ComicStrip = exports.ComicStrip = function () {
-	  function ComicStrip() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
-
-	    _classCallCheck(this, ComicStrip);
-
-	    this.name = name;
-	    this.panels = panels;
-	    this.onFinish = onFinish;
-
-	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
-	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
-	    this.background = "#333";
-
-	    this.start();
-	  }
-
-	  _createClass(ComicStrip, [{
-	    key: "start",
-	    value: function start() {
-	      this.currentPanel = 0;
-	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
-	      this.counter = 0;
-	    }
-	  }, {
-	    key: "getCurrentPanel",
-	    value: function getCurrentPanel() {
-	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel];
-	      }
-	    }
-	  }, {
-	    key: "getPreviousPanel",
-	    value: function getPreviousPanel() {
-	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel - 1];
-	      }
-	    }
-	  }]);
-
-	  return ComicStrip;
 	}();
 	//==============================================================================
 
@@ -1617,7 +1617,7 @@
 	});
 	exports.initialise = initialise;
 
-	var _avo = __webpack_require__(1);
+	var _index = __webpack_require__(1);
 
 	var _constants = __webpack_require__(2);
 
@@ -1637,19 +1637,19 @@
 
 	  //Images
 	  //--------------------------------
-	  this.assets.images.actor = new _utility.ImageAsset("assets/actor.png");
-	  this.assets.images.sarcophagus = new _utility.ImageAsset("assets/sarcophagus.png");
-	  this.assets.images.gate = new _utility.ImageAsset("assets/gate.png");
-	  this.assets.images.plate = new _utility.ImageAsset("assets/plate.png");
-	  this.assets.images.goal = new _utility.ImageAsset("assets/goal.png");
-	  this.assets.images.background = new _utility.ImageAsset("assets/background.png");
+	  this.assets.images.actor = new _utility.ImageAsset("assets/example-game/actor.png");
+	  this.assets.images.sarcophagus = new _utility.ImageAsset("assets/example-game/sarcophagus.png");
+	  this.assets.images.gate = new _utility.ImageAsset("assets/example-game/gate.png");
+	  this.assets.images.plate = new _utility.ImageAsset("assets/example-game/plate.png");
+	  this.assets.images.goal = new _utility.ImageAsset("assets/example-game/goal.png");
+	  this.assets.images.background = new _utility.ImageAsset("assets/example-game/background.png");
 
-	  this.assets.images.comicPanelA = new _utility.ImageAsset("assets/comic-panel-800x600-red.png");
-	  this.assets.images.comicPanelB = new _utility.ImageAsset("assets/comic-panel-800x600-blue.png");
-	  this.assets.images.comicPanelC = new _utility.ImageAsset("assets/comic-panel-800x600-yellow.png");
-	  this.assets.images.comicPanelSmall = new _utility.ImageAsset("assets/comic-panel-500x500-green.png");
-	  this.assets.images.comicPanelBig = new _utility.ImageAsset("assets/comic-panel-1000x1000-pink.png");
-	  this.assets.images.comicPanelWide = new _utility.ImageAsset("assets/comic-panel-1000x300-teal.png");
+	  this.assets.images.comicPanelA = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-red.png");
+	  this.assets.images.comicPanelB = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-blue.png");
+	  this.assets.images.comicPanelC = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-yellow.png");
+	  this.assets.images.comicPanelSmall = new _utility.ImageAsset("assets/example-game/comic-panel-500x500-green.png");
+	  this.assets.images.comicPanelBig = new _utility.ImageAsset("assets/example-game/comic-panel-1000x1000-pink.png");
+	  this.assets.images.comicPanelWide = new _utility.ImageAsset("assets/example-game/comic-panel-1000x300-teal.png");
 	  //--------------------------------
 
 	  //Animations
@@ -1801,7 +1801,7 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _avo.ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
+	  this.comicStrip = new _index.ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
 	  this.comicStrip.start();
 
 	  //this.comicStrip = new ComicStrip(
@@ -1900,7 +1900,7 @@
 	    var distance = this.refs["player"].radius + AOE_SIZE / 2;
 	    var x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
 	    var y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
-	    var newAoE = new _avo.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _avo.Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	    var newAoE = new _index.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _index.Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
 	    this.areasOfEffect.push(newAoE);
 	  }
 	  //--------------------------------
@@ -1967,30 +1967,30 @@
 	  var midX = this.width / 2,
 	      midY = this.height / 2;
 
-	  this.refs["player"] = new _avo.Actor("player", midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
+	  this.refs["player"] = new _index.Actor("player", midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
 	  this.refs["player"].spritesheet = this.assets.images.actor;
 	  this.refs["player"].animationSet = this.animationSets.actor;
 	  this.refs["player"].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs["player"]);
 
-	  var wallN = new _avo.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-	  var wallS = new _avo.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-	  var wallE = new _avo.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  var wallW = new _avo.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
+	  var wallN = new _index.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
+	  var wallS = new _index.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
+	  var wallE = new _index.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
+	  var wallW = new _index.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
 	  wallE.canBeMoved = false;
 	  wallS.canBeMoved = false;
 	  wallW.canBeMoved = false;
 	  wallN.canBeMoved = false;
 	  this.actors.push(wallE, wallS, wallW, wallN);
 
-	  this.refs["gate"] = new _avo.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
+	  this.refs["gate"] = new _index.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
 	  this.refs["gate"].canBeMoved = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
 	  this.refs["gate"].setAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
-	  this.refs["goal"] = new _avo.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	  this.refs["goal"] = new _index.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
 	  this.refs["goal"].setAnimation("glow");
@@ -2012,9 +2012,9 @@
 	  this.refs.plates = [];
 	  var newBox = void 0,
 	      newPlate = void 0;
-	  var chargeEffect = new _avo.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
+	  var chargeEffect = new _index.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
 
-	  this.refs.boxes = [new _avo.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _avo.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
+	  this.refs.boxes = [new _index.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _index.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
 	  var _iteratorNormalCompletion3 = true;
 	  var _didIteratorError3 = false;
 	  var _iteratorError3 = undefined;
@@ -2043,7 +2043,7 @@
 	    }
 	  }
 
-	  this.refs.plates = [new _avo.AoE("plate", midX - 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]), new _avo.AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()])];
+	  this.refs.plates = [new _index.AoE("plate", midX - 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]), new _index.AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()])];
 	  var _iteratorNormalCompletion4 = true;
 	  var _didIteratorError4 = false;
 	  var _iteratorError4 = undefined;

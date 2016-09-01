@@ -9,9 +9,9 @@ adventure game idea.
 ********************************************************************************
  */
 
-import { AvO, Actor, AoE, Effect, ComicStrip } from "./avo.js"; 
-import * as AVO from  "./constants.js";
-import { ImageAsset } from "./utility.js";
+import { AvO, Actor, AoE, Effect, ComicStrip } from "../avo/index.js"; 
+import * as AVO from  "../avo/constants.js";
+import { ImageAsset } from "../avo/utility.js";
 
 export function initialise() {
   //Scripts
@@ -23,19 +23,19 @@ export function initialise() {
   
   //Images
   //--------------------------------
-  this.assets.images.actor = new ImageAsset("assets/actor.png");
-  this.assets.images.sarcophagus = new ImageAsset("assets/sarcophagus.png");
-  this.assets.images.gate = new ImageAsset("assets/gate.png");
-  this.assets.images.plate = new ImageAsset("assets/plate.png");
-  this.assets.images.goal = new ImageAsset("assets/goal.png");
-  this.assets.images.background = new ImageAsset("assets/background.png");
+  this.assets.images.actor = new ImageAsset("assets/example-game/actor.png");
+  this.assets.images.sarcophagus = new ImageAsset("assets/example-game/sarcophagus.png");
+  this.assets.images.gate = new ImageAsset("assets/example-game/gate.png");
+  this.assets.images.plate = new ImageAsset("assets/example-game/plate.png");
+  this.assets.images.goal = new ImageAsset("assets/example-game/goal.png");
+  this.assets.images.background = new ImageAsset("assets/example-game/background.png");
   
-  this.assets.images.comicPanelA = new ImageAsset("assets/comic-panel-800x600-red.png");
-  this.assets.images.comicPanelB = new ImageAsset("assets/comic-panel-800x600-blue.png");
-  this.assets.images.comicPanelC = new ImageAsset("assets/comic-panel-800x600-yellow.png");
-  this.assets.images.comicPanelSmall = new ImageAsset("assets/comic-panel-500x500-green.png");
-  this.assets.images.comicPanelBig = new ImageAsset("assets/comic-panel-1000x1000-pink.png");
-  this.assets.images.comicPanelWide = new ImageAsset("assets/comic-panel-1000x300-teal.png");
+  this.assets.images.comicPanelA = new ImageAsset("assets/example-game/comic-panel-800x600-red.png");
+  this.assets.images.comicPanelB = new ImageAsset("assets/example-game/comic-panel-800x600-blue.png");
+  this.assets.images.comicPanelC = new ImageAsset("assets/example-game/comic-panel-800x600-yellow.png");
+  this.assets.images.comicPanelSmall = new ImageAsset("assets/example-game/comic-panel-500x500-green.png");
+  this.assets.images.comicPanelBig = new ImageAsset("assets/example-game/comic-panel-1000x1000-pink.png");
+  this.assets.images.comicPanelWide = new ImageAsset("assets/example-game/comic-panel-1000x300-teal.png");
   //--------------------------------
   
   //Animations

@@ -6,8 +6,8 @@ AvO Adventure Game
 ********************************************************************************
  */
 
-import { AvO } from "./avo.js";
-import { initialise } from "./example-game.js";
+import { AvO } from "./avo/index.js";
+import { initialise } from "./example-game/index.js";
  
 /*  Initialisations
  */
