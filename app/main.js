@@ -2,8 +2,6 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /*  
@@ -17,13 +15,13 @@ AvO Adventure Game
 /*  Primary App Class
  */
 //==============================================================================
-
 var App = function () {
   function App(startScript) {
     _classCallCheck(this, App);
 
     //Initialise properties
     //--------------------------------
+    this.debugMode = false;
     this.runCycle = undefined;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
@@ -42,17 +40,24 @@ var App = function () {
     this.assets = {
       images: {}
     };
-    this.assetsLoaded = true;
+    this.assetsLoaded = 0;
+    this.assetsTotal = 0;
     this.scripts = {
       run: null,
       runStart: null,
       runAction: null,
+      runComic: null,
       runEnd: null
     };
     this.actors = [];
     this.areasOfEffect = [];
     this.refs = {};
     this.store = {};
+    this.ui = {
+      foregroundImage: null,
+      backgroundImage: null
+    };
+    this.comicStrip = null;
     //--------------------------------
 
     //Prepare Input
@@ -129,6 +134,9 @@ var App = function () {
         case STATE_ACTION:
           this.run_action();
           break;
+        case STATE_COMIC:
+          this.run_comic();
+          break;
       }
 
       this.paint();
@@ -136,6 +144,16 @@ var App = function () {
   }, {
     key: "run_start",
     value: function run_start() {
+      this.assetsLoaded = 0;
+      this.assetsTotal = 0;
+      for (var category in this.assets) {
+        for (var asset in this.assets[category]) {
+          this.assetsTotal++;
+          if (this.assets[category][asset].loaded) this.assetsLoaded++;
+        }
+      }
+      if (this.assetsLoaded < this.assetsTotal) return;
+
       if (this.scripts.runStart) this.scripts.runStart.apply(this);
     }
   }, {
@@ -169,9 +187,30 @@ var App = function () {
               var actor = _step4.value;
 
               if (this.isATouchingB(_aoe, actor)) {
-                var _actor$effects;
+                var _iteratorNormalCompletion5 = true;
+                var _didIteratorError5 = false;
+                var _iteratorError5 = undefined;
 
-                (_actor$effects = actor.effects).push.apply(_actor$effects, _toConsumableArray(_aoe.effects)); //Array.push can push multiple elements.
+                try {
+                  for (var _iterator5 = _aoe.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    var effect = _step5.value;
+
+                    actor.effects.push(effect.copy());
+                  }
+                } catch (err) {
+                  _didIteratorError5 = true;
+                  _iteratorError5 = err;
+                } finally {
+                  try {
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                      _iterator5.return();
+                    }
+                  } finally {
+                    if (_didIteratorError5) {
+                      throw _iteratorError5;
+                    }
+                  }
+                }
               }
             }
           } catch (err) {
@@ -215,30 +254,33 @@ var App = function () {
       try {
         for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
           var _actor = _step2.value;
-          var _iteratorNormalCompletion5 = true;
-          var _didIteratorError5 = false;
-          var _iteratorError5 = undefined;
+          var _iteratorNormalCompletion6 = true;
+          var _didIteratorError6 = false;
+          var _iteratorError6 = undefined;
 
           try {
-            for (var _iterator5 = _actor.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-              var effect = _step5.value;
+            for (var _iterator6 = _actor.effects[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+              var _effect = _step6.value;
 
-              if (effect.name === "push" && _actor.canBeMoved) {
-                _actor.x += effect.data.x || 0;
-                _actor.y += effect.data.y || 0;
+              //TODO make this an external script
+              //----------------
+              if (_effect.name === "push" && _actor.canBeMoved) {
+                _actor.x += _effect.data.x || 0;
+                _actor.y += _effect.data.y || 0;
               }
+              //----------------
             }
           } catch (err) {
-            _didIteratorError5 = true;
-            _iteratorError5 = err;
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                _iterator5.return();
+              if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
               }
             } finally {
-              if (_didIteratorError5) {
-                throw _iteratorError5;
+              if (_didIteratorError6) {
+                throw _iteratorError6;
               }
             }
           }
@@ -269,9 +311,8 @@ var App = function () {
       //--------------------------------
       //Arrange sprites by vertical order.
       this.actors.sort(function (a, b) {
-        return a.bottom < b.bottom;
+        return a.bottom - b.bottom;
       });
-
       //this.paint();  //moved to run()
       //--------------------------------
 
@@ -339,6 +380,43 @@ var App = function () {
         }
       }
       //--------------------------------
+    }
+  }, {
+    key: "run_comic",
+    value: function run_comic() {
+      if (this.scripts.runComic) this.scripts.runComic.apply(this);
+
+      if (!this.comicStrip) return;
+      var comic = this.comicStrip;
+
+      if (comic.state !== COMIC_STRIP_STATE_TRANSITIONING && comic.currentPanel >= comic.panels.length) {
+        comic.onFinish.apply(this);
+      }
+
+      switch (comic.state) {
+        case COMIC_STRIP_STATE_TRANSITIONING:
+          if (comic.counter < comic.transitionTime) {
+            comic.counter++;
+          } else {
+            comic.counter = 0;
+            comic.state = COMIC_STRIP_STATE_WAIT_BEFORE_INPUT;
+          }
+          break;
+        case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+          if (comic.counter < comic.waitTime) {
+            comic.counter++;
+          } else {
+            comic.counter = 0;
+            comic.state = COMIC_STRIP_STATE_IDLE;
+          }
+          break;
+        case COMIC_STRIP_STATE_IDLE:
+          if (this.pointer.state === INPUT_ACTIVE || this.keys[KEY_CODES.UP].state === INPUT_ACTIVE || this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE || this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
+            comic.currentPanel++;
+            comic.state = COMIC_STRIP_STATE_TRANSITIONING;
+          }
+          break;
+      }
     }
 
     //----------------------------------------------------------------
@@ -462,6 +540,11 @@ var App = function () {
       //Clear
       this.context2d.clearRect(0, 0, this.width, this.height);
 
+      if (this.ui.backgroundImage && this.ui.backgroundImage.loaded) {
+        var image = this.ui.backgroundImage;
+        this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
+      }
+
       switch (this.state) {
         case STATE_START:
           this.paint_start();
@@ -472,22 +555,41 @@ var App = function () {
         case STATE_ACTION:
           this.paint_action();
           break;
+        case STATE_COMIC:
+          this.paint_comic();
+          break;
+      }
+
+      if (this.ui.foregroundImage && this.ui.foregroundImage.loaded) {
+        var _image = this.ui.foregroundImage;
+        this.context2d.drawImage(_image.img, (this.width - _image.img.width) / 2, (this.height - _image.img.height) / 2);
       }
     }
   }, {
     key: "paint_start",
     value: function paint_start() {
-      if (this.assetsLoaded) {
+      var percentage = this.assetsTotal > 0 ? this.assetsLoaded / this.assetsTotal : 1;
+
+      this.context2d.font = DEFAULT_FONT;
+      this.context2d.textAlign = "center";
+      this.context2d.textBaseline = "middle";
+
+      if (this.assetsLoaded < this.assetsTotal) {
+        var rgb = Math.floor(percentage * 255);
         this.context2d.beginPath();
         this.context2d.rect(0, 0, this.width, this.height);
-        this.context2d.fillStyle = "#c33";
+        this.context2d.fillStyle = "rgba(" + rgb + "," + rgb + "," + rgb + ",1)";
         this.context2d.fill();
+        this.context2d.fillStyle = "#fff";
+        this.context2d.fillText("Loading... (" + this.assetsLoaded + "/" + this.assetsTotal + ")", this.width / 2, this.height / 2);
         this.context2d.closePath();
       } else {
         this.context2d.beginPath();
         this.context2d.rect(0, 0, this.width, this.height);
-        this.context2d.fillStyle = "#333";
+        this.context2d.fillStyle = "#fff";
         this.context2d.fill();
+        this.context2d.fillStyle = "#000";
+        this.context2d.fillText("Ready!", this.width / 2, this.height / 2);
         this.context2d.closePath();
       }
     }
@@ -503,139 +605,238 @@ var App = function () {
   }, {
     key: "paint_action",
     value: function paint_action() {
-      //Paint Areas of Effects
-      var _iteratorNormalCompletion6 = true;
-      var _didIteratorError6 = false;
-      var _iteratorError6 = undefined;
+      //DEBUG: Paint hitboxes
+      //--------------------------------
+      if (this.debugMode) {
+        //Areas of Effects
+        var _iteratorNormalCompletion7 = true;
+        var _didIteratorError7 = false;
+        var _iteratorError7 = undefined;
 
-      try {
-        for (var _iterator6 = this.areasOfEffect[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-          var aoe = _step6.value;
+        try {
+          for (var _iterator7 = this.areasOfEffect[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+            var aoe = _step7.value;
 
-          var durationPercentage = 1;
-          if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
-            durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+            var durationPercentage = 1;
+            if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
+              durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+            }
+            this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
+
+            switch (aoe.shape) {
+              case SHAPE_CIRCLE:
+                this.context2d.beginPath();
+                this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+                this.context2d.stroke();
+                this.context2d.closePath();
+                break;
+              case SHAPE_SQUARE:
+                this.context2d.beginPath();
+                this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+                this.context2d.stroke();
+                this.context2d.closePath();
+                break;
+            }
           }
-          this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
 
-          switch (aoe.shape) {
-            case SHAPE_CIRCLE:
-              this.context2d.beginPath();
-              this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              this.context2d.beginPath();
-              this.context2d.moveTo(aoe.x, aoe.y);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              break;
-            case SHAPE_SQUARE:
-              this.context2d.beginPath();
-              this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              break;
+          //Actors
+        } catch (err) {
+          _didIteratorError7 = true;
+          _iteratorError7 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion7 && _iterator7.return) {
+              _iterator7.return();
+            }
+          } finally {
+            if (_didIteratorError7) {
+              throw _iteratorError7;
+            }
           }
         }
 
-        //Paint Actor hitboxes
+        this.context2d.strokeStyle = "rgba(0,0,0,1)";
+        var _iteratorNormalCompletion8 = true;
+        var _didIteratorError8 = false;
+        var _iteratorError8 = undefined;
+
+        try {
+          for (var _iterator8 = this.actors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+            var actor = _step8.value;
+
+            switch (actor.shape) {
+              case SHAPE_CIRCLE:
+                this.context2d.beginPath();
+                this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+                this.context2d.stroke();
+                this.context2d.closePath();
+                this.context2d.beginPath();
+                this.context2d.moveTo(actor.x, actor.y);
+                this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+                this.context2d.stroke();
+                this.context2d.closePath();
+                break;
+              case SHAPE_SQUARE:
+                this.context2d.beginPath();
+                this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+                this.context2d.stroke();
+                this.context2d.closePath();
+                break;
+            }
+          }
+        } catch (err) {
+          _didIteratorError8 = true;
+          _iteratorError8 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion8 && _iterator8.return) {
+              _iterator8.return();
+            }
+          } finally {
+            if (_didIteratorError8) {
+              throw _iteratorError8;
+            }
+          }
+        }
+      }
+      //--------------------------------
+
+      //Paint sprites
+      //TODO: IMPROVE
+      //TODO: Layering
+      //--------------------------------
+      //AoEs
+      var _iteratorNormalCompletion9 = true;
+      var _didIteratorError9 = false;
+      var _iteratorError9 = undefined;
+
+      try {
+        for (var _iterator9 = this.areasOfEffect[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+          var _aoe2 = _step9.value;
+
+          this.paintSprite(_aoe2);
+          _aoe2.nextAnimationFrame();
+        }
+
+        //Actors
       } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
+        _didIteratorError9 = true;
+        _iteratorError9 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6.return) {
-            _iterator6.return();
+          if (!_iteratorNormalCompletion9 && _iterator9.return) {
+            _iterator9.return();
           }
         } finally {
-          if (_didIteratorError6) {
-            throw _iteratorError6;
+          if (_didIteratorError9) {
+            throw _iteratorError9;
           }
         }
       }
 
-      this.context2d.strokeStyle = "rgba(0,0,0,1)";
-      var _iteratorNormalCompletion7 = true;
-      var _didIteratorError7 = false;
-      var _iteratorError7 = undefined;
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
 
       try {
-        for (var _iterator7 = this.actors[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-          var actor = _step7.value;
+        for (var _iterator10 = this.actors[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var _actor3 = _step10.value;
 
-          switch (actor.shape) {
-            case SHAPE_CIRCLE:
-              this.context2d.beginPath();
-              this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              this.context2d.beginPath();
-              this.context2d.moveTo(actor.x, actor.y);
-              this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              break;
-            case SHAPE_SQUARE:
-              this.context2d.beginPath();
-              this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
-              this.context2d.stroke();
-              this.context2d.closePath();
-              break;
-          }
+          this.paintSprite(_actor3);
+          _actor3.nextAnimationFrame();
         }
-
-        //Paint sprites
+        //--------------------------------
       } catch (err) {
-        _didIteratorError7 = true;
-        _iteratorError7 = err;
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion7 && _iterator7.return) {
-            _iterator7.return();
+          if (!_iteratorNormalCompletion10 && _iterator10.return) {
+            _iterator10.return();
           }
         } finally {
-          if (_didIteratorError7) {
-            throw _iteratorError7;
+          if (_didIteratorError10) {
+            throw _iteratorError10;
           }
         }
       }
+    }
+  }, {
+    key: "paint_comic",
+    value: function paint_comic() {
+      if (!this.comicStrip) return;
+      var comic = this.comicStrip;
 
-      var _iteratorNormalCompletion8 = true;
-      var _didIteratorError8 = false;
-      var _iteratorError8 = undefined;
+      this.context2d.beginPath();
+      this.context2d.rect(0, 0, this.width, this.height);
+      this.context2d.fillStyle = comic.background;
+      this.context2d.fill();
+      this.context2d.closePath();
 
-      try {
-        for (var _iterator8 = this.actors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-          var _actor3 = _step8.value;
-
-          if (!_actor3.spritesheet || !_actor3.spritesheet.loaded || !_actor3.animationSet || !_actor3.animationSet.actions[_actor3.animationName]) continue;
-
-          var animationSet = _actor3.animationSet;
-          var srcW = animationSet.tileWidth;
-          var srcH = animationSet.tileHeight;
-          var srcX = srcW * _actor3.direction;
-          var srcY = animationSet.actions[_actor3.animationName].steps[_actor3.animationStep].row * srcH;
-          var tgtX = Math.floor(_actor3.x - srcW / 2 + animationSet.tileOffsetX);
-          var tgtY = Math.floor(_actor3.y - srcH / 2 + animationSet.tileOffsetY);
-          var tgtW = srcW;
-          var tgtH = srcH;
-
-          this.context2d.drawImage(_actor3.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
-        }
-      } catch (err) {
-        _didIteratorError8 = true;
-        _iteratorError8 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return) {
-            _iterator8.return();
-          }
-        } finally {
-          if (_didIteratorError8) {
-            throw _iteratorError8;
-          }
-        }
+      switch (comic.state) {
+        case COMIC_STRIP_STATE_TRANSITIONING:
+          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.height) : 0;
+          this.paintComicPanel(comic.getPreviousPanel(), offsetY);
+          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
+          break;
+        case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+          this.paintComicPanel(comic.getCurrentPanel());
+          break;
+        case COMIC_STRIP_STATE_IDLE:
+          this.paintComicPanel(comic.getCurrentPanel());
+          //TODO: Paint "NEXT" icon
+          break;
       }
+    }
+  }, {
+    key: "paintSprite",
+    value: function paintSprite(obj) {
+      if (!obj.spritesheet || !obj.spritesheet.loaded || !obj.animationSet || !obj.animationSet.actions[obj.animationName]) return;
+
+      var animationSet = obj.animationSet;
+
+      var srcW = animationSet.tileWidth;
+      var srcH = animationSet.tileHeight;
+      var srcX = 0;
+      var srcY = 0;
+      if (animationSet.rule === ANIMATION_RULE_DIRECTIONAL) {
+        srcX = obj.direction * srcW;
+        srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
+      } else {
+        srcX = animationSet.actions[obj.animationName].steps[obj.animationStep].col * srcW;
+        srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
+      }
+
+      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
+      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+      var tgtW = srcW;
+      var tgtH = srcH;
+
+      this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+    }
+  }, {
+    key: "paintComicPanel",
+    value: function paintComicPanel() {
+      var panel = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+      var offsetY = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+
+      if (!panel || !panel.loaded) return;
+
+      var ratioX = this.width / panel.img.width;
+      var ratioY = this.height / panel.img.height;
+      var ratio = Math.min(1, Math.min(ratioX, ratioY));
+
+      var srcX = 0;
+      var srcY = 0;
+      var srcW = panel.img.width;
+      var srcH = panel.img.height;
+
+      var tgtW = panel.img.width * ratio;
+      var tgtH = panel.img.height * ratio;
+      var tgtX = (this.width - tgtW) / 2; //TODO
+      var tgtY = (this.height - tgtH) / 2 + offsetY; //TODO
+
+      this.context2d.drawImage(panel.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
     }
 
     //----------------------------------------------------------------
@@ -722,10 +923,15 @@ var INPUT_ACTIVE = 1;
 var INPUT_ENDED = 2;
 var INPUT_DISTANCE_SENSITIVITY = 16;
 var MAX_KEYS = 128;
+var DEFAULT_FONT = "32px monospace";
 
 var STATE_START = 0;
 var STATE_ACTION = 1;
-var STATE_END = 2;
+var STATE_COMIC = 2;
+var STATE_END = 3;
+
+var ANIMATION_RULE_BASIC = "basic";
+var ANIMATION_RULE_DIRECTIONAL = "directional";
 //==============================================================================
 
 /*  Actor Class
@@ -756,36 +962,39 @@ var Actor = function () {
     this.animationSet = null;
     this.animationName = "";
 
+    this.attributes = {};
     this.effects = [];
   }
 
   _createClass(Actor, [{
-    key: "playAnimation",
-    value: function playAnimation() {
+    key: "setAnimation",
+    value: function setAnimation() {
       var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
       var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       if (!this.animationSet || !this.animationSet.actions[animationName]) return;
 
-      //let animationSet = this.animationSet[animationName];
-      var animationAction = this.animationSet.actions[animationName];
-
       if (restart || this.animationName !== animationName) {
         //Set this as the new animation
         this.animationStep = 0;
         this.animationName = animationName;
-      } else {
-        //Take a step through the current animation
-        this.animationStep++;
-        if (animationAction.steps.length === 0) {
-          this.animationStep = 0;
-        } else if (animationAction.loop) {
-          while (this.animationStep >= animationAction.steps.length) {
-            this.animationStep -= animationAction.steps.length;
-          }
-        } else {
-          this.animationStep = animationAction.steps.length - 1;
+      }
+    }
+  }, {
+    key: "nextAnimationFrame",
+    value: function nextAnimationFrame() {
+      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+      var animationAction = this.animationSet.actions[this.animationName];
+      this.animationStep++;
+      if (animationAction.steps.length === 0) {
+        this.animationStep = 0;
+      } else if (animationAction.loop) {
+        while (this.animationStep >= animationAction.steps.length) {
+          this.animationStep -= animationAction.steps.length;
         }
+      } else {
+        this.animationStep = animationAction.steps.length - 1;
       }
     }
   }, {
@@ -884,18 +1093,17 @@ var DIRECTION_NORTH = 3;
 
 var AoE = function () {
   function AoE() {
-    var id = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
     var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
     var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
     var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
     var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
     var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
     var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
-    var source = arguments.length <= 7 || arguments[7] === undefined ? null : arguments[7];
 
     _classCallCheck(this, AoE);
 
-    this.id = id;
+    this.name = name;
     this.x = x;
     this.y = y;
     this.size = size;
@@ -914,6 +1122,37 @@ var AoE = function () {
     key: "hasInfiniteDuration",
     value: function hasInfiniteDuration() {
       return this.startDuration === DURATION_INFINITE;
+    }
+  }, {
+    key: "setAnimation",
+    value: function setAnimation() {
+      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+      if (restart || this.animationName !== animationName) {
+        //Set this as the new animation
+        this.animationStep = 0;
+        this.animationName = animationName;
+      }
+    }
+  }, {
+    key: "nextAnimationFrame",
+    value: function nextAnimationFrame() {
+      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+      var animationAction = this.animationSet.actions[this.animationName];
+      this.animationStep++;
+      if (animationAction.steps.length === 0) {
+        this.animationStep = 0;
+      } else if (animationAction.loop) {
+        while (this.animationStep >= animationAction.steps.length) {
+          this.animationStep -= animationAction.steps.length;
+        }
+      } else {
+        this.animationStep = animationAction.steps.length - 1;
+      }
     }
   }, {
     key: "left",
@@ -948,6 +1187,106 @@ var AoE = function () {
 var DURATION_INFINITE = 0;
 //==============================================================================
 
+/*  4-Koma Comic Strip Class
+ */
+//==============================================================================
+
+var ComicStrip = function () {
+  function ComicStrip() {
+    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+    _classCallCheck(this, ComicStrip);
+
+    this.name = name;
+    this.panels = panels;
+    this.onFinish = onFinish;
+
+    this.waitTime = DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+    this.transitionTime = DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+    this.background = "#333";
+
+    this.start();
+  }
+
+  _createClass(ComicStrip, [{
+    key: "start",
+    value: function start() {
+      this.currentPanel = 0;
+      this.state = COMIC_STRIP_STATE_TRANSITIONING;
+      this.counter = 0;
+    }
+  }, {
+    key: "getCurrentPanel",
+    value: function getCurrentPanel() {
+      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+        return null;
+      } else {
+        return this.panels[this.currentPanel];
+      }
+    }
+  }, {
+    key: "getPreviousPanel",
+    value: function getPreviousPanel() {
+      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+        return null;
+      } else {
+        return this.panels[this.currentPanel - 1];
+      }
+    }
+
+    /* Logic loop should be as follows
+    
+    loop {
+      if !TRANSITIONING && currentPanel >= panels.length
+        onFinish()
+        FINISH
+          
+      if TRANSITIONING
+        if counter < transitionTime
+          counter++
+          reposition and paint image n-1
+          reposition and paint image n    //NOTE: if 0 panels, this will display an empty scenario for a short time.
+        else
+          counter = 0
+          state = WAIT BEFORE INPUT
+      
+      if IDLE
+        paint image n
+        paint "next" icon
+        
+        if INPUT
+          currentPanel++
+          state = TRANSITIONING
+        
+      if WAIT BEFORE INPUT
+        paint image n
+        
+        if counter < waitTime
+          counter++
+        else
+          counter = 0
+          state = IDLE
+    }
+    
+    check for conditions: 0 panels, 1 panel, 2 panels.
+    
+    */
+
+  }]);
+
+  return ComicStrip;
+}();
+
+var COMIC_STRIP_STATE_TRANSITIONING = 0;
+var COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
+var COMIC_STRIP_STATE_IDLE = 2;
+
+var DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
+var DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
+//==============================================================================
+
 /*  Effect Class
  */
 //==============================================================================
@@ -958,7 +1297,6 @@ var Effect = function () {
     var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
     var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
     var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
-    var source = arguments.length <= 4 || arguments[4] === undefined ? null : arguments[4];
 
     _classCallCheck(this, Effect);
 
@@ -967,13 +1305,17 @@ var Effect = function () {
     this.duration = duration;
     this.stackingRule = stackingRule;
     this.startDuration = duration;
-    this.source = source;
   }
 
   _createClass(Effect, [{
     key: "hasInfiniteDuration",
     value: function hasInfiniteDuration() {
       return this.startDuration === DURATION_INFINITE;
+    }
+  }, {
+    key: "copy",
+    value: function copy() {
+      return new Effect(this.name, this.data, this.duration, this.stackingRule);
     }
   }]);
 
@@ -1187,7 +1529,7 @@ window.onload = function () {
 };
 //==============================================================================
 
-/*  Global Scripts
+/*  Game Scripts
  */
 //==============================================================================
 function initialise() {
@@ -1201,32 +1543,110 @@ function initialise() {
   //Images
   //--------------------------------
   this.assets.images.actor = new ImageAsset("assets/actor.png");
+  this.assets.images.sarcophagus = new ImageAsset("assets/sarcophagus.png");
+  this.assets.images.gate = new ImageAsset("assets/gate.png");
+  this.assets.images.plate = new ImageAsset("assets/plate.png");
+  this.assets.images.goal = new ImageAsset("assets/goal.png");
+  this.assets.images.background = new ImageAsset("assets/background.png");
+
+  this.assets.images.comicPanelA = new ImageAsset("assets/comic-panel-800x600-red.png");
+  this.assets.images.comicPanelB = new ImageAsset("assets/comic-panel-800x600-blue.png");
+  this.assets.images.comicPanelC = new ImageAsset("assets/comic-panel-800x600-yellow.png");
+  this.assets.images.comicPanelSmall = new ImageAsset("assets/comic-panel-500x500-green.png");
+  this.assets.images.comicPanelBig = new ImageAsset("assets/comic-panel-1000x1000-pink.png");
+  this.assets.images.comicPanelWide = new ImageAsset("assets/comic-panel-1000x300-teal.png");
   //--------------------------------
 
   //Animations
   //--------------------------------
   var STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
   this.animationSets = {
-    "actor": {
-      "tileWidth": 64,
-      "tileHeight": 64,
-      "tileOffsetX": 0,
-      "tileOffsetY": -16,
-      "actions": {
-        "idle": {
-          "loop": true,
-          "steps": [{ row: 0, duration: STEPS_PER_SECOND }]
+    actor: {
+      rule: ANIMATION_RULE_DIRECTIONAL,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: -16,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [{ row: 0, duration: 1 }]
         },
-        "walk": {
-          "tileWidth": 64,
-          "tileHeight": 64,
-          "tileOffsetX": 0,
-          "tileOffsetY": 0,
-          "loop": true,
-          "steps": [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+        walk: {
+          loop: true,
+          steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+        }
+      }
+    },
+
+    sarcophagus: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: -32,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [{ col: 0, row: 0, duration: 1 }]
+        },
+        glow: {
+          loop: true,
+          steps: [{ col: 1, row: 0, duration: STEPS_PER_SECOND * 4 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 1, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 }]
+        }
+      }
+    },
+
+    plate: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [{ col: 0, row: 0, duration: 1 }]
+        },
+        glow: {
+          loop: true,
+          steps: [{ col: 1, row: 0, duration: STEPS_PER_SECOND * 4 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 1, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 }, { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 }]
+        }
+      }
+    },
+
+    simple128: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 128,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [{ col: 0, row: 0, duration: 1 }]
+        }
+      }
+    },
+
+    simple64: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [{ col: 0, row: 0, duration: 1 }]
+        },
+        glow: {
+          loop: true,
+          steps: [{ col: 0, row: 0, duration: STEPS_PER_SECOND * 3 }, { col: 1, row: 0, duration: STEPS_PER_SECOND * 3 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 3 }, { col: 1, row: 1, duration: STEPS_PER_SECOND * 3 }, { col: 0, row: 1, duration: STEPS_PER_SECOND * 3 }, { col: 1, row: 0, duration: STEPS_PER_SECOND * 3 }, { col: 0, row: 0, duration: STEPS_PER_SECOND * 3 }]
         }
       }
     }
+
   };
 
   //Process Animations; expand steps to many frames per steps.
@@ -1235,29 +1655,29 @@ function initialise() {
     for (var animationName in animationSet.actions) {
       var animationAction = animationSet.actions[animationName];
       var newSteps = [];
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator9 = animationAction.steps[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var step = _step9.value;
+        for (var _iterator11 = animationAction.steps[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var step = _step11.value;
 
           for (var i = 0; i < step.duration; i++) {
             newSteps.push(step);
           }
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-            _iterator9.return();
+          if (!_iteratorNormalCompletion11 && _iterator11.return) {
+            _iterator11.return();
           }
         } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -1269,19 +1689,29 @@ function initialise() {
 }
 
 function runStart() {
-  this.assetsLoaded = true;
-  for (var category in this.assets) {
-    for (var asset in this.assets[category]) {
-      this.assetsLoaded = this.assetsLoaded && this.assets[category][asset].loaded;
-    }
-  }
-  if (!this.assetsLoaded) return;
-
   this.store.level = 1;
 
   if (this.pointer.state === INPUT_ACTIVE || this.keys[KEY_CODES.UP].state === INPUT_ACTIVE || this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE || this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE || this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE || this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE || this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
-    this.changeState(STATE_ACTION, startLevel1);
+    this.changeState(STATE_COMIC, comicStart);
   }
+}
+
+function comicStart() {
+  this.comicStrip = new ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
+  this.comicStrip.start();
+
+  this.comicStrip = new ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelSmall, this.assets.images.comicPanelBig, this.assets.images.comicPanelWide], comicStartFinished);
+  this.comicStrip.start();
+
+  //this.comicStrip = new ComicStrip(
+  //  "startcomic",
+  //  [],
+  //  comicStartFinished);
+  //this.comicStrip.start();
+}
+
+function comicStartFinished() {
+  this.changeState(STATE_ACTION, startLevel1);
 }
 
 function runEnd() {}
@@ -1360,16 +1790,56 @@ function runAction() {
     var distance = this.refs["player"].radius + AOE_SIZE / 2;
     var x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
     var y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
-    var newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD, this.refs["player"])], this.refs["player"]);
+    var newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD)]);
     this.areasOfEffect.push(newAoE);
   }
+  //--------------------------------
 
-  //Try animation!
+  //Animations
+  //--------------------------------
   if (playerIsIdle) {
-    this.refs["player"].playAnimation("idle");
+    this.refs["player"].setAnimation("idle");
   } else {
-    this.refs["player"].playAnimation("walk");
+    this.refs["player"].setAnimation("walk");
   }
+
+  if (this.refs["boxes"]) {
+    var _iteratorNormalCompletion12 = true;
+    var _didIteratorError12 = false;
+    var _iteratorError12 = undefined;
+
+    try {
+      for (var _iterator12 = this.refs["boxes"][Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+        var box = _step12.value;
+
+        if (box.effects.find(function (eff) {
+          return eff.name === "charge";
+        })) {
+          box.setAnimation("glow");
+        } else {
+          box.setAnimation("idle");
+        }
+      }
+    } catch (err) {
+      _didIteratorError12 = true;
+      _iteratorError12 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion12 && _iterator12.return) {
+          _iterator12.return();
+        }
+      } finally {
+        if (_didIteratorError12) {
+          throw _iteratorError12;
+        }
+      }
+    }
+  }
+  //--------------------------------
+
+  //Game rules
+  //--------------------------------
+  checkIfAllBoxesAreCharged.apply(this);
   //--------------------------------
 
   //Win Condition
@@ -1378,39 +1848,202 @@ function runAction() {
   //--------------------------------
 }
 
-function startLevel1() {
+function startLevelInit() {
   //Reset
   this.actors = [];
   this.areasOfEffect = [];
+  this.refs = {};
 
-  this.refs["player"] = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
-  this.refs["player"].spritesheet = new ImageAsset("assets/actor.png");
-  this.refs["player"].animationStep = 0;
-  this.refs["player"].animationSet = this.animationSets["actor"];
+  var midX = this.width / 2,
+      midY = this.height / 2;
+
+  this.refs["player"] = new Actor("player", midX, midY + 256, 32, SHAPE_CIRCLE);
+  this.refs["player"].spritesheet = this.assets.images.actor;
+  this.refs["player"].animationSet = this.animationSets.actor;
+  this.refs["player"].rotation = ROTATION_NORTH;
   this.actors.push(this.refs["player"]);
 
-  this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
-  this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
-  this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
-  this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
-
-  var wallN = new Actor("wallN", this.width / 2, this.height * -0.65, this.width, SHAPE_SQUARE);
-  var wallS = new Actor("wallS", this.width / 2, this.height * +1.65, this.width, SHAPE_SQUARE);
-  var wallE = new Actor("wallE", this.width * +1.35, this.height / 2, this.height, SHAPE_SQUARE);
-  var wallW = new Actor("wallW", this.width * -0.35, this.height / 2, this.height, SHAPE_SQUARE);
-  //let wallE = new Actor();
-  //let wallW = new Actor();
+  var wallN = new Actor("wallN", midX, midY - 672, this.width, SHAPE_SQUARE);
+  var wallS = new Actor("wallS", midX, midY + 688, this.width, SHAPE_SQUARE);
+  var wallE = new Actor("wallE", midX + 688, midY, this.height, SHAPE_SQUARE);
+  var wallW = new Actor("wallW", midX - 688, midY, this.height, SHAPE_SQUARE);
   wallE.canBeMoved = false;
   wallS.canBeMoved = false;
   wallW.canBeMoved = false;
   wallN.canBeMoved = false;
   this.actors.push(wallE, wallS, wallW, wallN);
 
-  this.areasOfEffect.push(new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null));
+  this.refs["gate"] = new Actor("gate", midX, 16, 128, SHAPE_SQUARE);
+  this.refs["gate"].canBeMoved = false;
+  this.refs["gate"].spritesheet = this.assets.images.gate;
+  this.refs["gate"].animationSet = this.animationSets.simple128;
+  this.refs["gate"].setAnimation("idle");
+  this.actors.push(this.refs["gate"]);
 
-  this.refs["goal"] = new AoE("goal", this.width / 2, this.height / 2 - 256, 64, SHAPE_SQUARE, DURATION_INFINITE, [], null);
+  this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, SHAPE_SQUARE, DURATION_INFINITE, []);
+  this.refs["goal"].spritesheet = this.assets.images.goal;
+  this.refs["goal"].animationSet = this.animationSets.simple64;
+  this.refs["goal"].setAnimation("glow");
   this.areasOfEffect.push(this.refs["goal"]);
-  //--------------------------------
+}
+
+function startLevel1() {
+  startLevelInit.apply(this);
+  //this.areasOfEffect.push(
+  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
+  //    [new Effect("push", { x: 0, y: 4 }, 4, STACKING_RULE_ADD, null)], null)
+  //);
+  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+
+  var midX = this.width / 2,
+      midY = this.height / 2;
+
+  this.refs.boxes = [];
+  this.refs.plates = [];
+  var newBox = void 0,
+      newPlate = void 0;
+  var chargeEffect = new Effect("charge", {}, 4, STACKING_RULE_ADD, null);
+
+  this.refs.boxes = [new Actor("", midX - 128, midY - 64, 64, SHAPE_SQUARE), new Actor("", midX + 128, midY - 64, 64, SHAPE_SQUARE)];
+  var _iteratorNormalCompletion13 = true;
+  var _didIteratorError13 = false;
+  var _iteratorError13 = undefined;
+
+  try {
+    for (var _iterator13 = this.refs.boxes[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+      var box = _step13.value;
+
+      box.attributes.box = true;
+      box.spritesheet = this.assets.images.sarcophagus;
+      box.animationSet = this.animationSets.sarcophagus;
+      this.actors.push(box);
+    }
+  } catch (err) {
+    _didIteratorError13 = true;
+    _iteratorError13 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion13 && _iterator13.return) {
+        _iterator13.return();
+      }
+    } finally {
+      if (_didIteratorError13) {
+        throw _iteratorError13;
+      }
+    }
+  }
+
+  this.refs.plates = [new AoE("plate", midX - 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()]), new AoE("plate", midX + 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()])];
+  var _iteratorNormalCompletion14 = true;
+  var _didIteratorError14 = false;
+  var _iteratorError14 = undefined;
+
+  try {
+    for (var _iterator14 = this.refs.plates[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+      var plate = _step14.value;
+
+      plate.spritesheet = this.assets.images.plate;
+      plate.animationSet = this.animationSets.plate;
+      plate.setAnimation("idle");
+      this.areasOfEffect.push(plate);
+    }
+  } catch (err) {
+    _didIteratorError14 = true;
+    _iteratorError14 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion14 && _iterator14.return) {
+        _iterator14.return();
+      }
+    } finally {
+      if (_didIteratorError14) {
+        throw _iteratorError14;
+      }
+    }
+  }
+
+  this.ui.backgroundImage = this.assets.images.background;
+}
+
+function startLevel2() {
+  startLevelInit.apply(this);
+}
+
+function startLevel3() {
+  startLevelInit.apply(this);
+}
+
+function checkIfAllBoxesAreCharged() {
+  var allBoxesAreCharged = true;
+
+  if (this.refs["plates"] && this.refs["boxes"]) {
+    var _iteratorNormalCompletion15 = true;
+    var _didIteratorError15 = false;
+    var _iteratorError15 = undefined;
+
+    try {
+      for (var _iterator15 = this.refs["plates"][Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+        var plate = _step15.value;
+
+        var thisPlateIsCharged = false;
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
+
+        try {
+          for (var _iterator16 = this.refs["boxes"][Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var box = _step16.value;
+
+            if (this.isATouchingB(box, plate)) {
+              thisPlateIsCharged = true;
+              plate.setAnimation("glow");
+            }
+          }
+        } catch (err) {
+          _didIteratorError16 = true;
+          _iteratorError16 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion16 && _iterator16.return) {
+              _iterator16.return();
+            }
+          } finally {
+            if (_didIteratorError16) {
+              throw _iteratorError16;
+            }
+          }
+        }
+
+        !thisPlateIsCharged && plate.setAnimation("idle");
+        allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
+      }
+    } catch (err) {
+      _didIteratorError15 = true;
+      _iteratorError15 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion15 && _iterator15.return) {
+          _iterator15.return();
+        }
+      } finally {
+        if (_didIteratorError15) {
+          throw _iteratorError15;
+        }
+      }
+    }
+  }
+
+  if (allBoxesAreCharged) {
+    if (this.refs["gate"] && this.refs["gate"].y >= -32) {
+      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].y -= 1;
+    }
+  } else {
+    if (this.refs["gate"] && this.refs["gate"].y <= 16) {
+      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].y += 1;
+    }
+  }
 }
 
 function checkIfPlayerIsAtGoal() {
@@ -1419,9 +2052,13 @@ function checkIfPlayerIsAtGoal() {
 
     switch (this.store.level) {
       case 1:
-      case 2:
-      case 3:
         startLevel1.apply(this);
+        break;
+      case 2:
+        startLevel2.apply(this);
+        break;
+      case 3:
+        startLevel3.apply(this);
         break;
       default:
         this.changeState(STATE_END);

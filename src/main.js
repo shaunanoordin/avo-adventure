@@ -13,6 +13,7 @@ class App {
   constructor(startScript) {
     //Initialise properties
     //--------------------------------
+    this.debugMode = false;
     this.runCycle = undefined;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
@@ -30,18 +31,25 @@ class App {
     //--------------------------------
     this.assets = {
       images: {}
-    }
-    this.assetsLoaded = true;
+    };
+    this.assetsLoaded = 0;
+    this.assetsTotal = 0;
     this.scripts = {
       run: null,
       runStart: null,
       runAction: null,
+      runComic: null,
       runEnd: null,
-    }
+    };
     this.actors = [];
     this.areasOfEffect = [];
     this.refs = {};
     this.store = {};
+    this.ui = {
+      foregroundImage: null,
+      backgroundImage: null,
+    };
+    this.comicStrip = null;
     //--------------------------------
     
     //Prepare Input
@@ -115,12 +123,25 @@ class App {
       case STATE_ACTION:
         this.run_action();
         break;
+      case STATE_COMIC:
+        this.run_comic();
+        break;
     }
     
     this.paint();
   }
   
   run_start() {
+    this.assetsLoaded = 0;
+    this.assetsTotal = 0;    
+    for (let category in this.assets) {
+      for (let asset in this.assets[category]) {
+        this.assetsTotal++;
+        if (this.assets[category][asset].loaded) this.assetsLoaded++;
+      }
+    }
+    if (this.assetsLoaded < this.assetsTotal) return;
+    
     if (this.scripts.runStart) this.scripts.runStart.apply(this);
   }
   
@@ -139,7 +160,9 @@ class App {
     for (let aoe of this.areasOfEffect) {
       for (let actor of this.actors) {
         if (this.isATouchingB(aoe, actor)) {
-          actor.effects.push(...aoe.effects);  //Array.push can push multiple elements.
+          for (let effect of aoe.effects) {
+            actor.effects.push(effect.copy());
+          }
         }
       }
     }
@@ -149,10 +172,13 @@ class App {
     //--------------------------------
     for (let actor of this.actors) {
       for (let effect of actor.effects) {
+        //TODO make this an external script
+        //----------------
         if (effect.name === "push" && actor.canBeMoved) {
           actor.x += effect.data.x || 0;
           actor.y += effect.data.y || 0;
         }
+        //----------------
       }
     }
     //--------------------------------
@@ -166,9 +192,8 @@ class App {
     //--------------------------------
     //Arrange sprites by vertical order.
     this.actors.sort((a, b) => {
-      return a.bottom < b.bottom;
-    });    
-    
+      return a.bottom - b.bottom;
+    });
     //this.paint();  //moved to run()
     //--------------------------------
     
@@ -214,6 +239,46 @@ class App {
       }
     }
     //--------------------------------
+  }
+  
+  run_comic() {
+    if (this.scripts.runComic) this.scripts.runComic.apply(this);
+    
+    if (!this.comicStrip) return;
+    const comic = this.comicStrip;
+    
+    if (comic.state !== COMIC_STRIP_STATE_TRANSITIONING &&
+        comic.currentPanel >= comic.panels.length) {
+      comic.onFinish.apply(this);
+    }
+    
+    switch (comic.state) {
+      case COMIC_STRIP_STATE_TRANSITIONING:
+        if (comic.counter < comic.transitionTime) {
+          comic.counter++;          
+        } else {
+          comic.counter = 0;
+          comic.state = COMIC_STRIP_STATE_WAIT_BEFORE_INPUT
+        }
+        break;
+      case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+        if (comic.counter < comic.waitTime) {
+          comic.counter++;
+        } else {
+          comic.counter = 0;
+          comic.state = COMIC_STRIP_STATE_IDLE;
+        }
+        break;
+      case COMIC_STRIP_STATE_IDLE:
+        if (this.pointer.state === INPUT_ACTIVE || 
+            this.keys[KEY_CODES.UP].state === INPUT_ACTIVE ||
+            this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE ||
+            this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
+          comic.currentPanel++;
+          comic.state = COMIC_STRIP_STATE_TRANSITIONING;
+        }        
+        break;
+    }
   }
   
   //----------------------------------------------------------------
@@ -346,6 +411,11 @@ class App {
     //Clear
     this.context2d.clearRect(0, 0, this.width, this.height);
     
+    if (this.ui.backgroundImage && this.ui.backgroundImage.loaded) {
+      const image = this.ui.backgroundImage;
+      this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
+    }
+    
     switch (this.state) {
       case STATE_START:
         this.paint_start();
@@ -356,23 +426,43 @@ class App {
       case STATE_ACTION:
         this.paint_action();
         break;
+      case STATE_COMIC:
+        this.paint_comic();
+        break;
+    }
+    
+    if (this.ui.foregroundImage && this.ui.foregroundImage.loaded) {
+      const image = this.ui.foregroundImage;
+      this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
     }
   }
   
   paint_start() {
-    if (this.assetsLoaded) {
+    const percentage = (this.assetsTotal > 0) ? this.assetsLoaded / this.assetsTotal : 1;
+    
+    this.context2d.font = DEFAULT_FONT;
+    this.context2d.textAlign = "center";
+    this.context2d.textBaseline = "middle";
+
+    if (this.assetsLoaded < this.assetsTotal) {
+      const rgb = Math.floor(percentage * 255);
       this.context2d.beginPath();
       this.context2d.rect(0, 0, this.width, this.height);
-      this.context2d.fillStyle = "#c33";
+      this.context2d.fillStyle = "rgba("+rgb+","+rgb+","+rgb+",1)";
       this.context2d.fill();
+      this.context2d.fillStyle = "#fff";
+      this.context2d.fillText("Loading... (" + this.assetsLoaded+"/" + this.assetsTotal + ")", this.width / 2, this.height / 2); 
       this.context2d.closePath();
     } else {
       this.context2d.beginPath();
       this.context2d.rect(0, 0, this.width, this.height);
-      this.context2d.fillStyle = "#333";
+      this.context2d.fillStyle = "#fff";
       this.context2d.fill();
+      this.context2d.fillStyle = "#000";
+      this.context2d.fillText("Ready!", this.width / 2, this.height / 2); 
       this.context2d.closePath();
     }
+    
   }
   paint_end() {
     this.context2d.beginPath();
@@ -383,76 +473,150 @@ class App {
   }
   
   paint_action() {
-    //Paint Areas of Effects
-    for (let aoe of this.areasOfEffect) {
-      let durationPercentage = 1;
-      if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
-        durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+    //DEBUG: Paint hitboxes
+    //--------------------------------
+    if (this.debugMode) {
+      //Areas of Effects
+      for (let aoe of this.areasOfEffect) {
+        let durationPercentage = 1;
+        if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
+          durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+        }
+        this.context2d.strokeStyle = "rgba(204,51,51,"+durationPercentage+")";
+        
+        switch (aoe.shape) {
+          case SHAPE_CIRCLE:
+            this.context2d.beginPath();
+            this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+          case SHAPE_SQUARE:
+            this.context2d.beginPath();
+            this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+        }
       }
-      this.context2d.strokeStyle = "rgba(204,51,51,"+durationPercentage+")";
       
-      switch (aoe.shape) {
-        case SHAPE_CIRCLE:
-          this.context2d.beginPath();
-          this.context2d.arc(aoe.x, aoe.y, aoe.size/2, 0, 2 * Math.PI);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          this.context2d.beginPath();
-          this.context2d.moveTo(aoe.x, aoe.y);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          break;
-        case SHAPE_SQUARE:
-          this.context2d.beginPath();
-          this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          break;
+      //Actors
+      this.context2d.strokeStyle = "rgba(0,0,0,1)";
+      for (let actor of this.actors) {
+        switch (actor.shape) {
+          case SHAPE_CIRCLE:
+            this.context2d.beginPath();
+            this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            this.context2d.beginPath();
+            this.context2d.moveTo(actor.x, actor.y);
+            this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+          case SHAPE_SQUARE:
+            this.context2d.beginPath();
+            this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+        }
       }
     }
-    
-    //Paint Actor hitboxes
-    this.context2d.strokeStyle = "rgba(0,0,0,1)";
-    for (let actor of this.actors) {
-      switch (actor.shape) {
-        case SHAPE_CIRCLE:
-          this.context2d.beginPath();
-          this.context2d.arc(actor.x, actor.y, actor.size/2, 0, 2 * Math.PI);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          this.context2d.beginPath();
-          this.context2d.moveTo(actor.x, actor.y);
-          this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          break;
-        case SHAPE_SQUARE:
-          this.context2d.beginPath();
-          this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
-          this.context2d.stroke();
-          this.context2d.closePath();
-          break;
-      }
-    }
+    //--------------------------------
     
     //Paint sprites
-    for (let actor of this.actors) {
-      if (!actor.spritesheet || !actor.spritesheet.loaded ||
-          !actor.animationSet || !actor.animationSet.actions[actor.animationName])
-        continue;
-      
-      const animationSet = actor.animationSet;
-      const srcW = animationSet.tileWidth;
-      const srcH = animationSet.tileHeight;
-      const srcX = srcW * actor.direction;
-      const srcY = animationSet.actions[actor.animationName].steps[actor.animationStep].row * srcH;
-      const tgtX = Math.floor(actor.x - srcW / 2 + animationSet.tileOffsetX);
-      const tgtY = Math.floor(actor.y - srcH / 2 + animationSet.tileOffsetY);
-      const tgtW = srcW;
-      const tgtH = srcH;
-      
-      this.context2d.drawImage(actor.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+    //TODO: IMPROVE
+    //TODO: Layering
+    //--------------------------------
+    //AoEs
+    for (let aoe of this.areasOfEffect) {
+      this.paintSprite(aoe);
+      aoe.nextAnimationFrame();
     }
+    
+    //Actors
+    for (let actor of this.actors) {
+      this.paintSprite(actor);
+      actor.nextAnimationFrame();
+    }
+    //--------------------------------
+  }
+  
+  paint_comic() {
+    if (!this.comicStrip) return;
+    const comic = this.comicStrip;
+    
+    this.context2d.beginPath();
+    this.context2d.rect(0, 0, this.width, this.height);
+    this.context2d.fillStyle = comic.background;
+    this.context2d.fill();
+    this.context2d.closePath();
+    
+    switch (comic.state) {
+      case COMIC_STRIP_STATE_TRANSITIONING:
+        const offsetY = (comic.transitionTime > 0)
+          ? Math.floor(comic.counter / comic.transitionTime * -this.height)
+          : 0;
+        this.paintComicPanel(comic.getPreviousPanel(), offsetY);
+        this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
+        break;
+      case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+        this.paintComicPanel(comic.getCurrentPanel());
+        break;
+      case COMIC_STRIP_STATE_IDLE:
+        this.paintComicPanel(comic.getCurrentPanel());
+        //TODO: Paint "NEXT" icon
+        break;
+    }
+  }
+  
+  paintSprite(obj) {
+    if (!obj.spritesheet || !obj.spritesheet.loaded ||
+        !obj.animationSet || !obj.animationSet.actions[obj.animationName])
+      return;
+    
+    const animationSet = obj.animationSet;
+    
+    const srcW = animationSet.tileWidth;
+    const srcH = animationSet.tileHeight;    
+    let srcX = 0;
+    let srcY = 0;
+    if (animationSet.rule === ANIMATION_RULE_DIRECTIONAL) {
+      srcX = obj.direction * srcW;
+      srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
+    } else {
+      srcX = animationSet.actions[obj.animationName].steps[obj.animationStep].col * srcW;
+      srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
+    }
+    
+    const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
+    const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+    const tgtW = srcW;
+    const tgtH = srcH;
+    
+    this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+  }
+  
+  paintComicPanel(panel = null, offsetY = 0) {
+    if (!panel || !panel.loaded) return;
+    
+    const ratioX = this.width / panel.img.width;
+    const ratioY = this.height / panel.img.height;
+    const ratio = Math.min(1, Math.min(ratioX, ratioY));
+    
+    const srcX = 0;
+    const srcY = 0;
+    const srcW = panel.img.width;
+    const srcH = panel.img.height;
+    
+    const tgtW = panel.img.width * ratio;
+    const tgtH = panel.img.height * ratio;
+    const tgtX = (this.width - tgtW) / 2;  //TODO
+    const tgtY = (this.height - tgtH) / 2 + offsetY;  //TODO
+    
+    this.context2d.drawImage(panel.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
   }
   
   //----------------------------------------------------------------
@@ -529,10 +693,15 @@ const INPUT_ACTIVE = 1;
 const INPUT_ENDED = 2;
 const INPUT_DISTANCE_SENSITIVITY = 16;
 const MAX_KEYS = 128;
+const DEFAULT_FONT = "32px monospace";
 
 const STATE_START = 0;
 const STATE_ACTION = 1;
-const STATE_END = 2;
+const STATE_COMIC = 2;
+const STATE_END = 3;
+
+const ANIMATION_RULE_BASIC = "basic";
+const ANIMATION_RULE_DIRECTIONAL = "directional";  
 //==============================================================================
 
 /*  Actor Class
@@ -554,28 +723,8 @@ class Actor {
     this.animationSet = null;
     this.animationName = "";
     
+    this.attributes = {};
     this.effects = [];
-  }
-  
-  playAnimation(animationName = "", restart = false) {
-    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-    
-    //let animationSet = this.animationSet[animationName];
-    let animationAction = this.animationSet.actions[animationName];
-    
-    if (restart || this.animationName !== animationName) {  //Set this as the new animation
-      this.animationStep = 0;
-      this.animationName = animationName;
-    } else {  //Take a step through the current animation
-      this.animationStep++;
-      if (animationAction.steps.length === 0) {
-        this.animationStep = 0;
-      } else if (animationAction.loop) {
-        while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
-      } else {
-        this.animationStep = animationAction.steps.length - 1;
-      }
-    }
   }
   
   get left() { return this.x - this.size / 2; }
@@ -613,6 +762,29 @@ class Actor {
         break;
     }
   }
+  
+  setAnimation(animationName = "", restart = false) {
+    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+    
+    if (restart || this.animationName !== animationName) {  //Set this as the new animation
+      this.animationStep = 0;
+      this.animationName = animationName;
+    }
+  }
+  
+  nextAnimationFrame() {
+    if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+    
+    let animationAction = this.animationSet.actions[this.animationName];
+    this.animationStep++;
+    if (animationAction.steps.length === 0) {
+      this.animationStep = 0;
+    } else if (animationAction.loop) {
+      while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
+    } else {
+      this.animationStep = animationAction.steps.length - 1;
+    }
+  }
 }
 
 const SHAPE_NONE = 0;  //No shape = no collision
@@ -634,8 +806,8 @@ const DIRECTION_NORTH = 3;
  */
 //==============================================================================
 class AoE {
-  constructor(id = "", x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, effects = [], source = null) {
-    this.id = id; 
+  constructor(name = "", x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, effects = []) {
+    this.name = name; 
     this.x = x;
     this.y = y;
     this.size = size;
@@ -659,26 +831,138 @@ class AoE {
   hasInfiniteDuration() {
     return this.startDuration === DURATION_INFINITE;
   }
+  
+  setAnimation(animationName = "", restart = false) {
+    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+    
+    if (restart || this.animationName !== animationName) {  //Set this as the new animation
+      this.animationStep = 0;
+      this.animationName = animationName;
+    }
+  }
+  
+  nextAnimationFrame() {
+    if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+    
+    let animationAction = this.animationSet.actions[this.animationName];
+    this.animationStep++;
+    if (animationAction.steps.length === 0) {
+      this.animationStep = 0;
+    } else if (animationAction.loop) {
+      while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
+    } else {
+      this.animationStep = animationAction.steps.length - 1;
+    }
+  }
 }
 
 const DURATION_INFINITE = 0;
+//==============================================================================
+
+/*  4-Koma Comic Strip Class
+ */
+//==============================================================================
+class ComicStrip {
+  constructor(name = "", panels = [], onFinish = null) {
+    this.name = name;
+    this.panels = panels;
+    this.onFinish = onFinish;
+    
+    this.waitTime = DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+    this.transitionTime = DEFAULT_COMIC_STRIP_TRANSITION_TIME;    
+    this.background = "#333";
+    
+    this.start();
+  }
+  
+  start() {
+    this.currentPanel = 0;
+    this.state = COMIC_STRIP_STATE_TRANSITIONING;
+    this.counter = 0;
+  }
+  
+  getCurrentPanel() {
+    if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+      return null;
+    } else {
+      return this.panels[this.currentPanel];
+    }
+  }
+  
+  getPreviousPanel() {
+    if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+      return null;
+    } else {
+      return this.panels[this.currentPanel - 1];
+    }
+  }
+  
+  /* Logic loop should be as follows
+  
+  loop {
+    if !TRANSITIONING && currentPanel >= panels.length
+      onFinish()
+      FINISH
+        
+    if TRANSITIONING
+      if counter < transitionTime
+        counter++
+        reposition and paint image n-1
+        reposition and paint image n    //NOTE: if 0 panels, this will display an empty scenario for a short time.
+      else
+        counter = 0
+        state = WAIT BEFORE INPUT
+    
+    if IDLE
+      paint image n
+      paint "next" icon
+      
+      if INPUT
+        currentPanel++
+        state = TRANSITIONING
+      
+    if WAIT BEFORE INPUT
+      paint image n
+      
+      if counter < waitTime
+        counter++
+      else
+        counter = 0
+        state = IDLE
+  }
+  
+  check for conditions: 0 panels, 1 panel, 2 panels.
+  
+  */
+  
+}
+
+const COMIC_STRIP_STATE_TRANSITIONING = 0;
+const COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
+const COMIC_STRIP_STATE_IDLE = 2;
+
+const DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
+const DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
 //==============================================================================
 
 /*  Effect Class
  */
 //==============================================================================
 class Effect {
-  constructor(name = "", data = {}, duration = 1, stackingRule = STACKING_RULE_ADD, source = null) {
+  constructor(name = "", data = {}, duration = 1, stackingRule = STACKING_RULE_ADD) {
     this.name = name;
     this.data = data;
     this.duration = duration;
     this.stackingRule = stackingRule;
     this.startDuration = duration;
-    this.source = source;
   }
   
   hasInfiniteDuration() {
     return this.startDuration === DURATION_INFINITE;
+  }
+  
+  copy() {
+    return new Effect(this.name, this.data, this.duration, this.stackingRule);
   }
 }
 
@@ -722,7 +1006,7 @@ const Utility = {
     
     return 0;
   }
-}
+};
 
 const KEY_CODES = {
   LEFT: 37,
@@ -772,7 +1056,7 @@ const KEY_CODES = {
   NUM7: 55,
   NUM8: 56,
   NUM9: 57,
-}
+};
 
 const KEY_VALUES = {
   "ArrowLeft": KEY_CODES.LEFT,
@@ -866,7 +1150,7 @@ const KEY_VALUES = {
   "Digit8": KEY_CODES.NUM8,
   "9": KEY_CODES.NUM9,
   "Digit9": KEY_CODES.NUM9,
-}
+};
 
 function ImageAsset(url) {
   this.url = url;
@@ -889,8 +1173,7 @@ window.onload = function() {
 };
 //==============================================================================
 
-
-/*  Global Scripts
+/*  Game Scripts
  */
 //==============================================================================
 function initialise() {
@@ -904,31 +1187,40 @@ function initialise() {
   //Images
   //--------------------------------
   this.assets.images.actor = new ImageAsset("assets/actor.png");
+  this.assets.images.sarcophagus = new ImageAsset("assets/sarcophagus.png");
+  this.assets.images.gate = new ImageAsset("assets/gate.png");
+  this.assets.images.plate = new ImageAsset("assets/plate.png");
+  this.assets.images.goal = new ImageAsset("assets/goal.png");
+  this.assets.images.background = new ImageAsset("assets/background.png");
+  
+  this.assets.images.comicPanelA = new ImageAsset("assets/comic-panel-800x600-red.png");
+  this.assets.images.comicPanelB = new ImageAsset("assets/comic-panel-800x600-blue.png");
+  this.assets.images.comicPanelC = new ImageAsset("assets/comic-panel-800x600-yellow.png");
+  this.assets.images.comicPanelSmall = new ImageAsset("assets/comic-panel-500x500-green.png");
+  this.assets.images.comicPanelBig = new ImageAsset("assets/comic-panel-1000x1000-pink.png");
+  this.assets.images.comicPanelWide = new ImageAsset("assets/comic-panel-1000x300-teal.png");
   //--------------------------------
   
   //Animations
   //--------------------------------
   const STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
   this.animationSets = {
-    "actor": {
-      "tileWidth": 64,
-      "tileHeight": 64,
-      "tileOffsetX": 0,
-      "tileOffsetY": -16,        
-      "actions": {
-        "idle": {
-          "loop": true,
-          "steps": [
-            { row: 0, duration: STEPS_PER_SECOND }
+    actor: {
+      rule: ANIMATION_RULE_DIRECTIONAL,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: -16,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { row: 0, duration: 1 }
           ],
         },
-        "walk": {
-          "tileWidth": 64,
-          "tileHeight": 64,
-          "tileOffsetX": 0,
-          "tileOffsetY": 0,
-          "loop": true,
-          "steps": [
+        walk: {
+          loop: true,
+          steps: [
             { row: 1, duration: STEPS_PER_SECOND },
             { row: 2, duration: STEPS_PER_SECOND },
             { row: 3, duration: STEPS_PER_SECOND },
@@ -937,6 +1229,103 @@ function initialise() {
         },
       },
     },
+    
+    sarcophagus: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: -32,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+        glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 1, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 },
+          ],
+        },
+      },
+    },
+    
+    plate: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+        glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 1, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 4 },
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 4 },
+          ],
+        },
+      },
+    },
+    
+    simple128: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 128,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+      },
+    },
+    
+    simple64: {
+      rule: ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+        glow: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: STEPS_PER_SECOND * 3 },
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 3 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 3 },
+            { col: 1, row: 1, duration: STEPS_PER_SECOND * 3 },
+            { col: 0, row: 1, duration: STEPS_PER_SECOND * 3 },
+            { col: 1, row: 0, duration: STEPS_PER_SECOND * 3 },
+            { col: 0, row: 0, duration: STEPS_PER_SECOND * 3 },
+          ],
+        },
+      },
+    },
+    
   };
   
   //Process Animations; expand steps to many frames per steps.
@@ -955,14 +1344,6 @@ function initialise() {
 }
 
 function runStart() {
-  this.assetsLoaded = true;
-  for (let category in this.assets) {
-    for (let asset in this.assets[category]) {
-      this.assetsLoaded = this.assetsLoaded && this.assets[category][asset].loaded;
-    }
-  }
-  if (!this.assetsLoaded) return;
-  
   this.store.level = 1;
   
   if (this.pointer.state === INPUT_ACTIVE || 
@@ -972,8 +1353,37 @@ function runStart() {
       this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE ||
       this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE ||
       this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
-    this.changeState(STATE_ACTION, startLevel1);
+    this.changeState(STATE_COMIC, comicStart);
   }
+}
+
+function comicStart() {
+  this.comicStrip = new ComicStrip(
+    "startcomic",
+    [ this.assets.images.comicPanelA,
+      this.assets.images.comicPanelB,
+      this.assets.images.comicPanelC ],
+    comicStartFinished);
+  this.comicStrip.start();
+  
+  this.comicStrip = new ComicStrip(
+    "startcomic",
+    [ this.assets.images.comicPanelA, 
+      this.assets.images.comicPanelSmall, 
+      this.assets.images.comicPanelBig, 
+      this.assets.images.comicPanelWide ],
+    comicStartFinished);
+  this.comicStrip.start();
+  
+  //this.comicStrip = new ComicStrip(
+  //  "startcomic",
+  //  [],
+  //  comicStartFinished);
+  //this.comicStrip.start();
+}
+
+function comicStartFinished() {
+  this.changeState(STATE_ACTION, startLevel1);
 }
 
 function runEnd() {}
@@ -1060,18 +1470,34 @@ function runAction() {
       [
         new Effect("push",
           { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER },
-          2, STACKING_RULE_ADD, this.refs["player"])
-      ],
-      this.refs["player"]);
+          2, STACKING_RULE_ADD)
+      ]);
     this.areasOfEffect.push(newAoE);
   }
+  //--------------------------------
   
-  //Try animation!
+  //Animations
+  //--------------------------------
   if (playerIsIdle) {
-    this.refs["player"].playAnimation("idle");
+    this.refs["player"].setAnimation("idle");
   } else {
-    this.refs["player"].playAnimation("walk");
+    this.refs["player"].setAnimation("walk");
   }
+  
+  if (this.refs["boxes"]) {
+    for (let box of this.refs["boxes"]) {
+      if (box.effects.find((eff) => { return eff.name === "charge" })) {
+        box.setAnimation("glow");
+      } else {
+        box.setAnimation("idle");
+      }
+    }
+  }
+  //--------------------------------
+  
+  //Game rules
+  //--------------------------------
+  checkIfAllBoxesAreCharged.apply(this);
   //--------------------------------
   
   //Win Condition
@@ -1080,42 +1506,120 @@ function runAction() {
   //--------------------------------
 }
 
-function startLevel1() {
+function startLevelInit() {
   //Reset
   this.actors = [];
   this.areasOfEffect = [];
+  this.refs = {};
   
-  this.refs["player"] = new Actor("player", this.width / 2, this.height / 2, 32, SHAPE_CIRCLE, true);
-  this.refs["player"].spritesheet = new ImageAsset("assets/actor.png");
-  this.refs["player"].animationStep = 0;
-  this.refs["player"].animationSet = this.animationSets["actor"];
+  const midX = this.width / 2, midY = this.height / 2;
+  
+  this.refs["player"] = new Actor("player", midX, midY + 256, 32, SHAPE_CIRCLE);
+  this.refs["player"].spritesheet = this.assets.images.actor;
+  this.refs["player"].animationSet = this.animationSets.actor;
+  this.refs["player"].rotation = ROTATION_NORTH;
   this.actors.push(this.refs["player"]);
   
-  this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
-  this.actors.push(new Actor("s2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
-  this.actors.push(new Actor("c1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
-  this.actors.push(new Actor("c2", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_CIRCLE));
-  
-  let wallN = new Actor("wallN", this.width / 2, this.height * -0.65, this.width, SHAPE_SQUARE);
-  let wallS = new Actor("wallS", this.width / 2, this.height * +1.65, this.width, SHAPE_SQUARE);
-  let wallE = new Actor("wallE", this.width * +1.35, this.height / 2, this.height, SHAPE_SQUARE);
-  let wallW = new Actor("wallW", this.width * -0.35, this.height / 2, this.height, SHAPE_SQUARE);
-  //let wallE = new Actor();
-  //let wallW = new Actor();
+  let wallN = new Actor("wallN", midX, midY - 672, this.width, SHAPE_SQUARE);
+  let wallS = new Actor("wallS", midX, midY + 688, this.width, SHAPE_SQUARE);
+  let wallE = new Actor("wallE", midX + 688, midY, this.height, SHAPE_SQUARE);
+  let wallW = new Actor("wallW", midX - 688, midY, this.height, SHAPE_SQUARE);
   wallE.canBeMoved = false;
   wallS.canBeMoved = false;
   wallW.canBeMoved = false;
   wallN.canBeMoved = false;
   this.actors.push(wallE, wallS, wallW, wallN);
+
+  this.refs["gate"] = new Actor("gate", midX, 16, 128, SHAPE_SQUARE);
+  this.refs["gate"].canBeMoved = false;
+  this.refs["gate"].spritesheet = this.assets.images.gate;
+  this.refs["gate"].animationSet = this.animationSets.simple128;
+  this.refs["gate"].setAnimation("idle");
+  this.actors.push(this.refs["gate"]);
   
-  this.areasOfEffect.push(
-    new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
-      [new Effect("push", { x: 0, y: 4 }, 1, STACKING_RULE_ADD, null)], null)
-  );
-  
-  this.refs["goal"] = new AoE("goal", this.width / 2, this.height / 2 - 256, 64, SHAPE_SQUARE, DURATION_INFINITE, [], null);
+  this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, SHAPE_SQUARE, DURATION_INFINITE, []);
+  this.refs["goal"].spritesheet = this.assets.images.goal;
+  this.refs["goal"].animationSet = this.animationSets.simple64;
+  this.refs["goal"].setAnimation("glow");
   this.areasOfEffect.push(this.refs["goal"]);
-  //--------------------------------  
+}
+
+function startLevel1() {
+  startLevelInit.apply(this);
+  //this.areasOfEffect.push(
+  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
+  //    [new Effect("push", { x: 0, y: 4 }, 4, STACKING_RULE_ADD, null)], null)
+  //);
+  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+  
+  const midX = this.width / 2, midY = this.height / 2;
+  
+  this.refs.boxes = [];
+  this.refs.plates = [];
+  let newBox, newPlate;
+  const chargeEffect = new Effect("charge", {}, 4, STACKING_RULE_ADD, null);
+  
+  this.refs.boxes = [
+    new Actor("", midX - 128, midY - 64, 64, SHAPE_SQUARE),
+    new Actor("", midX + 128, midY - 64, 64, SHAPE_SQUARE),
+  ];
+  for (let box of this.refs.boxes) {
+    box.attributes.box = true;
+    box.spritesheet = this.assets.images.sarcophagus;
+    box.animationSet = this.animationSets.sarcophagus;
+    this.actors.push(box);
+  }
+  
+  this.refs.plates = [
+    new AoE("plate", midX - 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()]),
+    new AoE("plate", midX + 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()]),
+  ];
+  for (let plate of this.refs.plates) {
+    plate.spritesheet = this.assets.images.plate;
+    plate.animationSet = this.animationSets.plate;
+    plate.setAnimation("idle");
+    this.areasOfEffect.push(plate);
+  }
+  
+  this.ui.backgroundImage = this.assets.images.background;
+}
+
+function startLevel2() {
+  startLevelInit.apply(this);
+}
+
+function startLevel3() {
+  startLevelInit.apply(this);
+}
+
+function checkIfAllBoxesAreCharged() {
+  let allBoxesAreCharged = true;
+  
+  if (this.refs["plates"] && this.refs["boxes"]) {
+    for (let plate of this.refs["plates"]) {
+      let thisPlateIsCharged = false;
+      for (let box of this.refs["boxes"]) {
+        if (this.isATouchingB(box, plate)) {
+          thisPlateIsCharged = true;
+          plate.setAnimation("glow");
+        }
+      }
+      !thisPlateIsCharged && plate.setAnimation("idle");
+      allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
+    }
+  }
+  
+  if (allBoxesAreCharged) {
+    if (this.refs["gate"] && this.refs["gate"].y >= -32) {
+      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].y -= 1;
+    }
+  } else {
+    if (this.refs["gate"] && this.refs["gate"].y <= 16) {
+      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].y += 1;
+    }
+  }
 }
 
 function checkIfPlayerIsAtGoal() {
@@ -1124,10 +1628,14 @@ function checkIfPlayerIsAtGoal() {
     
     switch (this.store.level) {
       case 1:
-      case 2:
-      case 3:
         startLevel1.apply(this);
         break;
+      case 2:
+        startLevel2.apply(this);
+        break;
+      case 3:
+        startLevel3.apply(this);
+        break;      
       default:
         this.changeState(STATE_END);
     }    
