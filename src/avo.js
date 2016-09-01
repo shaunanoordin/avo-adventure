@@ -6,13 +6,13 @@ AvO Adventure Game Engine
 ********************************************************************************
  */
 
-import "./constants.js";
-import "./utility.js";
+import * as AVO from "./constants.js";  //Naming note: all caps.
+import { Utility } from "./utility.js";
 
 /*  Primary AvO Game Engine
  */
 //==============================================================================
-export class AvO {
+export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   constructor(startScript) {
     //Initialise properties
     //--------------------------------
@@ -57,17 +57,17 @@ export class AvO {
     
     //Prepare Input
     //--------------------------------
-    this.keys = new Array(MAX_KEYS);
+    this.keys = new Array(AVO.MAX_KEYS);
     for (let i = 0; i < this.keys.length; i++) {
       this.keys[i] = {
-        state: INPUT_IDLE,
+        state: AVO.INPUT_IDLE,
         duration: 0
       };
     }
     this.pointer = {
       start: { x: 0, y: 0 },
       now: { x: 0, y: 0 },
-      state: INPUT_IDLE,
+      state: AVO.INPUT_IDLE,
       duration: 0
     };
     //--------------------------------
@@ -99,8 +99,8 @@ export class AvO {
     
     //Start!
     //--------------------------------
-    this.changeState(STATE_START, startScript);
-    this.runCycle = setInterval(this.run.bind(this), 1000 / FRAMES_PER_SECOND);
+    this.changeState(AVO.STATE_START, startScript);
+    this.runCycle = setInterval(this.run.bind(this), 1000 / AVO.FRAMES_PER_SECOND);
     //--------------------------------
   }
   
@@ -117,16 +117,16 @@ export class AvO {
     if (this.scripts.run) this.scripts.run.apply(this);
     
     switch (this.state) {
-      case STATE_START:
+      case AVO.STATE_START:
         this.run_start();
         break;
-      case STATE_END:
+      case AVO.STATE_END:
         this.run_end();
         break;
-      case STATE_ACTION:
+      case AVO.STATE_ACTION:
         this.run_action();
         break;
-      case STATE_COMIC:
+      case AVO.STATE_COMIC:
         this.run_comic();
         break;
     }
@@ -229,16 +229,16 @@ export class AvO {
     
     //Cleanup Input
     //--------------------------------
-    if (this.pointer.state === INPUT_ENDED) {
+    if (this.pointer.state === AVO.INPUT_ENDED) {
       this.pointer.duration = 0;
-      this.pointer.state = INPUT_IDLE;
+      this.pointer.state = AVO.INPUT_IDLE;
     }
     for (let i = 0; i < this.keys.length; i++) {
-      if (this.keys[i].state === INPUT_ACTIVE) {
+      if (this.keys[i].state === AVO.INPUT_ACTIVE) {
         this.keys[i].duration++;
-      } else if (this.keys[i].state === INPUT_ENDED) {
+      } else if (this.keys[i].state === AVO.INPUT_ENDED) {
         this.keys[i].duration = 0;
-        this.keys[i].state = INPUT_IDLE;
+        this.keys[i].state = AVO.INPUT_IDLE;
       }
     }
     //--------------------------------
@@ -250,35 +250,35 @@ export class AvO {
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
     
-    if (comic.state !== COMIC_STRIP_STATE_TRANSITIONING &&
+    if (comic.state !== AVO.COMIC_STRIP_STATE_TRANSITIONING &&
         comic.currentPanel >= comic.panels.length) {
       comic.onFinish.apply(this);
     }
     
     switch (comic.state) {
-      case COMIC_STRIP_STATE_TRANSITIONING:
+      case AVO.COMIC_STRIP_STATE_TRANSITIONING:
         if (comic.counter < comic.transitionTime) {
           comic.counter++;          
         } else {
           comic.counter = 0;
-          comic.state = COMIC_STRIP_STATE_WAIT_BEFORE_INPUT
+          comic.state = AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT
         }
         break;
-      case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+      case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
         if (comic.counter < comic.waitTime) {
           comic.counter++;
         } else {
           comic.counter = 0;
-          comic.state = COMIC_STRIP_STATE_IDLE;
+          comic.state = AVO.COMIC_STRIP_STATE_IDLE;
         }
         break;
-      case COMIC_STRIP_STATE_IDLE:
-        if (this.pointer.state === INPUT_ACTIVE || 
-            this.keys[KEY_CODES.UP].state === INPUT_ACTIVE ||
-            this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE ||
-            this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
+      case AVO.COMIC_STRIP_STATE_IDLE:
+        if (this.pointer.state === AVO.INPUT_ACTIVE || 
+            this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
+            this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
+            this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
           comic.currentPanel++;
-          comic.state = COMIC_STRIP_STATE_TRANSITIONING;
+          comic.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
         }        
         break;
     }
@@ -301,7 +301,7 @@ export class AvO {
   isATouchingB(objA, objB) {
     if (!objA || !objB) return false;
     
-    if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
       const distX = objA.x - objB.x;
       const distY = objA.y - objB.y;
       const minimumDist = objA.radius + objB.radius;
@@ -310,7 +310,7 @@ export class AvO {
       }
     }
     
-    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
       if (objA.left < objB.right &&
           objA.right > objB.left &&
           objA.top < objB.bottom &&
@@ -319,7 +319,7 @@ export class AvO {
       }
     }
     
-    else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+    else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
       const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
       const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
       if (distX * distX + distY * distY < objA.radius * objA.radius) {
@@ -327,7 +327,7 @@ export class AvO {
       }
     }
     
-    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
       const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
       const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
       if (distX * distX + distY * distY < objB.radius * objB.radius) {
@@ -352,7 +352,7 @@ export class AvO {
       fractionB = 1;
     }
     
-    if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
       const distX = objB.x - objA.x;
       const distY = objB.y - objA.y;
       const dist = Math.sqrt(distX * distX + distY * distY);
@@ -366,7 +366,7 @@ export class AvO {
       objB.y += sinAngle * (correctDist - dist) * fractionB;
     }
     
-    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
       const distX = objB.x - objA.x;
       const distY = objB.y - objA.y;
       const correctDist = (objA.size + objB.size) / 2;
@@ -379,7 +379,7 @@ export class AvO {
       }
     }
     
-    else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+    else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
       const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
       const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
       const dist = Math.sqrt(distX * distX + distY * distY);
@@ -393,7 +393,7 @@ export class AvO {
       objB.y -= sinAngle * (correctDist - dist) * fractionB;
     }
     
-    else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
       const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
       const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
       const dist = Math.sqrt(distX * distX + distY * distY);
@@ -420,16 +420,16 @@ export class AvO {
     }
     
     switch (this.state) {
-      case STATE_START:
+      case AVO.STATE_START:
         this.paint_start();
         break;
-      case STATE_END:
+      case AVO.STATE_END:
         this.paint_end();
         break;
-      case STATE_ACTION:
+      case AVO.STATE_ACTION:
         this.paint_action();
         break;
-      case STATE_COMIC:
+      case AVO.STATE_COMIC:
         this.paint_comic();
         break;
     }
@@ -443,7 +443,7 @@ export class AvO {
   paint_start() {
     const percentage = (this.assetsTotal > 0) ? this.assetsLoaded / this.assetsTotal : 1;
     
-    this.context2d.font = DEFAULT_FONT;
+    this.context2d.font = AVO.DEFAULT_FONT;
     this.context2d.textAlign = "center";
     this.context2d.textBaseline = "middle";
 
@@ -488,13 +488,13 @@ export class AvO {
         this.context2d.strokeStyle = "rgba(204,51,51,"+durationPercentage+")";
         
         switch (aoe.shape) {
-          case SHAPE_CIRCLE:
+          case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
             this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
-          case SHAPE_SQUARE:
+          case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
             this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
             this.context2d.stroke();
@@ -507,7 +507,7 @@ export class AvO {
       this.context2d.strokeStyle = "rgba(0,0,0,1)";
       for (let actor of this.actors) {
         switch (actor.shape) {
-          case SHAPE_CIRCLE:
+          case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
             this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
@@ -518,7 +518,7 @@ export class AvO {
             this.context2d.stroke();
             this.context2d.closePath();
             break;
-          case SHAPE_SQUARE:
+          case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
             this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
             this.context2d.stroke();
@@ -558,17 +558,17 @@ export class AvO {
     this.context2d.closePath();
     
     switch (comic.state) {
-      case COMIC_STRIP_STATE_TRANSITIONING:
+      case AVO.COMIC_STRIP_STATE_TRANSITIONING:
         const offsetY = (comic.transitionTime > 0)
           ? Math.floor(comic.counter / comic.transitionTime * -this.height)
           : 0;
         this.paintComicPanel(comic.getPreviousPanel(), offsetY);
         this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
         break;
-      case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+      case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
         this.paintComicPanel(comic.getCurrentPanel());
         break;
-      case COMIC_STRIP_STATE_IDLE:
+      case AVO.COMIC_STRIP_STATE_IDLE:
         this.paintComicPanel(comic.getCurrentPanel());
         //TODO: Paint "NEXT" icon
         break;
@@ -586,7 +586,7 @@ export class AvO {
     const srcH = animationSet.tileHeight;    
     let srcX = 0;
     let srcY = 0;
-    if (animationSet.rule === ANIMATION_RULE_DIRECTIONAL) {
+    if (animationSet.rule === AVO.ANIMATION_RULE_DIRECTIONAL) {
       srcX = obj.direction * srcW;
       srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
     } else {
@@ -625,7 +625,7 @@ export class AvO {
   //----------------------------------------------------------------
   
   onPointerStart(e) {
-    this.pointer.state = INPUT_ACTIVE;
+    this.pointer.state = AVO.INPUT_ACTIVE;
     this.pointer.duration = 1;
     this.pointer.start = this.getPointerXY(e);
     this.pointer.now = this.pointer.start;
@@ -633,14 +633,14 @@ export class AvO {
   }
   
   onPointerMove(e) {
-    if (this.pointer.state === INPUT_ACTIVE) {
+    if (this.pointer.state === AVO.INPUT_ACTIVE) {
       this.pointer.now = this.getPointerXY(e);
     }
     return Utility.stopEvent(e);
   }
   
   onPointerEnd(e) {
-    this.pointer.state = INPUT_ENDED;
+    this.pointer.state = AVO.INPUT_ENDED;
     //this.pointer.now = this.getPointerXY(e);
     return Utility.stopEvent(e);
   }
@@ -665,16 +665,16 @@ export class AvO {
   
   onKeyDown(e) {
     let keyCode = Utility.getKeyCode(e);
-    if (keyCode > 0 && keyCode < MAX_KEYS && this.keys[keyCode].state != INPUT_ACTIVE) {
-      this.keys[keyCode].state = INPUT_ACTIVE;
+    if (keyCode > 0 && keyCode < AVO.MAX_KEYS && this.keys[keyCode].state != AVO.INPUT_ACTIVE) {
+      this.keys[keyCode].state = AVO.INPUT_ACTIVE;
       this.keys[keyCode].duration = 1;
     }  //if keyCode == 0, there's an error.
   }
   
   onKeyUp(e) {
     let keyCode = Utility.getKeyCode(e);    
-    if (keyCode > 0 && keyCode < MAX_KEYS) {
-      this.keys[keyCode].state = INPUT_ENDED;
+    if (keyCode > 0 && keyCode < AVO.MAX_KEYS) {
+      this.keys[keyCode].state = AVO.INPUT_ENDED;
     }  //if keyCode == 0, there's an error.
   }
   
@@ -696,15 +696,15 @@ export class AvO {
  */
 //==============================================================================
 export class Actor {
-  constructor(name = "", x = 0, y = 0, size = 32, shape = SHAPE_NONE) {
+  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_NONE) {
     this.name = name;
     this.x = x;
     this.y = y;
     this.size = size;
     this.shape = shape;
-    this.solid = (shape !== SHAPE_NONE);
+    this.solid = (shape !== AVO.SHAPE_NONE);
     this.canBeMoved = true;
-    this.rotation = ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
+    this.rotation = AVO.ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
     
     this.spritesheet = null;
     this.animationStep = 0;
@@ -729,24 +729,24 @@ export class Actor {
   }
   get direction() {  //Get cardinal direction
     //Favour East and West when rotation is exactly SW, NW, SE or NE.
-    if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) { return DIRECTION_EAST; }
-    else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return DIRECTION_SOUTH; }
-    else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return DIRECTION_NORTH; }
-    else { return DIRECTION_WEST; }
+    if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) { return AVO.DIRECTION_EAST; }
+    else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return AVO.DIRECTION_SOUTH; }
+    else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return AVO.DIRECTION_NORTH; }
+    else { return AVO.DIRECTION_WEST; }
   }
   set direction(val) {
     switch (val) {
-      case DIRECTION_EAST:
-        this._rotation = ROTATION_EAST;
+      case AVO.DIRECTION_EAST:
+        this._rotation = AVO.ROTATION_EAST;
         break;
-      case DIRECTION_SOUTH:
-        this._rotation = ROTATION_SOUTH;
+      case AVO.DIRECTION_SOUTH:
+        this._rotation = AVO.ROTATION_SOUTH;
         break;
-      case DIRECTION_WEST:
-        this._rotation = ROTATION_WEST;
+      case AVO.DIRECTION_WEST:
+        this._rotation = AVO.ROTATION_WEST;
         break;
-      case DIRECTION_NORTH:
-        this._rotation = ROTATION_NORTH;
+      case AVO.DIRECTION_NORTH:
+        this._rotation = AVO.ROTATION_NORTH;
         break;
     }
   }
@@ -780,7 +780,7 @@ export class Actor {
  */
 //==============================================================================
 export class AoE {
-  constructor(name = "", x = 0, y = 0, size = 32, shape = SHAPE_CIRCLE, duration = 1, effects = []) {
+  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_CIRCLE, duration = 1, effects = []) {
     this.name = name; 
     this.x = x;
     this.y = y;
@@ -803,7 +803,7 @@ export class AoE {
   get radius() { return this.size / 2; }
   
   hasInfiniteDuration() {
-    return this.startDuration === DURATION_INFINITE;
+    return this.startDuration === AVO.DURATION_INFINITE;
   }
   
   setAnimation(animationName = "", restart = false) {
@@ -840,8 +840,8 @@ export class ComicStrip {
     this.panels = panels;
     this.onFinish = onFinish;
     
-    this.waitTime = DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
-    this.transitionTime = DEFAULT_COMIC_STRIP_TRANSITION_TIME;    
+    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;    
     this.background = "#333";
     
     this.start();
@@ -849,7 +849,7 @@ export class ComicStrip {
   
   start() {
     this.currentPanel = 0;
-    this.state = COMIC_STRIP_STATE_TRANSITIONING;
+    this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
     this.counter = 0;
   }
   
@@ -875,7 +875,7 @@ export class ComicStrip {
  */
 //==============================================================================
 export class Effect {
-  constructor(name = "", data = {}, duration = 1, stackingRule = STACKING_RULE_ADD) {
+  constructor(name = "", data = {}, duration = 1, stackingRule = AVO.STACKING_RULE_ADD) {
     this.name = name;
     this.data = data;
     this.duration = duration;
@@ -884,7 +884,7 @@ export class Effect {
   }
   
   hasInfiniteDuration() {
-    return this.startDuration === DURATION_INFINITE;
+    return this.startDuration === AVO.DURATION_INFINITE;
   }
   
   copy() {

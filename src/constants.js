@@ -11,7 +11,6 @@ export const INPUT_ACTIVE = 1;
 export const INPUT_ENDED = 2;
 export const INPUT_DISTANCE_SENSITIVITY = 16;
 export const MAX_KEYS = 128;
-export const DEFAULT_FONT = "32px monospace";
 
 export const STATE_START = 0;
 export const STATE_ACTION = 1;
@@ -35,17 +34,18 @@ export const DIRECTION_SOUTH = 1;
 export const DIRECTION_WEST = 2;
 export const DIRECTION_NORTH = 3;
 
-const DURATION_INFINITE = 0;
+export const DURATION_INFINITE = 0;
 
-const COMIC_STRIP_STATE_TRANSITIONING = 0;
-const COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
-const COMIC_STRIP_STATE_IDLE = 2;
+export const COMIC_STRIP_STATE_TRANSITIONING = 0;
+export const COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
+export const COMIC_STRIP_STATE_IDLE = 2;
 
-const DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
-const DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
+export const DEFAULT_FONT = "32px monospace";
+export const DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
+export const DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
 
-const STACKING_RULE_ADD = 0;
-const STACKING_RULE_REPLACE = 1;
+export const STACKING_RULE_ADD = 0;
+export const STACKING_RULE_REPLACE = 1;
 
 export const KEY_CODES = {
   LEFT: 37,

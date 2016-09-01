@@ -42,14 +42,17 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	var _avo = __webpack_require__(1);
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	var _exampleGame = __webpack_require__(4);
 
+	/*  Initialisations
+	 */
+	//==============================================================================
 	/*  
 	AvO Adventure Game
 	==================
@@ -58,12 +61,51 @@
 	********************************************************************************
 	 */
 
-	/*  Primary App Class
+	var app;
+	window.onload = function () {
+	  window.app = new _avo.AvO(_exampleGame.initialise);
+	};
+	//==============================================================================
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Effect = exports.ComicStrip = exports.AoE = exports.Actor = exports.AvO = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Adventure Game Engine
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     =========================
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20160517)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	//Naming note: all caps.
+
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _utility = __webpack_require__(3);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*  Primary AvO Game Engine
 	 */
 	//==============================================================================
-	var App = function () {
-	  function App(startScript) {
-	    _classCallCheck(this, App);
+	var AvO = exports.AvO = function () {
+	  //Naming note: small 'v' between capital 'A' and 'O'.
+	  function AvO(startScript) {
+	    _classCallCheck(this, AvO);
 
 	    //Initialise properties
 	    //--------------------------------
@@ -108,17 +150,17 @@
 
 	    //Prepare Input
 	    //--------------------------------
-	    this.keys = new Array(MAX_KEYS);
+	    this.keys = new Array(AVO.MAX_KEYS);
 	    for (var i = 0; i < this.keys.length; i++) {
 	      this.keys[i] = {
-	        state: INPUT_IDLE,
+	        state: AVO.INPUT_IDLE,
 	        duration: 0
 	      };
 	    }
 	    this.pointer = {
 	      start: { x: 0, y: 0 },
 	      now: { x: 0, y: 0 },
-	      state: INPUT_IDLE,
+	      state: AVO.INPUT_IDLE,
 	      duration: 0
 	    };
 	    //--------------------------------
@@ -148,14 +190,14 @@
 
 	    //Start!
 	    //--------------------------------
-	    this.changeState(STATE_START, startScript);
-	    this.runCycle = setInterval(this.run.bind(this), 1000 / FRAMES_PER_SECOND);
+	    this.changeState(AVO.STATE_START, startScript);
+	    this.runCycle = setInterval(this.run.bind(this), 1000 / AVO.FRAMES_PER_SECOND);
 	    //--------------------------------
 	  }
 
 	  //----------------------------------------------------------------
 
-	  _createClass(App, [{
+	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
 	      var script = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
@@ -171,16 +213,16 @@
 	      if (this.scripts.run) this.scripts.run.apply(this);
 
 	      switch (this.state) {
-	        case STATE_START:
+	        case AVO.STATE_START:
 	          this.run_start();
 	          break;
-	        case STATE_END:
+	        case AVO.STATE_END:
 	          this.run_end();
 	          break;
-	        case STATE_ACTION:
+	        case AVO.STATE_ACTION:
 	          this.run_action();
 	          break;
-	        case STATE_COMIC:
+	        case AVO.STATE_COMIC:
 	          this.run_comic();
 	          break;
 	      }
@@ -413,16 +455,16 @@
 	        }
 	      }
 
-	      if (this.pointer.state === INPUT_ENDED) {
+	      if (this.pointer.state === AVO.INPUT_ENDED) {
 	        this.pointer.duration = 0;
-	        this.pointer.state = INPUT_IDLE;
+	        this.pointer.state = AVO.INPUT_IDLE;
 	      }
 	      for (var _i = 0; _i < this.keys.length; _i++) {
-	        if (this.keys[_i].state === INPUT_ACTIVE) {
+	        if (this.keys[_i].state === AVO.INPUT_ACTIVE) {
 	          this.keys[_i].duration++;
-	        } else if (this.keys[_i].state === INPUT_ENDED) {
+	        } else if (this.keys[_i].state === AVO.INPUT_ENDED) {
 	          this.keys[_i].duration = 0;
-	          this.keys[_i].state = INPUT_IDLE;
+	          this.keys[_i].state = AVO.INPUT_IDLE;
 	        }
 	      }
 	      //--------------------------------
@@ -435,31 +477,31 @@
 	      if (!this.comicStrip) return;
 	      var comic = this.comicStrip;
 
-	      if (comic.state !== COMIC_STRIP_STATE_TRANSITIONING && comic.currentPanel >= comic.panels.length) {
+	      if (comic.state !== AVO.COMIC_STRIP_STATE_TRANSITIONING && comic.currentPanel >= comic.panels.length) {
 	        comic.onFinish.apply(this);
 	      }
 
 	      switch (comic.state) {
-	        case COMIC_STRIP_STATE_TRANSITIONING:
+	        case AVO.COMIC_STRIP_STATE_TRANSITIONING:
 	          if (comic.counter < comic.transitionTime) {
 	            comic.counter++;
 	          } else {
 	            comic.counter = 0;
-	            comic.state = COMIC_STRIP_STATE_WAIT_BEFORE_INPUT;
+	            comic.state = AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT;
 	          }
 	          break;
-	        case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+	        case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
 	          if (comic.counter < comic.waitTime) {
 	            comic.counter++;
 	          } else {
 	            comic.counter = 0;
-	            comic.state = COMIC_STRIP_STATE_IDLE;
+	            comic.state = AVO.COMIC_STRIP_STATE_IDLE;
 	          }
 	          break;
-	        case COMIC_STRIP_STATE_IDLE:
-	          if (this.pointer.state === INPUT_ACTIVE || this.keys[KEY_CODES.UP].state === INPUT_ACTIVE || this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE || this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
+	        case AVO.COMIC_STRIP_STATE_IDLE:
+	          if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	            comic.currentPanel++;
-	            comic.state = COMIC_STRIP_STATE_TRANSITIONING;
+	            comic.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
 	          }
 	          break;
 	      }
@@ -485,24 +527,24 @@
 	    value: function isATouchingB(objA, objB) {
 	      if (!objA || !objB) return false;
 
-	      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
 	        var distX = objA.x - objB.x;
 	        var distY = objA.y - objB.y;
 	        var minimumDist = objA.radius + objB.radius;
 	        if (distX * distX + distY * distY < minimumDist * minimumDist) {
 	          return true;
 	        }
-	      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
 	        if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
 	          return true;
 	        }
-	      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
 	        var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
 	        var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
 	        if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
 	          return true;
 	        }
-	      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
 	        var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
 	        var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
 	        if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
@@ -528,7 +570,7 @@
 	        fractionB = 1;
 	      }
 
-	      if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_CIRCLE) {
+	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
 	        var distX = objB.x - objA.x;
 	        var distY = objB.y - objA.y;
 	        var dist = Math.sqrt(distX * distX + distY * distY);
@@ -540,7 +582,7 @@
 	        objA.y -= sinAngle * (correctDist - dist) * fractionA;
 	        objB.x += cosAngle * (correctDist - dist) * fractionB;
 	        objB.y += sinAngle * (correctDist - dist) * fractionB;
-	      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_SQUARE) {
+	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
 	        var _distX3 = objB.x - objA.x;
 	        var _distY3 = objB.y - objA.y;
 	        var _correctDist = (objA.size + objB.size) / 2;
@@ -551,7 +593,7 @@
 	          objA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
 	          objB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
 	        }
-	      } else if (objA.shape === SHAPE_CIRCLE && objB.shape === SHAPE_SQUARE) {
+	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
 	        var _distX4 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
 	        var _distY4 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
 	        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
@@ -563,7 +605,7 @@
 	        objA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
 	        objB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
 	        objB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
-	      } else if (objA.shape === SHAPE_SQUARE && objB.shape === SHAPE_CIRCLE) {
+	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
 	        var _distX5 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
 	        var _distY5 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
 	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
@@ -592,16 +634,16 @@
 	      }
 
 	      switch (this.state) {
-	        case STATE_START:
+	        case AVO.STATE_START:
 	          this.paint_start();
 	          break;
-	        case STATE_END:
+	        case AVO.STATE_END:
 	          this.paint_end();
 	          break;
-	        case STATE_ACTION:
+	        case AVO.STATE_ACTION:
 	          this.paint_action();
 	          break;
-	        case STATE_COMIC:
+	        case AVO.STATE_COMIC:
 	          this.paint_comic();
 	          break;
 	      }
@@ -616,7 +658,7 @@
 	    value: function paint_start() {
 	      var percentage = this.assetsTotal > 0 ? this.assetsLoaded / this.assetsTotal : 1;
 
-	      this.context2d.font = DEFAULT_FONT;
+	      this.context2d.font = AVO.DEFAULT_FONT;
 	      this.context2d.textAlign = "center";
 	      this.context2d.textBaseline = "middle";
 
@@ -670,13 +712,13 @@
 	            this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
 
 	            switch (aoe.shape) {
-	              case SHAPE_CIRCLE:
+	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
 	                this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
-	              case SHAPE_SQUARE:
+	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
 	                this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
 	                this.context2d.stroke();
@@ -711,7 +753,7 @@
 	            var actor = _step8.value;
 
 	            switch (actor.shape) {
-	              case SHAPE_CIRCLE:
+	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
 	                this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
@@ -722,7 +764,7 @@
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
-	              case SHAPE_SQUARE:
+	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
 	                this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
 	                this.context2d.stroke();
@@ -820,15 +862,15 @@
 	      this.context2d.closePath();
 
 	      switch (comic.state) {
-	        case COMIC_STRIP_STATE_TRANSITIONING:
+	        case AVO.COMIC_STRIP_STATE_TRANSITIONING:
 	          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.height) : 0;
 	          this.paintComicPanel(comic.getPreviousPanel(), offsetY);
 	          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
 	          break;
-	        case COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
+	        case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
 	          this.paintComicPanel(comic.getCurrentPanel());
 	          break;
-	        case COMIC_STRIP_STATE_IDLE:
+	        case AVO.COMIC_STRIP_STATE_IDLE:
 	          this.paintComicPanel(comic.getCurrentPanel());
 	          //TODO: Paint "NEXT" icon
 	          break;
@@ -845,7 +887,7 @@
 	      var srcH = animationSet.tileHeight;
 	      var srcX = 0;
 	      var srcY = 0;
-	      if (animationSet.rule === ANIMATION_RULE_DIRECTIONAL) {
+	      if (animationSet.rule === AVO.ANIMATION_RULE_DIRECTIONAL) {
 	        srcX = obj.direction * srcW;
 	        srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
 	      } else {
@@ -890,26 +932,26 @@
 	  }, {
 	    key: "onPointerStart",
 	    value: function onPointerStart(e) {
-	      this.pointer.state = INPUT_ACTIVE;
+	      this.pointer.state = AVO.INPUT_ACTIVE;
 	      this.pointer.duration = 1;
 	      this.pointer.start = this.getPointerXY(e);
 	      this.pointer.now = this.pointer.start;
-	      return Utility.stopEvent(e);
+	      return _utility.Utility.stopEvent(e);
 	    }
 	  }, {
 	    key: "onPointerMove",
 	    value: function onPointerMove(e) {
-	      if (this.pointer.state === INPUT_ACTIVE) {
+	      if (this.pointer.state === AVO.INPUT_ACTIVE) {
 	        this.pointer.now = this.getPointerXY(e);
 	      }
-	      return Utility.stopEvent(e);
+	      return _utility.Utility.stopEvent(e);
 	    }
 	  }, {
 	    key: "onPointerEnd",
 	    value: function onPointerEnd(e) {
-	      this.pointer.state = INPUT_ENDED;
+	      this.pointer.state = AVO.INPUT_ENDED;
 	      //this.pointer.now = this.getPointerXY(e);
-	      return Utility.stopEvent(e);
+	      return _utility.Utility.stopEvent(e);
 	    }
 	  }, {
 	    key: "getPointerXY",
@@ -933,18 +975,18 @@
 	  }, {
 	    key: "onKeyDown",
 	    value: function onKeyDown(e) {
-	      var keyCode = Utility.getKeyCode(e);
-	      if (keyCode > 0 && keyCode < MAX_KEYS && this.keys[keyCode].state != INPUT_ACTIVE) {
-	        this.keys[keyCode].state = INPUT_ACTIVE;
+	      var keyCode = _utility.Utility.getKeyCode(e);
+	      if (keyCode > 0 && keyCode < AVO.MAX_KEYS && this.keys[keyCode].state != AVO.INPUT_ACTIVE) {
+	        this.keys[keyCode].state = AVO.INPUT_ACTIVE;
 	        this.keys[keyCode].duration = 1;
 	      } //if keyCode == 0, there's an error.
 	    }
 	  }, {
 	    key: "onKeyUp",
 	    value: function onKeyUp(e) {
-	      var keyCode = Utility.getKeyCode(e);
-	      if (keyCode > 0 && keyCode < MAX_KEYS) {
-	        this.keys[keyCode].state = INPUT_ENDED;
+	      var keyCode = _utility.Utility.getKeyCode(e);
+	      if (keyCode > 0 && keyCode < AVO.MAX_KEYS) {
+	        this.keys[keyCode].state = AVO.INPUT_ENDED;
 	      } //if keyCode == 0, there's an error.
 	    }
 
@@ -960,37 +1002,23 @@
 	    }
 	  }]);
 
-	  return App;
+	  return AvO;
 	}();
 
-	var FRAMES_PER_SECOND = 50;
-	var INPUT_IDLE = 0;
-	var INPUT_ACTIVE = 1;
-	var INPUT_ENDED = 2;
-	var INPUT_DISTANCE_SENSITIVITY = 16;
-	var MAX_KEYS = 128;
-	var DEFAULT_FONT = "32px monospace";
-
-	var STATE_START = 0;
-	var STATE_ACTION = 1;
-	var STATE_COMIC = 2;
-	var STATE_END = 3;
-
-	var ANIMATION_RULE_BASIC = "basic";
-	var ANIMATION_RULE_DIRECTIONAL = "directional";
 	//==============================================================================
 
 	/*  Actor Class
 	 */
 	//==============================================================================
 
-	var Actor = function () {
+
+	var Actor = exports.Actor = function () {
 	  function Actor() {
 	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
 	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
 	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_NONE : arguments[4];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
 
 	    _classCallCheck(this, Actor);
 
@@ -999,9 +1027,9 @@
 	    this.y = y;
 	    this.size = size;
 	    this.shape = shape;
-	    this.solid = shape !== SHAPE_NONE;
+	    this.solid = shape !== AVO.SHAPE_NONE;
 	    this.canBeMoved = true;
-	    this.rotation = ROTATION_SOUTH; //Rotation in radians; clockwise positive.
+	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
 
 	    this.spritesheet = null;
 	    this.animationStep = 0;
@@ -1088,28 +1116,28 @@
 	      //Get cardinal direction
 	      //Favour East and West when rotation is exactly SW, NW, SE or NE.
 	      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
-	        return DIRECTION_EAST;
+	        return AVO.DIRECTION_EAST;
 	      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
-	        return DIRECTION_SOUTH;
+	        return AVO.DIRECTION_SOUTH;
 	      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
-	        return DIRECTION_NORTH;
+	        return AVO.DIRECTION_NORTH;
 	      } else {
-	        return DIRECTION_WEST;
+	        return AVO.DIRECTION_WEST;
 	      }
 	    },
 	    set: function set(val) {
 	      switch (val) {
-	        case DIRECTION_EAST:
-	          this._rotation = ROTATION_EAST;
+	        case AVO.DIRECTION_EAST:
+	          this._rotation = AVO.ROTATION_EAST;
 	          break;
-	        case DIRECTION_SOUTH:
-	          this._rotation = ROTATION_SOUTH;
+	        case AVO.DIRECTION_SOUTH:
+	          this._rotation = AVO.ROTATION_SOUTH;
 	          break;
-	        case DIRECTION_WEST:
-	          this._rotation = ROTATION_WEST;
+	        case AVO.DIRECTION_WEST:
+	          this._rotation = AVO.ROTATION_WEST;
 	          break;
-	        case DIRECTION_NORTH:
-	          this._rotation = ROTATION_NORTH;
+	        case AVO.DIRECTION_NORTH:
+	          this._rotation = AVO.ROTATION_NORTH;
 	          break;
 	      }
 	    }
@@ -1117,33 +1145,20 @@
 
 	  return Actor;
 	}();
-
-	var SHAPE_NONE = 0; //No shape = no collision
-	var SHAPE_SQUARE = 1;
-	var SHAPE_CIRCLE = 2;
-
-	var ROTATION_EAST = 0;
-	var ROTATION_SOUTH = Math.PI / 2;
-	var ROTATION_WEST = Math.PI;
-	var ROTATION_NORTH = -Math.PI / 2;
-
-	var DIRECTION_EAST = 0;
-	var DIRECTION_SOUTH = 1;
-	var DIRECTION_WEST = 2;
-	var DIRECTION_NORTH = 3;
 	//==============================================================================
 
 	/*  Area of Effect Class
 	 */
 	//==============================================================================
 
-	var AoE = function () {
+
+	var AoE = exports.AoE = function () {
 	  function AoE() {
 	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
 	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
 	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? SHAPE_CIRCLE : arguments[4];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_CIRCLE : arguments[4];
 	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
 	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
 
@@ -1167,7 +1182,7 @@
 	  _createClass(AoE, [{
 	    key: "hasInfiniteDuration",
 	    value: function hasInfiniteDuration() {
-	      return this.startDuration === DURATION_INFINITE;
+	      return this.startDuration === AVO.DURATION_INFINITE;
 	    }
 	  }, {
 	    key: "setAnimation",
@@ -1229,15 +1244,14 @@
 
 	  return AoE;
 	}();
-
-	var DURATION_INFINITE = 0;
 	//==============================================================================
 
 	/*  4-Koma Comic Strip Class
 	 */
 	//==============================================================================
 
-	var ComicStrip = function () {
+
+	var ComicStrip = exports.ComicStrip = function () {
 	  function ComicStrip() {
 	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
 	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
@@ -1249,8 +1263,8 @@
 	    this.panels = panels;
 	    this.onFinish = onFinish;
 
-	    this.waitTime = DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
-	    this.transitionTime = DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
 	    this.background = "#333";
 
 	    this.start();
@@ -1260,7 +1274,7 @@
 	    key: "start",
 	    value: function start() {
 	      this.currentPanel = 0;
-	      this.state = COMIC_STRIP_STATE_TRANSITIONING;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
 	      this.counter = 0;
 	    }
 	  }, {
@@ -1281,68 +1295,23 @@
 	        return this.panels[this.currentPanel - 1];
 	      }
 	    }
-
-	    /* Logic loop should be as follows
-	    
-	    loop {
-	      if !TRANSITIONING && currentPanel >= panels.length
-	        onFinish()
-	        FINISH
-	          
-	      if TRANSITIONING
-	        if counter < transitionTime
-	          counter++
-	          reposition and paint image n-1
-	          reposition and paint image n    //NOTE: if 0 panels, this will display an empty scenario for a short time.
-	        else
-	          counter = 0
-	          state = WAIT BEFORE INPUT
-	      
-	      if IDLE
-	        paint image n
-	        paint "next" icon
-	        
-	        if INPUT
-	          currentPanel++
-	          state = TRANSITIONING
-	        
-	      if WAIT BEFORE INPUT
-	        paint image n
-	        
-	        if counter < waitTime
-	          counter++
-	        else
-	          counter = 0
-	          state = IDLE
-	    }
-	    
-	    check for conditions: 0 panels, 1 panel, 2 panels.
-	    
-	    */
-
 	  }]);
 
 	  return ComicStrip;
 	}();
-
-	var COMIC_STRIP_STATE_TRANSITIONING = 0;
-	var COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
-	var COMIC_STRIP_STATE_IDLE = 2;
-
-	var DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
-	var DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
 	//==============================================================================
 
 	/*  Effect Class
 	 */
 	//==============================================================================
 
-	var Effect = function () {
+
+	var Effect = exports.Effect = function () {
 	  function Effect() {
 	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
 	    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 	    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
-	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? STACKING_RULE_ADD : arguments[3];
+	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? AVO.STACKING_RULE_ADD : arguments[3];
 
 	    _classCallCheck(this, Effect);
 
@@ -1356,7 +1325,7 @@
 	  _createClass(Effect, [{
 	    key: "hasInfiniteDuration",
 	    value: function hasInfiniteDuration() {
-	      return this.startDuration === DURATION_INFINITE;
+	      return this.startDuration === AVO.DURATION_INFINITE;
 	    }
 	  }, {
 	    key: "copy",
@@ -1367,50 +1336,67 @@
 
 	  return Effect;
 	}();
-
-	var STACKING_RULE_ADD = 0;
-	var STACKING_RULE_REPLACE = 1;
 	//==============================================================================
 
-	/*  Utility Classes
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	/*
+	Constant Values
+	===============
+
+	(Shaun A. Noordin || shaunanoordin.com || 20160901)
+	********************************************************************************
 	 */
-	//==============================================================================
-	var Utility = {
-	  randomInt: function randomInt(min, max) {
-	    var a = min < max ? min : max;
-	    var b = min < max ? max : min;
-	    return Math.floor(a + Math.random() * (b - a + 1));
-	  },
+	var FRAMES_PER_SECOND = exports.FRAMES_PER_SECOND = 50;
+	var INPUT_IDLE = exports.INPUT_IDLE = 0;
+	var INPUT_ACTIVE = exports.INPUT_ACTIVE = 1;
+	var INPUT_ENDED = exports.INPUT_ENDED = 2;
+	var INPUT_DISTANCE_SENSITIVITY = exports.INPUT_DISTANCE_SENSITIVITY = 16;
+	var MAX_KEYS = exports.MAX_KEYS = 128;
 
-	  stopEvent: function stopEvent(e) {
-	    //var eve = e || window.event;
-	    e.preventDefault && e.preventDefault();
-	    e.stopPropagation && e.stopPropagation();
-	    e.returnValue = false;
-	    e.cancelBubble = true;
-	    return false;
-	  },
+	var STATE_START = exports.STATE_START = 0;
+	var STATE_ACTION = exports.STATE_ACTION = 1;
+	var STATE_COMIC = exports.STATE_COMIC = 2;
+	var STATE_END = exports.STATE_END = 3;
 
-	  getKeyCode: function getKeyCode(e) {
-	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
-	    //at the moment, but unfortunately it's being deprecated.
-	    if (e.keyCode) {
-	      return e.keyCode;
-	    }
+	var ANIMATION_RULE_BASIC = exports.ANIMATION_RULE_BASIC = "basic";
+	var ANIMATION_RULE_DIRECTIONAL = exports.ANIMATION_RULE_DIRECTIONAL = "directional";
 
-	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
-	    //far from being standardised between browsers.
-	    if (e.code && KeyValues[e.code]) {
-	      return KeyValues[e.code];
-	    } else if (e.key && KeyValues[e.key]) {
-	      return KeyValues[e.key];
-	    }
+	var SHAPE_NONE = exports.SHAPE_NONE = 0; //No shape = no collision
+	var SHAPE_SQUARE = exports.SHAPE_SQUARE = 1;
+	var SHAPE_CIRCLE = exports.SHAPE_CIRCLE = 2;
 
-	    return 0;
-	  }
-	};
+	var ROTATION_EAST = exports.ROTATION_EAST = 0;
+	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI / 2;
+	var ROTATION_WEST = exports.ROTATION_WEST = Math.PI;
+	var ROTATION_NORTH = exports.ROTATION_NORTH = -Math.PI / 2;
 
-	var KEY_CODES = {
+	var DIRECTION_EAST = exports.DIRECTION_EAST = 0;
+	var DIRECTION_SOUTH = exports.DIRECTION_SOUTH = 1;
+	var DIRECTION_WEST = exports.DIRECTION_WEST = 2;
+	var DIRECTION_NORTH = exports.DIRECTION_NORTH = 3;
+
+	var DURATION_INFINITE = exports.DURATION_INFINITE = 0;
+
+	var COMIC_STRIP_STATE_TRANSITIONING = exports.COMIC_STRIP_STATE_TRANSITIONING = 0;
+	var COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = exports.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT = 1;
+	var COMIC_STRIP_STATE_IDLE = exports.COMIC_STRIP_STATE_IDLE = 2;
+
+	var DEFAULT_FONT = exports.DEFAULT_FONT = "32px monospace";
+	var DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = exports.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT = 10;
+	var DEFAULT_COMIC_STRIP_TRANSITION_TIME = exports.DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
+
+	var STACKING_RULE_ADD = exports.STACKING_RULE_ADD = 0;
+	var STACKING_RULE_REPLACE = exports.STACKING_RULE_REPLACE = 1;
+
+	var KEY_CODES = exports.KEY_CODES = {
 	  LEFT: 37,
 	  UP: 38,
 	  RIGHT: 39,
@@ -1460,7 +1446,7 @@
 	  NUM9: 57
 	};
 
-	var KEY_VALUES = {
+	var KEY_VALUES = exports.KEY_VALUES = {
 	  "ArrowLeft": KEY_CODES.LEFT,
 	  "Left": KEY_CODES.LEFT,
 	  "ArrowUp": KEY_CODES.UP,
@@ -1554,6 +1540,61 @@
 	  "Digit9": KEY_CODES.NUM9
 	};
 
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Utility = undefined;
+	exports.ImageAsset = ImageAsset;
+
+	var _constants = __webpack_require__(2);
+
+	var Utility = exports.Utility = {
+	  randomInt: function randomInt(min, max) {
+	    var a = min < max ? min : max;
+	    var b = min < max ? max : min;
+	    return Math.floor(a + Math.random() * (b - a + 1));
+	  },
+
+	  stopEvent: function stopEvent(e) {
+	    //var eve = e || window.event;
+	    e.preventDefault && e.preventDefault();
+	    e.stopPropagation && e.stopPropagation();
+	    e.returnValue = false;
+	    e.cancelBubble = true;
+	    return false;
+	  },
+
+	  getKeyCode: function getKeyCode(e) {
+	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
+	    //at the moment, but unfortunately it's being deprecated.
+	    if (e.keyCode) {
+	      return e.keyCode;
+	    }
+
+	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
+	    //far from being standardised between browsers.
+	    if (e.code && _constants.KEY_VALUES[e.code]) {
+	      return _constants.KEY_VALUES[e.code];
+	    } else if (e.key && _constants.KEY_VALUES[e.key]) {
+	      return _constants.KEY_VALUES[e.key];
+	    }
+
+	    return 0;
+	  }
+	}; /*
+	   Utility Classes
+	   ===============
+	   
+	   (Shaun A. Noordin || shaunanoordin.com || 20160901)
+	   ********************************************************************************
+	    */
+
 	function ImageAsset(url) {
 	  this.url = url;
 	  this.img = null;
@@ -1564,20 +1605,28 @@
 	  }.bind(this);
 	  this.img.src = this.url;
 	}
-	//==============================================================================
 
-	/*  Initialisations
-	 */
-	//==============================================================================
-	var app;
-	window.onload = function () {
-	  window.app = new App(initialise);
-	};
-	//==============================================================================
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
 
-	/*  Game Scripts
-	 */
-	//==============================================================================
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.initialise = initialise;
+
+	var _avo = __webpack_require__(1);
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _utility = __webpack_require__(3);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 	function initialise() {
 	  //Scripts
 	  //--------------------------------
@@ -1588,27 +1637,27 @@
 
 	  //Images
 	  //--------------------------------
-	  this.assets.images.actor = new ImageAsset("assets/actor.png");
-	  this.assets.images.sarcophagus = new ImageAsset("assets/sarcophagus.png");
-	  this.assets.images.gate = new ImageAsset("assets/gate.png");
-	  this.assets.images.plate = new ImageAsset("assets/plate.png");
-	  this.assets.images.goal = new ImageAsset("assets/goal.png");
-	  this.assets.images.background = new ImageAsset("assets/background.png");
+	  this.assets.images.actor = new _utility.ImageAsset("assets/actor.png");
+	  this.assets.images.sarcophagus = new _utility.ImageAsset("assets/sarcophagus.png");
+	  this.assets.images.gate = new _utility.ImageAsset("assets/gate.png");
+	  this.assets.images.plate = new _utility.ImageAsset("assets/plate.png");
+	  this.assets.images.goal = new _utility.ImageAsset("assets/goal.png");
+	  this.assets.images.background = new _utility.ImageAsset("assets/background.png");
 
-	  this.assets.images.comicPanelA = new ImageAsset("assets/comic-panel-800x600-red.png");
-	  this.assets.images.comicPanelB = new ImageAsset("assets/comic-panel-800x600-blue.png");
-	  this.assets.images.comicPanelC = new ImageAsset("assets/comic-panel-800x600-yellow.png");
-	  this.assets.images.comicPanelSmall = new ImageAsset("assets/comic-panel-500x500-green.png");
-	  this.assets.images.comicPanelBig = new ImageAsset("assets/comic-panel-1000x1000-pink.png");
-	  this.assets.images.comicPanelWide = new ImageAsset("assets/comic-panel-1000x300-teal.png");
+	  this.assets.images.comicPanelA = new _utility.ImageAsset("assets/comic-panel-800x600-red.png");
+	  this.assets.images.comicPanelB = new _utility.ImageAsset("assets/comic-panel-800x600-blue.png");
+	  this.assets.images.comicPanelC = new _utility.ImageAsset("assets/comic-panel-800x600-yellow.png");
+	  this.assets.images.comicPanelSmall = new _utility.ImageAsset("assets/comic-panel-500x500-green.png");
+	  this.assets.images.comicPanelBig = new _utility.ImageAsset("assets/comic-panel-1000x1000-pink.png");
+	  this.assets.images.comicPanelWide = new _utility.ImageAsset("assets/comic-panel-1000x300-teal.png");
 	  //--------------------------------
 
 	  //Animations
 	  //--------------------------------
-	  var STEPS_PER_SECOND = FRAMES_PER_SECOND / 10;
+	  var STEPS_PER_SECOND = AVO.FRAMES_PER_SECOND / 10;
 	  this.animationSets = {
 	    actor: {
-	      rule: ANIMATION_RULE_DIRECTIONAL,
+	      rule: AVO.ANIMATION_RULE_DIRECTIONAL,
 	      tileWidth: 64,
 	      tileHeight: 64,
 	      tileOffsetX: 0,
@@ -1626,7 +1675,7 @@
 	    },
 
 	    sarcophagus: {
-	      rule: ANIMATION_RULE_BASIC,
+	      rule: AVO.ANIMATION_RULE_BASIC,
 	      tileWidth: 64,
 	      tileHeight: 128,
 	      tileOffsetX: 0,
@@ -1644,7 +1693,7 @@
 	    },
 
 	    plate: {
-	      rule: ANIMATION_RULE_BASIC,
+	      rule: AVO.ANIMATION_RULE_BASIC,
 	      tileWidth: 64,
 	      tileHeight: 64,
 	      tileOffsetX: 0,
@@ -1662,7 +1711,7 @@
 	    },
 
 	    simple128: {
-	      rule: ANIMATION_RULE_BASIC,
+	      rule: AVO.ANIMATION_RULE_BASIC,
 	      tileWidth: 128,
 	      tileHeight: 128,
 	      tileOffsetX: 0,
@@ -1676,7 +1725,7 @@
 	    },
 
 	    simple64: {
-	      rule: ANIMATION_RULE_BASIC,
+	      rule: AVO.ANIMATION_RULE_BASIC,
 	      tileWidth: 64,
 	      tileHeight: 64,
 	      tileOffsetX: 0,
@@ -1701,29 +1750,29 @@
 	    for (var animationName in animationSet.actions) {
 	      var animationAction = animationSet.actions[animationName];
 	      var newSteps = [];
-	      var _iteratorNormalCompletion11 = true;
-	      var _didIteratorError11 = false;
-	      var _iteratorError11 = undefined;
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
 
 	      try {
-	        for (var _iterator11 = animationAction.steps[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-	          var step = _step11.value;
+	        for (var _iterator = animationAction.steps[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var step = _step.value;
 
 	          for (var i = 0; i < step.duration; i++) {
 	            newSteps.push(step);
 	          }
 	        }
 	      } catch (err) {
-	        _didIteratorError11 = true;
-	        _iteratorError11 = err;
+	        _didIteratorError = true;
+	        _iteratorError = err;
 	      } finally {
 	        try {
-	          if (!_iteratorNormalCompletion11 && _iterator11.return) {
-	            _iterator11.return();
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
 	          }
 	        } finally {
-	          if (_didIteratorError11) {
-	            throw _iteratorError11;
+	          if (_didIteratorError) {
+	            throw _iteratorError;
 	          }
 	        }
 	      }
@@ -1732,22 +1781,37 @@
 	    }
 	  }
 	  //--------------------------------
-	}
+	} /*
+	  Example Game
+	  ============
+	  
+	  While AvO is the adventure game engine, this is a specific implementation of an
+	  adventure game idea.
+	  
+	  (Shaun A. Noordin || shaunanoordin.com || 20160901)
+	  ********************************************************************************
+	   */
 
 	function runStart() {
 	  this.store.level = 1;
 
-	  if (this.pointer.state === INPUT_ACTIVE || this.keys[KEY_CODES.UP].state === INPUT_ACTIVE || this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE || this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE || this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE || this.keys[KEY_CODES.SPACE].state === INPUT_ACTIVE || this.keys[KEY_CODES.ENTER].state === INPUT_ACTIVE) {
-	    this.changeState(STATE_COMIC, comicStart);
+	  if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	    this.changeState(AVO.STATE_COMIC, comicStart);
 	  }
 	}
 
 	function comicStart() {
-	  this.comicStrip = new ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
+	  this.comicStrip = new _avo.ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
 	  this.comicStrip.start();
 
-	  this.comicStrip = new ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelSmall, this.assets.images.comicPanelBig, this.assets.images.comicPanelWide], comicStartFinished);
-	  this.comicStrip.start();
+	  //this.comicStrip = new ComicStrip(
+	  //  "startcomic",
+	  //  [ this.assets.images.comicPanelA, 
+	  //    this.assets.images.comicPanelSmall, 
+	  //    this.assets.images.comicPanelBig, 
+	  //    this.assets.images.comicPanelWide ],
+	  //  comicStartFinished);
+	  //this.comicStrip.start();
 
 	  //this.comicStrip = new ComicStrip(
 	  //  "startcomic",
@@ -1757,7 +1821,7 @@
 	}
 
 	function comicStartFinished() {
-	  this.changeState(STATE_ACTION, startLevel1);
+	  this.changeState(AVO.STATE_ACTION, startLevel1);
 	}
 
 	function runEnd() {}
@@ -1767,12 +1831,12 @@
 	  //--------------------------------
 	  var playerIsIdle = true;
 	  var PLAYER_SPEED = 4;
-	  if (this.pointer.state === INPUT_ACTIVE) {
+	  if (this.pointer.state === AVO.INPUT_ACTIVE) {
 	    var distX = this.pointer.now.x - this.pointer.start.x;
 	    var distY = this.pointer.now.y - this.pointer.start.y;
 	    var dist = Math.sqrt(distX * distX + distY * distY);
 
-	    if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	    if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
 	      var angle = Math.atan2(distY, distX);
 	      var speed = PLAYER_SPEED;
 	      this.refs["player"].x += Math.cos(angle) * speed;
@@ -1782,61 +1846,61 @@
 
 	      //UX improvement: reset the base point of the pointer so the player can
 	      //switch directions much more easily.
-	      if (dist >= INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-	        this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	        this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+	      if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+	        this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+	        this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
 	      }
 	    }
 	  }
 
-	  if (this.keys[KEY_CODES.UP].state === INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state !== INPUT_ACTIVE) {
+	  if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
 	    this.refs["player"].y -= PLAYER_SPEED;
-	    this.refs["player"].direction = DIRECTION_NORTH;
+	    this.refs["player"].direction = AVO.DIRECTION_NORTH;
 	    playerIsIdle = false;
-	  } else if (this.keys[KEY_CODES.UP].state !== INPUT_ACTIVE && this.keys[KEY_CODES.DOWN].state === INPUT_ACTIVE) {
+	  } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
 	    this.refs["player"].y += PLAYER_SPEED;
-	    this.refs["player"].direction = DIRECTION_SOUTH;
+	    this.refs["player"].direction = AVO.DIRECTION_SOUTH;
 	    playerIsIdle = false;
 	  }
-	  if (this.keys[KEY_CODES.LEFT].state === INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state !== INPUT_ACTIVE) {
+	  if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
 	    this.refs["player"].x -= PLAYER_SPEED;
-	    this.refs["player"].direction = DIRECTION_WEST;
+	    this.refs["player"].direction = AVO.DIRECTION_WEST;
 	    playerIsIdle = false;
-	  } else if (this.keys[KEY_CODES.LEFT].state !== INPUT_ACTIVE && this.keys[KEY_CODES.RIGHT].state === INPUT_ACTIVE) {
+	  } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
 	    this.refs["player"].x += PLAYER_SPEED;
-	    this.refs["player"].direction = DIRECTION_EAST;
+	    this.refs["player"].direction = AVO.DIRECTION_EAST;
 	    playerIsIdle = false;
 	  }
 
-	  if (this.keys[KEY_CODES.A].state === INPUT_ACTIVE && this.keys[KEY_CODES.D].state !== INPUT_ACTIVE) {
+	  if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
 	    this.refs["player"].rotation -= Math.PI / 36;
 	    playerIsIdle = false;
-	  } else if (this.keys[KEY_CODES.A].state !== INPUT_ACTIVE && this.keys[KEY_CODES.D].state === INPUT_ACTIVE) {
+	  } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
 	    this.refs["player"].rotation += Math.PI / 36;
 	    playerIsIdle = false;
 	  }
 
-	  if (this.keys[KEY_CODES.W].state === INPUT_ACTIVE) {
+	  if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
 	    this.refs["player"].x += Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
 	    this.refs["player"].y += Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
 	    playerIsIdle = false;
-	  } else if (this.keys[KEY_CODES.S].state === INPUT_ACTIVE) {
+	  } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
 	    this.refs["player"].x -= Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
 	    this.refs["player"].y -= Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
 	    playerIsIdle = false;
 	  }
 
-	  if (this.keys[KEY_CODES.Z].duration === 1) {
-	    this.refs["player"].shape = this.refs["player"].shape === SHAPE_CIRCLE ? SHAPE_SQUARE : SHAPE_CIRCLE;
+	  if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
+	    this.refs["player"].shape = this.refs["player"].shape === AVO.SHAPE_CIRCLE ? AVO.SHAPE_SQUARE : AVO.SHAPE_CIRCLE;
 	  }
 
-	  if (this.keys[KEY_CODES.SPACE].duration === 1) {
+	  if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
 	    var PUSH_POWER = 12;
 	    var AOE_SIZE = this.refs["player"].size;
 	    var distance = this.refs["player"].radius + AOE_SIZE / 2;
 	    var x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
 	    var y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
-	    var newAoE = new AoE("", x, y, AOE_SIZE, SHAPE_CIRCLE, 5, [new Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, STACKING_RULE_ADD)]);
+	    var newAoE = new _avo.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _avo.Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
 	    this.areasOfEffect.push(newAoE);
 	  }
 	  //--------------------------------
@@ -1850,13 +1914,13 @@
 	  }
 
 	  if (this.refs["boxes"]) {
-	    var _iteratorNormalCompletion12 = true;
-	    var _didIteratorError12 = false;
-	    var _iteratorError12 = undefined;
+	    var _iteratorNormalCompletion2 = true;
+	    var _didIteratorError2 = false;
+	    var _iteratorError2 = undefined;
 
 	    try {
-	      for (var _iterator12 = this.refs["boxes"][Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-	        var box = _step12.value;
+	      for (var _iterator2 = this.refs["boxes"][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	        var box = _step2.value;
 
 	        if (box.effects.find(function (eff) {
 	          return eff.name === "charge";
@@ -1867,16 +1931,16 @@
 	        }
 	      }
 	    } catch (err) {
-	      _didIteratorError12 = true;
-	      _iteratorError12 = err;
+	      _didIteratorError2 = true;
+	      _iteratorError2 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion12 && _iterator12.return) {
-	          _iterator12.return();
+	        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+	          _iterator2.return();
 	        }
 	      } finally {
-	        if (_didIteratorError12) {
-	          throw _iteratorError12;
+	        if (_didIteratorError2) {
+	          throw _iteratorError2;
 	        }
 	      }
 	    }
@@ -1903,30 +1967,30 @@
 	  var midX = this.width / 2,
 	      midY = this.height / 2;
 
-	  this.refs["player"] = new Actor("player", midX, midY + 256, 32, SHAPE_CIRCLE);
+	  this.refs["player"] = new _avo.Actor("player", midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
 	  this.refs["player"].spritesheet = this.assets.images.actor;
 	  this.refs["player"].animationSet = this.animationSets.actor;
-	  this.refs["player"].rotation = ROTATION_NORTH;
+	  this.refs["player"].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs["player"]);
 
-	  var wallN = new Actor("wallN", midX, midY - 672, this.width, SHAPE_SQUARE);
-	  var wallS = new Actor("wallS", midX, midY + 688, this.width, SHAPE_SQUARE);
-	  var wallE = new Actor("wallE", midX + 688, midY, this.height, SHAPE_SQUARE);
-	  var wallW = new Actor("wallW", midX - 688, midY, this.height, SHAPE_SQUARE);
+	  var wallN = new _avo.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
+	  var wallS = new _avo.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
+	  var wallE = new _avo.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
+	  var wallW = new _avo.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
 	  wallE.canBeMoved = false;
 	  wallS.canBeMoved = false;
 	  wallW.canBeMoved = false;
 	  wallN.canBeMoved = false;
 	  this.actors.push(wallE, wallS, wallW, wallN);
 
-	  this.refs["gate"] = new Actor("gate", midX, 16, 128, SHAPE_SQUARE);
+	  this.refs["gate"] = new _avo.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
 	  this.refs["gate"].canBeMoved = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
 	  this.refs["gate"].setAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
-	  this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, SHAPE_SQUARE, DURATION_INFINITE, []);
+	  this.refs["goal"] = new _avo.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
 	  this.refs["goal"].setAnimation("glow");
@@ -1936,10 +2000,10 @@
 	function startLevel1() {
 	  startLevelInit.apply(this);
 	  //this.areasOfEffect.push(
-	  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, SHAPE_SQUARE, DURATION_INFINITE,
-	  //    [new Effect("push", { x: 0, y: 4 }, 4, STACKING_RULE_ADD, null)], null)
+	  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
+	  //    [new Effect("push", { x: 0, y: 4 }, 4, AVO.STACKING_RULE_ADD, null)], null)
 	  //);
-	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, SHAPE_SQUARE));
+	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
 
 	  var midX = this.width / 2,
 	      midY = this.height / 2;
@@ -1948,16 +2012,16 @@
 	  this.refs.plates = [];
 	  var newBox = void 0,
 	      newPlate = void 0;
-	  var chargeEffect = new Effect("charge", {}, 4, STACKING_RULE_ADD, null);
+	  var chargeEffect = new _avo.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
 
-	  this.refs.boxes = [new Actor("", midX - 128, midY - 64, 64, SHAPE_SQUARE), new Actor("", midX + 128, midY - 64, 64, SHAPE_SQUARE)];
-	  var _iteratorNormalCompletion13 = true;
-	  var _didIteratorError13 = false;
-	  var _iteratorError13 = undefined;
+	  this.refs.boxes = [new _avo.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _avo.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
+	  var _iteratorNormalCompletion3 = true;
+	  var _didIteratorError3 = false;
+	  var _iteratorError3 = undefined;
 
 	  try {
-	    for (var _iterator13 = this.refs.boxes[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-	      var box = _step13.value;
+	    for (var _iterator3 = this.refs.boxes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	      var box = _step3.value;
 
 	      box.attributes.box = true;
 	      box.spritesheet = this.assets.images.sarcophagus;
@@ -1965,28 +2029,28 @@
 	      this.actors.push(box);
 	    }
 	  } catch (err) {
-	    _didIteratorError13 = true;
-	    _iteratorError13 = err;
+	    _didIteratorError3 = true;
+	    _iteratorError3 = err;
 	  } finally {
 	    try {
-	      if (!_iteratorNormalCompletion13 && _iterator13.return) {
-	        _iterator13.return();
+	      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+	        _iterator3.return();
 	      }
 	    } finally {
-	      if (_didIteratorError13) {
-	        throw _iteratorError13;
+	      if (_didIteratorError3) {
+	        throw _iteratorError3;
 	      }
 	    }
 	  }
 
-	  this.refs.plates = [new AoE("plate", midX - 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()]), new AoE("plate", midX + 128, midY + 64, 64, SHAPE_SQUARE, DURATION_INFINITE, [chargeEffect.copy()])];
-	  var _iteratorNormalCompletion14 = true;
-	  var _didIteratorError14 = false;
-	  var _iteratorError14 = undefined;
+	  this.refs.plates = [new _avo.AoE("plate", midX - 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]), new _avo.AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()])];
+	  var _iteratorNormalCompletion4 = true;
+	  var _didIteratorError4 = false;
+	  var _iteratorError4 = undefined;
 
 	  try {
-	    for (var _iterator14 = this.refs.plates[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-	      var plate = _step14.value;
+	    for (var _iterator4 = this.refs.plates[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	      var plate = _step4.value;
 
 	      plate.spritesheet = this.assets.images.plate;
 	      plate.animationSet = this.animationSets.plate;
@@ -1994,16 +2058,16 @@
 	      this.areasOfEffect.push(plate);
 	    }
 	  } catch (err) {
-	    _didIteratorError14 = true;
-	    _iteratorError14 = err;
+	    _didIteratorError4 = true;
+	    _iteratorError4 = err;
 	  } finally {
 	    try {
-	      if (!_iteratorNormalCompletion14 && _iterator14.return) {
-	        _iterator14.return();
+	      if (!_iteratorNormalCompletion4 && _iterator4.return) {
+	        _iterator4.return();
 	      }
 	    } finally {
-	      if (_didIteratorError14) {
-	        throw _iteratorError14;
+	      if (_didIteratorError4) {
+	        throw _iteratorError4;
 	      }
 	    }
 	  }
@@ -2023,22 +2087,22 @@
 	  var allBoxesAreCharged = true;
 
 	  if (this.refs["plates"] && this.refs["boxes"]) {
-	    var _iteratorNormalCompletion15 = true;
-	    var _didIteratorError15 = false;
-	    var _iteratorError15 = undefined;
+	    var _iteratorNormalCompletion5 = true;
+	    var _didIteratorError5 = false;
+	    var _iteratorError5 = undefined;
 
 	    try {
-	      for (var _iterator15 = this.refs["plates"][Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
-	        var plate = _step15.value;
+	      for (var _iterator5 = this.refs["plates"][Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	        var plate = _step5.value;
 
 	        var thisPlateIsCharged = false;
-	        var _iteratorNormalCompletion16 = true;
-	        var _didIteratorError16 = false;
-	        var _iteratorError16 = undefined;
+	        var _iteratorNormalCompletion6 = true;
+	        var _didIteratorError6 = false;
+	        var _iteratorError6 = undefined;
 
 	        try {
-	          for (var _iterator16 = this.refs["boxes"][Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
-	            var box = _step16.value;
+	          for (var _iterator6 = this.refs["boxes"][Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+	            var box = _step6.value;
 
 	            if (this.isATouchingB(box, plate)) {
 	              thisPlateIsCharged = true;
@@ -2046,16 +2110,16 @@
 	            }
 	          }
 	        } catch (err) {
-	          _didIteratorError16 = true;
-	          _iteratorError16 = err;
+	          _didIteratorError6 = true;
+	          _iteratorError6 = err;
 	        } finally {
 	          try {
-	            if (!_iteratorNormalCompletion16 && _iterator16.return) {
-	              _iterator16.return();
+	            if (!_iteratorNormalCompletion6 && _iterator6.return) {
+	              _iterator6.return();
 	            }
 	          } finally {
-	            if (_didIteratorError16) {
-	              throw _iteratorError16;
+	            if (_didIteratorError6) {
+	              throw _iteratorError6;
 	            }
 	          }
 	        }
@@ -2064,16 +2128,16 @@
 	        allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
 	      }
 	    } catch (err) {
-	      _didIteratorError15 = true;
-	      _iteratorError15 = err;
+	      _didIteratorError5 = true;
+	      _iteratorError5 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion15 && _iterator15.return) {
-	          _iterator15.return();
+	        if (!_iteratorNormalCompletion5 && _iterator5.return) {
+	          _iterator5.return();
 	        }
 	      } finally {
-	        if (_didIteratorError15) {
-	          throw _iteratorError15;
+	        if (_didIteratorError5) {
+	          throw _iteratorError5;
 	        }
 	      }
 	    }
@@ -2107,11 +2171,10 @@
 	        startLevel3.apply(this);
 	        break;
 	      default:
-	        this.changeState(STATE_END);
+	        this.changeState(AVO.STATE_END);
 	    }
 	  }
 	}
-	//==============================================================================
 
 /***/ }
 /******/ ]);

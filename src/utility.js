@@ -6,7 +6,7 @@ Utility Classes
 ********************************************************************************
  */
 
-import "./constants.js";
+import { KEY_VALUES } from "./constants.js";
 
 export const Utility = {
   randomInt: function (min, max) {
@@ -27,16 +27,16 @@ export const Utility = {
   getKeyCode(e) {
     //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
     //at the moment, but unfortunately it's being deprecated.
-    if (e.keyCode) { 
+    if (e.keyCode) {
       return e.keyCode;
     }
     
     //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
     //far from being standardised between browsers.
-    if (e.code && KeyValues[e.code]) {
-      return KeyValues[e.code]
-    } else if (e.key && KeyValues[e.key]) {
-      return KeyValues[e.key]
+    if (e.code && KEY_VALUES[e.code]) {
+      return KEY_VALUES[e.code]
+    } else if (e.key && KEY_VALUES[e.key]) {
+      return KEY_VALUES[e.key]
     }
     
     return 0;
