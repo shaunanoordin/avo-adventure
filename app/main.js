@@ -1669,7 +1669,7 @@
 	        },
 	        walk: {
 	          loop: true,
-	          steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+	          steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 5, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
 	        }
 	      }
 	    },
@@ -1801,8 +1801,16 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _index.ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
+	  this.comicStrip = new _index.ComicStrip("startcomic", [this.assets.images.comicPanelA], comicStartFinished);
 	  this.comicStrip.start();
+
+	  //this.comicStrip = new ComicStrip(
+	  //  "startcomic",
+	  //  [ this.assets.images.comicPanelA,
+	  //    this.assets.images.comicPanelB,
+	  //    this.assets.images.comicPanelC ],
+	  //  comicStartFinished);
+	  //this.comicStrip.start();
 
 	  //this.comicStrip = new ComicStrip(
 	  //  "startcomic",

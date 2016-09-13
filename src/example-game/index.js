@@ -61,6 +61,10 @@ export function initialise() {
             { row: 1, duration: STEPS_PER_SECOND },
             { row: 2, duration: STEPS_PER_SECOND },
             { row: 3, duration: STEPS_PER_SECOND },
+            { row: 4, duration: STEPS_PER_SECOND },
+            { row: 5, duration: STEPS_PER_SECOND },
+            { row: 4, duration: STEPS_PER_SECOND },
+            { row: 3, duration: STEPS_PER_SECOND },
             { row: 2, duration: STEPS_PER_SECOND },
           ],
         },
@@ -197,11 +201,17 @@ function runStart() {
 function comicStart() {
   this.comicStrip = new ComicStrip(
     "startcomic",
-    [ this.assets.images.comicPanelA,
-      this.assets.images.comicPanelB,
-      this.assets.images.comicPanelC ],
+    [ this.assets.images.comicPanelA ],
     comicStartFinished);
   this.comicStrip.start();
+  
+  //this.comicStrip = new ComicStrip(
+  //  "startcomic",
+  //  [ this.assets.images.comicPanelA,
+  //    this.assets.images.comicPanelB,
+  //    this.assets.images.comicPanelC ],
+  //  comicStartFinished);
+  //this.comicStrip.start();
   
   //this.comicStrip = new ComicStrip(
   //  "startcomic",
