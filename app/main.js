@@ -93,6 +93,8 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
+	var _entities = __webpack_require__(5);
+
 	var _utility = __webpack_require__(3);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -109,7 +111,7 @@
 
 	    //Initialise properties
 	    //--------------------------------
-	    this.debugMode = false;
+	    this.debugMode = true;
 	    this.runCycle = null;
 	    this.html = document.getElementById("app");
 	    this.canvas = document.getElementById("canvas");
@@ -259,8 +261,8 @@
 
 	      //Actors determine intent
 	      //--------------------------------
-	      if (this.refs[AVO.REF_PLAYER]) {
-	        var player = this.refs[AVO.REF_PLAYER];
+	      if (this.refs[AVO.REF.PLAYER]) {
+	        var player = this.refs[AVO.REF.PLAYER];
 	        player.intent = null;
 
 	        //Mouse/touch input
@@ -269,49 +271,60 @@
 	          var distY = this.pointer.now.y - this.pointer.start.y;
 	          var dist = Math.sqrt(distX * distX + distY * distY);
 
-	          if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
 	            var angle = Math.atan2(distY, distX);
 	            player.intent = {
-	              name: AVO.ACTION_MOVE,
+	              name: AVO.ACTION.MOVE,
 	              angle: angle
 	            };
 
 	            //UX improvement: reset the base point of the pointer so the player can
 	            //switch directions much more easily.
-	            if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+	            if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+	              console.log("x");
 	              this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
 	              this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
 	            }
+	          }
+	        } else if (this.pointer.state === AVO.INPUT_ENDED) {
+	          var _distX = this.pointer.now.x - this.pointer.start.x;
+	          var _distY = this.pointer.now.y - this.pointer.start.y;
+	          var _dist = Math.sqrt(_distX * _distX + _distY * _distY);
+
+	          if (_dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	            player.intent = {
+	              name: AVO.ACTION.PRIMARY
+	            };
 	          }
 	        }
 
 	        //Keyboard input
 	        if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
 	          player.intent = {
-	            name: AVO.ACTION_MOVE,
+	            name: AVO.ACTION.MOVE,
 	            angle: AVO.ROTATION_NORTH
 	          };
 	        } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
 	          player.intent = {
-	            name: AVO.ACTION_MOVE,
+	            name: AVO.ACTION.MOVE,
 	            angle: AVO.ROTATION_SOUTH
 	          };
 	        }
 	        if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
 	          player.intent = {
-	            name: AVO.ACTION_MOVE,
+	            name: AVO.ACTION.MOVE,
 	            angle: AVO.ROTATION_WEST
 	          };
 	        } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
 	          player.intent = {
-	            name: AVO.ACTION_MOVE,
+	            name: AVO.ACTION.MOVE,
 	            angle: AVO.ROTATION_EAST
 	          };
 	        }
 
 	        if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
 	          player.intent = {
-	            name: "primary_action"
+	            name: AVO.ACTION.PRIMARY
 	          };
 	        }
 	      }
@@ -402,6 +415,8 @@
 	      try {
 	        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	          var _actor = _step2.value;
+
+	          //First react to Effects.
 	          var _iteratorNormalCompletion6 = true;
 	          var _didIteratorError6 = false;
 	          var _iteratorError6 = undefined;
@@ -418,6 +433,8 @@
 	              }
 	              //----------------
 	            }
+
+	            //If the actor is not busy, transform the intent into an action.
 	          } catch (err) {
 	            _didIteratorError6 = true;
 	            _iteratorError6 = err;
@@ -441,16 +458,25 @@
 	            }
 	          }
 
+	          //If the Actor has an action, perform it.
 	          if (_actor.action) {
 	            //TODO make this an external script
 	            //----------------
-	            if (_actor.action.name === AVO.ACTION_MOVE) {
+	            if (_actor.action.name === AVO.ACTION.MOVE) {
 	              var _angle = _actor.action.angle || 0;
-	              var speed = _actor.attributes["speed"] || 0;
+	              var speed = _actor.attributes[AVO.ATTR.SPEED] || 0;
 	              _actor.x += Math.cos(_angle) * speed;
 	              _actor.y += Math.sin(_angle) * speed;
 	              _actor.rotation = _angle;
 	              _actor.state = AVO.ACTOR_WALKING;
+	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
+	              var PUSH_POWER = 12;
+	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	              var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	              this.areasOfEffect.push(newAoE);
 	            }
 	            //----------------
 
@@ -626,15 +652,15 @@
 	          return true;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
+	        var _distX2 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        var _distY2 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        if (_distX2 * _distX2 + _distY2 * _distY2 < objA.radius * objA.radius) {
 	          return true;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
+	        var _distX3 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        var _distY3 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        if (_distX3 * _distX3 + _distY3 * _distY3 < objB.radius * objB.radius) {
 	          return true;
 	        }
 	      }
@@ -670,40 +696,40 @@
 	        objB.x += cosAngle * (correctDist - dist) * fractionB;
 	        objB.y += sinAngle * (correctDist - dist) * fractionB;
 	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX3 = objB.x - objA.x;
-	        var _distY3 = objB.y - objA.y;
+	        var _distX4 = objB.x - objA.x;
+	        var _distY4 = objB.y - objA.y;
 	        var _correctDist = (objA.size + objB.size) / 2;
-	        if (Math.abs(_distX3) > Math.abs(_distY3)) {
-	          objA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
-	          objB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
+	        if (Math.abs(_distX4) > Math.abs(_distY4)) {
+	          objA.x -= Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionA;
+	          objB.x += Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionB;
 	        } else {
-	          objA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
-	          objB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
+	          objA.y -= Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionA;
+	          objB.y += Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionB;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX4 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY4 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
-	        var _angle2 = Math.atan2(_distY4, _distX4);
+	        var _distX5 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        var _distY5 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
+	        var _angle2 = Math.atan2(_distY5, _distX5);
 	        var _correctDist2 = objA.radius;
 	        var _cosAngle = Math.cos(_angle2);
 	        var _sinAngle = Math.sin(_angle2);
-	        objA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
-	        objA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
-	        objB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
-	        objB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
+	        objA.x += _cosAngle * (_correctDist2 - _dist2) * fractionA;
+	        objA.y += _sinAngle * (_correctDist2 - _dist2) * fractionA;
+	        objB.x -= _cosAngle * (_correctDist2 - _dist2) * fractionB;
+	        objB.y -= _sinAngle * (_correctDist2 - _dist2) * fractionB;
 	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX5 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY5 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
-	        var _angle3 = Math.atan2(_distY5, _distX5);
+	        var _distX6 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        var _distY6 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        var _dist3 = Math.sqrt(_distX6 * _distX6 + _distY6 * _distY6);
+	        var _angle3 = Math.atan2(_distY6, _distX6);
 	        var _correctDist3 = objB.radius;
 	        var _cosAngle2 = Math.cos(_angle3);
 	        var _sinAngle2 = Math.sin(_angle3);
-	        objA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
-	        objA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
-	        objB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
-	        objB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
+	        objA.x -= _cosAngle2 * (_correctDist3 - _dist3) * fractionA;
+	        objA.y -= _sinAngle2 * (_correctDist3 - _dist3) * fractionA;
+	        objB.x += _cosAngle2 * (_correctDist3 - _dist3) * fractionB;
+	        objB.y += _sinAngle2 * (_correctDist3 - _dist3) * fractionB;
 	      }
 	    }
 
@@ -921,6 +947,9 @@
 	          _actor3.nextAnimationFrame();
 	        }
 	        //--------------------------------
+
+	        //DEBUG: Paint touch/mouse input
+	        //--------------------------------
 	      } catch (err) {
 	        _didIteratorError10 = true;
 	        _iteratorError10 = err;
@@ -935,6 +964,15 @@
 	          }
 	        }
 	      }
+
+	      if (this.debugMode) {
+	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+	        this.context2d.beginPath();
+	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+	        this.context2d.stroke();
+	        this.context2d.closePath();
+	      }
+	      //--------------------------------
 	    }
 	  }, {
 	    key: "paint_comic",
@@ -1172,17 +1210,27 @@
 	var INPUT_DISTANCE_SENSITIVITY = exports.INPUT_DISTANCE_SENSITIVITY = 16;
 	var MAX_KEYS = exports.MAX_KEYS = 128;
 
-	var STATE_START = exports.STATE_START = 0;
+	var STATE_START = exports.STATE_START = 0; //AvO App states
 	var STATE_ACTION = exports.STATE_ACTION = 1;
 	var STATE_COMIC = exports.STATE_COMIC = 2;
 	var STATE_END = exports.STATE_END = 3;
 
-	var REF_PLAYER = exports.REF_PLAYER = "player";
-	var ACTOR_IDLE = exports.ACTOR_IDLE = 0;
+	var ACTOR_IDLE = exports.ACTOR_IDLE = 0; //Actor states
 	var ACTOR_MOVING = exports.ACTOR_MOVING = 1;
 	var ACTOR_BUSY = exports.ACTOR_BUSY = 2;
-	var ACTION_MOVE = exports.ACTION_MOVE = "move";
-	var ACTION_PRIMARY = exports.ACTION_PRIMARY = "primary";
+
+	var REF = exports.REF = { //Standard References
+	  PLAYER: "player"
+	};
+
+	var ACTION = exports.ACTION = { //Standard Actions
+	  MOVE: "move",
+	  PRIMARY: "primary"
+	};
+
+	var ATTR = exports.ATTR = { //Standard Attributes
+	  SPEED: "speed"
+	};
 
 	var ANIMATION_RULE_BASIC = exports.ANIMATION_RULE_BASIC = "basic";
 	var ANIMATION_RULE_DIRECTIONAL = exports.ANIMATION_RULE_DIRECTIONAL = "directional";
@@ -1650,9 +1698,9 @@
 	    if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
 	      const angle = Math.atan2(distY, distX);
 	      const speed = PLAYER_SPEED;
-	      this.refs[AVO.REF_PLAYER].x += Math.cos(angle) * speed;
-	      this.refs[AVO.REF_PLAYER].y += Math.sin(angle) * speed;
-	      this.refs[AVO.REF_PLAYER].rotation = angle;
+	      this.refs[AVO.REF.PLAYER].x += Math.cos(angle) * speed;
+	      this.refs[AVO.REF.PLAYER].y += Math.sin(angle) * speed;
+	      this.refs[AVO.REF.PLAYER].rotation = angle;
 	      playerIsIdle = false;
 	      
 	      //UX improvement: reset the base point of the pointer so the player can
@@ -1667,58 +1715,58 @@
 	  }
 	  
 	  if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].y -= PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_NORTH;
+	    this.refs[AVO.REF.PLAYER].y -= PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_NORTH;
 	    playerIsIdle = false;
 	  } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].y += PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_SOUTH;
+	    this.refs[AVO.REF.PLAYER].y += PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_SOUTH;
 	    playerIsIdle = false;
 	  }
 	  if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].x -= PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_WEST;
+	    this.refs[AVO.REF.PLAYER].x -= PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_WEST;
 	    playerIsIdle = false;
 	  } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].x += PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_EAST;
+	    this.refs[AVO.REF.PLAYER].x += PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_EAST;
 	    playerIsIdle = false;
 	  }
 	  
 	  if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].rotation -= Math.PI / 36;
+	    this.refs[AVO.REF.PLAYER].rotation -= Math.PI / 36;
 	    playerIsIdle = false;
 	  } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].rotation += Math.PI / 36;
+	    this.refs[AVO.REF.PLAYER].rotation += Math.PI / 36;
 	    playerIsIdle = false;
 	  }
 	  
 	  if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].x += Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].y += Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].x += Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].y += Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
 	    playerIsIdle = false;
 	  } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF_PLAYER].x -= Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
-	    this.refs[AVO.REF_PLAYER].y -= Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].x -= Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
+	    this.refs[AVO.REF.PLAYER].y -= Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
 	    playerIsIdle = false;
 	  }
 	  
 	  if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-	    this.refs[AVO.REF_PLAYER].shape = (this.refs[AVO.REF_PLAYER].shape === AVO.SHAPE_CIRCLE)
+	    this.refs[AVO.REF.PLAYER].shape = (this.refs[AVO.REF.PLAYER].shape === AVO.SHAPE_CIRCLE)
 	      ? AVO.SHAPE_SQUARE
 	      : AVO.SHAPE_CIRCLE;
 	  }
 	  
 	  if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
 	    const PUSH_POWER = 12;
-	    const AOE_SIZE = this.refs[AVO.REF_PLAYER].size;
-	    let distance = this.refs[AVO.REF_PLAYER].radius + AOE_SIZE / 2;
-	    let x = this.refs[AVO.REF_PLAYER].x + Math.cos(this.refs[AVO.REF_PLAYER].rotation) * distance;
-	    let y = this.refs[AVO.REF_PLAYER].y + Math.sin(this.refs[AVO.REF_PLAYER].rotation) * distance;;
+	    const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	    let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	    let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	    let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
 	    let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
 	      [
 	        new Effect("push",
-	          { x: Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER },
+	          { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
 	          2, AVO.STACKING_RULE_ADD)
 	      ]);
 	    this.areasOfEffect.push(newAoE);
@@ -1729,9 +1777,9 @@
 	  //Animations
 	  //--------------------------------
 	  /*if (playerIsIdle) {
-	    this.refs[AVO.REF_PLAYER].setAnimation("idle");
+	    this.refs[AVO.REF.PLAYER].setAnimation("idle");
 	  } else {
-	    this.refs[AVO.REF_PLAYER].setAnimation("walk");
+	    this.refs[AVO.REF.PLAYER].setAnimation("walk");
 	  }*/
 
 	  if (this.refs["boxes"]) {
@@ -1788,12 +1836,12 @@
 	  var midX = this.width / 2,
 	      midY = this.height / 2;
 
-	  this.refs[AVO.REF_PLAYER] = new _entities.Actor(AVO.REF_PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-	  this.refs[AVO.REF_PLAYER].spritesheet = this.assets.images.actor;
-	  this.refs[AVO.REF_PLAYER].animationSet = this.animationSets.actor;
-	  this.refs[AVO.REF_PLAYER].attributes["speed"] = 4;
-	  this.refs[AVO.REF_PLAYER].rotation = AVO.ROTATION_NORTH;
-	  this.actors.push(this.refs[AVO.REF_PLAYER]);
+	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
+	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
+	  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
+	  this.refs[AVO.REF.PLAYER].attributes["speed"] = 4;
+	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
 	  var wallN = new _entities.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
 	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
@@ -1979,7 +2027,7 @@
 	}
 
 	function checkIfPlayerIsAtGoal() {
-	  if (this.isATouchingB(this.refs[AVO.REF_PLAYER], this.refs["goal"])) {
+	  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
 	    this.store.level && this.store.level++;
 
 	    switch (this.store.level) {

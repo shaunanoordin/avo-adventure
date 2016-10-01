@@ -7,6 +7,7 @@ AvO Adventure Game Engine
  */
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
+import { AoE, Effect } from "./entities.js";
 import { Utility } from "./utility.js";
 
 /*  Primary AvO Game Engine
@@ -16,7 +17,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   constructor(startScript) {
     //Initialise properties
     //--------------------------------
-    this.debugMode = false;
+    this.debugMode = true;
     this.runCycle = null;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
@@ -160,8 +161,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Actors determine intent
     //--------------------------------
-    if (this.refs[AVO.REF_PLAYER]) {
-      const player = this.refs[AVO.REF_PLAYER];
+    if (this.refs[AVO.REF.PLAYER]) {
+      const player = this.refs[AVO.REF.PLAYER];
       player.intent = null;
       
       //Mouse/touch input
@@ -170,51 +171,62 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         const distY = this.pointer.now.y - this.pointer.start.y;
         const dist = Math.sqrt(distX * distX + distY * distY);
 
-        if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+        if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
           const angle = Math.atan2(distY, distX);
           player.intent = {
-            name: AVO.ACTION_MOVE,
+            name: AVO.ACTION.MOVE,
             angle: angle,
           };
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
-          if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+            console.log("x");
             this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
               AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
             this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
               AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
           }
         }
+      } else if (this.pointer.state === AVO.INPUT_ENDED) {
+        const distX = this.pointer.now.x - this.pointer.start.x;
+        const distY = this.pointer.now.y - this.pointer.start.y;
+        const dist = Math.sqrt(distX * distX + distY * distY);
+
+        if (dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+          player.intent = {
+            name: AVO.ACTION.PRIMARY,
+          };
+        }
       }
       
       //Keyboard input
       if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
         player.intent = {
-          name: AVO.ACTION_MOVE,
+          name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_NORTH,
         };
       } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
         player.intent = {
-          name: AVO.ACTION_MOVE,
+          name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_SOUTH,
         };
       }
       if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
         player.intent = {
-          name: AVO.ACTION_MOVE,
+          name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_WEST,
         };
       } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
         player.intent = {
-          name: AVO.ACTION_MOVE,
+          name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_EAST,
         };
       }
       
       if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
         player.intent = {
-          name: "primary_action",
+          name: AVO.ACTION.PRIMARY,
         };
       }
     }
@@ -236,6 +248,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Actors react to Effects and perform actions
     //--------------------------------
     for (let actor of this.actors) {
+      //First react to Effects.
       for (let effect of actor.effects) {
         //TODO make this an external script
         //----------------
@@ -246,6 +259,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         //----------------
       }
       
+      //If the actor is not busy, transform the intent into an action.
       if (actor.state !== AVO.ACTOR_BUSY) {
         if (actor.intent) {
           actor.action = actor.intent;
@@ -254,16 +268,30 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         }        
       }
       
+      //If the Actor has an action, perform it.
       if (actor.action) {
         //TODO make this an external script
         //----------------
-        if (actor.action.name === AVO.ACTION_MOVE) {
+        if (actor.action.name === AVO.ACTION.MOVE) {
           const angle = actor.action.angle || 0;
-          const speed = actor.attributes["speed"] || 0;
+          const speed = actor.attributes[AVO.ATTR.SPEED] || 0;
           actor.x += Math.cos(angle) * speed;
           actor.y += Math.sin(angle) * speed;
           actor.rotation = angle;
           actor.state = AVO.ACTOR_WALKING;
+        } else if (actor.action.name === AVO.ACTION.PRIMARY) {
+          const PUSH_POWER = 12;
+          const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+          let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+          let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+          let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+          let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
+            [
+              new Effect("push",
+                { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
+                2, AVO.STACKING_RULE_ADD)
+            ]);
+          this.areasOfEffect.push(newAoE);
         }
         //----------------
         
@@ -632,6 +660,17 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     for (let actor of this.actors) {
       this.paintSprite(actor);
       actor.nextAnimationFrame();
+    }
+    //--------------------------------
+    
+    //DEBUG: Paint touch/mouse input
+    //--------------------------------
+    if (this.debugMode) {      
+      this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+      this.context2d.beginPath();
+      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+      this.context2d.stroke();
+      this.context2d.closePath();
     }
     //--------------------------------
   }

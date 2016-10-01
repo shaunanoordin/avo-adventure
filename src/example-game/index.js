@@ -230,9 +230,9 @@ function runAction() {
     if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
       const angle = Math.atan2(distY, distX);
       const speed = PLAYER_SPEED;
-      this.refs[AVO.REF_PLAYER].x += Math.cos(angle) * speed;
-      this.refs[AVO.REF_PLAYER].y += Math.sin(angle) * speed;
-      this.refs[AVO.REF_PLAYER].rotation = angle;
+      this.refs[AVO.REF.PLAYER].x += Math.cos(angle) * speed;
+      this.refs[AVO.REF.PLAYER].y += Math.sin(angle) * speed;
+      this.refs[AVO.REF.PLAYER].rotation = angle;
       playerIsIdle = false;
       
       //UX improvement: reset the base point of the pointer so the player can
@@ -247,58 +247,58 @@ function runAction() {
   }
   
   if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].y -= PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_NORTH;
+    this.refs[AVO.REF.PLAYER].y -= PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_NORTH;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].y += PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_SOUTH;
+    this.refs[AVO.REF.PLAYER].y += PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_SOUTH;
     playerIsIdle = false;
   }
   if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].x -= PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_WEST;
+    this.refs[AVO.REF.PLAYER].x -= PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_WEST;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].x += PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_EAST;
+    this.refs[AVO.REF.PLAYER].x += PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_EAST;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].rotation -= Math.PI / 36;
+    this.refs[AVO.REF.PLAYER].rotation -= Math.PI / 36;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].rotation += Math.PI / 36;
+    this.refs[AVO.REF.PLAYER].rotation += Math.PI / 36;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].x += Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].y += Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].x += Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].y += Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF_PLAYER].x -= Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
-    this.refs[AVO.REF_PLAYER].y -= Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].x -= Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF.PLAYER].y -= Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-    this.refs[AVO.REF_PLAYER].shape = (this.refs[AVO.REF_PLAYER].shape === AVO.SHAPE_CIRCLE)
+    this.refs[AVO.REF.PLAYER].shape = (this.refs[AVO.REF.PLAYER].shape === AVO.SHAPE_CIRCLE)
       ? AVO.SHAPE_SQUARE
       : AVO.SHAPE_CIRCLE;
   }
   
   if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
     const PUSH_POWER = 12;
-    const AOE_SIZE = this.refs[AVO.REF_PLAYER].size;
-    let distance = this.refs[AVO.REF_PLAYER].radius + AOE_SIZE / 2;
-    let x = this.refs[AVO.REF_PLAYER].x + Math.cos(this.refs[AVO.REF_PLAYER].rotation) * distance;
-    let y = this.refs[AVO.REF_PLAYER].y + Math.sin(this.refs[AVO.REF_PLAYER].rotation) * distance;;
+    const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+    let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+    let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+    let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
     let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
       [
         new Effect("push",
-          { x: Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER },
+          { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
           2, AVO.STACKING_RULE_ADD)
       ]);
     this.areasOfEffect.push(newAoE);
@@ -309,9 +309,9 @@ function runAction() {
   //Animations
   //--------------------------------
   /*if (playerIsIdle) {
-    this.refs[AVO.REF_PLAYER].setAnimation("idle");
+    this.refs[AVO.REF.PLAYER].setAnimation("idle");
   } else {
-    this.refs[AVO.REF_PLAYER].setAnimation("walk");
+    this.refs[AVO.REF.PLAYER].setAnimation("walk");
   }*/
   
   if (this.refs["boxes"]) {
@@ -344,12 +344,12 @@ function startLevelInit() {
   
   const midX = this.width / 2, midY = this.height / 2;
   
-  this.refs[AVO.REF_PLAYER] = new Actor(AVO.REF_PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-  this.refs[AVO.REF_PLAYER].spritesheet = this.assets.images.actor;
-  this.refs[AVO.REF_PLAYER].animationSet = this.animationSets.actor;
-  this.refs[AVO.REF_PLAYER].attributes["speed"] = 4;
-  this.refs[AVO.REF_PLAYER].rotation = AVO.ROTATION_NORTH;
-  this.actors.push(this.refs[AVO.REF_PLAYER]);
+  this.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
+  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
+  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
+  this.refs[AVO.REF.PLAYER].attributes["speed"] = 4;
+  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+  this.actors.push(this.refs[AVO.REF.PLAYER]);
   
   let wallN = new Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
   let wallS = new Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
@@ -454,7 +454,7 @@ function checkIfAllBoxesAreCharged() {
 }
 
 function checkIfPlayerIsAtGoal() {
-  if (this.isATouchingB(this.refs[AVO.REF_PLAYER], this.refs["goal"])) {
+  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
     this.store.level && this.store.level++;
     
     switch (this.store.level) {
