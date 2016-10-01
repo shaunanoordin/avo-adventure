@@ -137,7 +137,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   
   run_start() {
     this.assetsLoaded = 0;
-    this.assetsTotal = 0;    
+    this.assetsTotal = 0;
     for (let category in this.assets) {
       for (let asset in this.assets[category]) {
         this.assetsTotal++;
@@ -163,7 +163,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //--------------------------------
     if (this.refs[AVO.REF.PLAYER]) {
       const player = this.refs[AVO.REF.PLAYER];
-      player.intent = null;
+      player.intent = { name: AVO.ACTION.IDLE };
       
       //Mouse/touch input
       if (this.pointer.state === AVO.INPUT_ACTIVE) {
@@ -272,13 +272,17 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       if (actor.action) {
         //TODO make this an external script
         //----------------
-        if (actor.action.name === AVO.ACTION.MOVE) {
+        if (actor.action.name === AVO.ACTION.IDLE) {
+          actor.state = AVO.ACTOR_IDLE;
+          actor.playAnimation(AVO.ACTION.IDLE);
+        } else if (actor.action.name === AVO.ACTION.MOVE) {
           const angle = actor.action.angle || 0;
           const speed = actor.attributes[AVO.ATTR.SPEED] || 0;
           actor.x += Math.cos(angle) * speed;
           actor.y += Math.sin(angle) * speed;
           actor.rotation = angle;
           actor.state = AVO.ACTOR_WALKING;
+          actor.playAnimation(AVO.ACTION.MOVE);
         } else if (actor.action.name === AVO.ACTION.PRIMARY) {
           const PUSH_POWER = 12;
           const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
@@ -291,14 +295,9 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
                 { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
                 2, AVO.STACKING_RULE_ADD)
             ]);
-          this.areasOfEffect.push(newAoE);
+          actor.playAnimation(AVO.ACTION.PRIMARY);
         }
-        //----------------
-        
-        actor.setAnimation(actor.action.name);
-      } else {
-        actor.state = AVO.ACTOR_IDLE;
-        actor.setAnimation("idle");
+        //----------------        
       }
     }
     //--------------------------------

@@ -26,6 +26,7 @@ export const REF = {  //Standard References
 };
 
 export const ACTION = {  //Standard Actions
+  IDLE: "idle",
   MOVE: "move",
   PRIMARY: "primary",
 };

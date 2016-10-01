@@ -217,109 +217,15 @@ function comicStartFinished() {
 function runEnd() {}
 
 function runAction() {
-  //Input & Actions
-  //--------------------------------
-  let playerIsIdle = true;
-  /*
-  const PLAYER_SPEED = 4;
-  if (this.pointer.state === AVO.INPUT_ACTIVE) {
-    const distX = this.pointer.now.x - this.pointer.start.x;
-    const distY = this.pointer.now.y - this.pointer.start.y;
-    const dist = Math.sqrt(distX * distX + distY * distY);
-    
-    if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
-      const angle = Math.atan2(distY, distX);
-      const speed = PLAYER_SPEED;
-      this.refs[AVO.REF.PLAYER].x += Math.cos(angle) * speed;
-      this.refs[AVO.REF.PLAYER].y += Math.sin(angle) * speed;
-      this.refs[AVO.REF.PLAYER].rotation = angle;
-      playerIsIdle = false;
-      
-      //UX improvement: reset the base point of the pointer so the player can
-      //switch directions much more easily.
-      if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-        this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
-          AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-        this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
-          AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-      }
-    }
-  }
-  
-  if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].y -= PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_NORTH;
-    playerIsIdle = false;
-  } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].y += PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_SOUTH;
-    playerIsIdle = false;
-  }
-  if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].x -= PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_WEST;
-    playerIsIdle = false;
-  } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].x += PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_EAST;
-    playerIsIdle = false;
-  }
-  
-  if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].rotation -= Math.PI / 36;
-    playerIsIdle = false;
-  } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].rotation += Math.PI / 36;
-    playerIsIdle = false;
-  }
-  
-  if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].x += Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].y += Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-    playerIsIdle = false;
-  } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-    this.refs[AVO.REF.PLAYER].x -= Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-    this.refs[AVO.REF.PLAYER].y -= Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-    playerIsIdle = false;
-  }
-  
-  if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-    this.refs[AVO.REF.PLAYER].shape = (this.refs[AVO.REF.PLAYER].shape === AVO.SHAPE_CIRCLE)
-      ? AVO.SHAPE_SQUARE
-      : AVO.SHAPE_CIRCLE;
-  }
-  
-  if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
-    const PUSH_POWER = 12;
-    const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-    let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-    let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-    let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-    let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
-      [
-        new Effect("push",
-          { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
-          2, AVO.STACKING_RULE_ADD)
-      ]);
-    this.areasOfEffect.push(newAoE);
-  }
-  */
-  //--------------------------------
-  
   //Animations
   //--------------------------------
-  /*if (playerIsIdle) {
-    this.refs[AVO.REF.PLAYER].setAnimation("idle");
-  } else {
-    this.refs[AVO.REF.PLAYER].setAnimation("walk");
-  }*/
-  
+  //WARNING: This is no longer working due to new Action/Intent rules
   if (this.refs["boxes"]) {
     for (let box of this.refs["boxes"]) {
       if (box.effects.find((eff) => { return eff.name === "charge" })) {
-        box.setAnimation("glow");
+        box.playAnimation("glow");
       } else {
-        box.setAnimation("idle");
+        box.playAnimation("idle");
       }
     }
   }
@@ -365,13 +271,13 @@ function startLevelInit() {
   this.refs["gate"].canBeMoved = false;
   this.refs["gate"].spritesheet = this.assets.images.gate;
   this.refs["gate"].animationSet = this.animationSets.simple128;
-  this.refs["gate"].setAnimation("idle");
+  this.refs["gate"].playAnimation("idle");
   this.actors.push(this.refs["gate"]);
   
   this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
   this.refs["goal"].spritesheet = this.assets.images.goal;
   this.refs["goal"].animationSet = this.animationSets.simple64;
-  this.refs["goal"].setAnimation("glow");
+  this.refs["goal"].playAnimation("glow");
   this.areasOfEffect.push(this.refs["goal"]);
 }
 
@@ -408,7 +314,7 @@ function startLevel1() {
   for (let plate of this.refs.plates) {
     plate.spritesheet = this.assets.images.plate;
     plate.animationSet = this.animationSets.plate;
-    plate.setAnimation("idle");
+    plate.playAnimation("idle");
     this.areasOfEffect.push(plate);
   }
   
@@ -432,10 +338,10 @@ function checkIfAllBoxesAreCharged() {
       for (let box of this.refs["boxes"]) {
         if (this.isATouchingB(box, plate)) {
           thisPlateIsCharged = true;
-          plate.setAnimation("glow");
+          plate.playAnimation("glow");
         }
       }
-      !thisPlateIsCharged && plate.setAnimation("idle");
+      !thisPlateIsCharged && plate.playAnimation("idle");
       allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
     }
   }

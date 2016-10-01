@@ -72,7 +72,7 @@ export class Actor {
     }
   }
   
-  setAnimation(animationName = "", restart = false) {
+  playAnimation(animationName = "", restart = false) {
     if (!this.animationSet || !this.animationSet.actions[animationName]) return;
     
     if (restart || this.animationName !== animationName) {  //Set this as the new animation
@@ -127,7 +127,7 @@ export class AoE {
     return this.startDuration === AVO.DURATION_INFINITE;
   }
   
-  setAnimation(animationName = "", restart = false) {
+  playAnimation(animationName = "", restart = false) {
     if (!this.animationSet || !this.animationSet.actions[animationName]) return;
     
     if (restart || this.animationName !== animationName) {  //Set this as the new animation

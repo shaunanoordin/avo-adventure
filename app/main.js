@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(4);
+	var _index2 = __webpack_require__(5);
 
 	/*  Initialisations
 	 */
@@ -93,9 +93,9 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _entities = __webpack_require__(5);
+	var _entities = __webpack_require__(3);
 
-	var _utility = __webpack_require__(3);
+	var _utility = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -263,7 +263,7 @@
 	      //--------------------------------
 	      if (this.refs[AVO.REF.PLAYER]) {
 	        var player = this.refs[AVO.REF.PLAYER];
-	        player.intent = null;
+	        player.intent = { name: AVO.ACTION.IDLE };
 
 	        //Mouse/touch input
 	        if (this.pointer.state === AVO.INPUT_ACTIVE) {
@@ -462,13 +462,17 @@
 	          if (_actor.action) {
 	            //TODO make this an external script
 	            //----------------
-	            if (_actor.action.name === AVO.ACTION.MOVE) {
+	            if (_actor.action.name === AVO.ACTION.IDLE) {
+	              _actor.state = AVO.ACTOR_IDLE;
+	              _actor.playAnimation(AVO.ACTION.IDLE);
+	            } else if (_actor.action.name === AVO.ACTION.MOVE) {
 	              var _angle = _actor.action.angle || 0;
 	              var speed = _actor.attributes[AVO.ATTR.SPEED] || 0;
 	              _actor.x += Math.cos(_angle) * speed;
 	              _actor.y += Math.sin(_angle) * speed;
 	              _actor.rotation = _angle;
 	              _actor.state = AVO.ACTOR_WALKING;
+	              _actor.playAnimation(AVO.ACTION.MOVE);
 	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
 	              var PUSH_POWER = 12;
 	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
@@ -476,14 +480,9 @@
 	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
 	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
 	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	              this.areasOfEffect.push(newAoE);
+	              _actor.playAnimation(AVO.ACTION.PRIMARY);
 	            }
-	            //----------------
-
-	            _actor.setAnimation(_actor.action.name);
-	          } else {
-	            _actor.state = AVO.ACTOR_IDLE;
-	            _actor.setAnimation("idle");
+	            //----------------        
 	          }
 	        }
 	        //--------------------------------
@@ -1224,6 +1223,7 @@
 	};
 
 	var ACTION = exports.ACTION = { //Standard Actions
+	  IDLE: "idle",
 	  MOVE: "move",
 	  PRIMARY: "primary"
 	};
@@ -1415,6 +1415,316 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.Effect = exports.AoE = exports.Actor = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ==============================
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161001)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	//Naming note: all caps.
+
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _utility = __webpack_require__(4);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*  Actor Class
+	 */
+	//==============================================================================
+	var Actor = exports.Actor = function () {
+	  function Actor() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+
+	    _classCallCheck(this, Actor);
+
+	    this.name = name;
+	    this.x = x;
+	    this.y = y;
+	    this.size = size;
+	    this.shape = shape;
+	    this.solid = shape !== AVO.SHAPE_NONE;
+	    this.canBeMoved = true;
+	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
+
+	    this.spritesheet = null;
+	    this.animationStep = 0;
+	    this.animationSet = null;
+	    this.animationName = "";
+
+	    this.state = AVO.ACTOR_IDLE;
+	    this.intent = null;
+	    this.action = null;
+
+	    this.attributes = {};
+	    this.effects = [];
+	  }
+
+	  _createClass(Actor, [{
+	    key: "playAnimation",
+	    value: function playAnimation() {
+	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+	      if (restart || this.animationName !== animationName) {
+	        //Set this as the new animation
+	        this.animationStep = 0;
+	        this.animationName = animationName;
+	      }
+	    }
+	  }, {
+	    key: "nextAnimationFrame",
+	    value: function nextAnimationFrame() {
+	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+	      var animationAction = this.animationSet.actions[this.animationName];
+	      this.animationStep++;
+	      if (animationAction.steps.length === 0) {
+	        this.animationStep = 0;
+	      } else if (animationAction.loop) {
+	        while (this.animationStep >= animationAction.steps.length) {
+	          this.animationStep -= animationAction.steps.length;
+	        }
+	      } else {
+	        this.animationStep = animationAction.steps.length - 1;
+	      }
+	    }
+	  }, {
+	    key: "left",
+	    get: function get() {
+	      return this.x - this.size / 2;
+	    }
+	  }, {
+	    key: "right",
+	    get: function get() {
+	      return this.x + this.size / 2;
+	    }
+	  }, {
+	    key: "top",
+	    get: function get() {
+	      return this.y - this.size / 2;
+	    }
+	  }, {
+	    key: "bottom",
+	    get: function get() {
+	      return this.y + this.size / 2;
+	    }
+	  }, {
+	    key: "radius",
+	    get: function get() {
+	      return this.size / 2;
+	    }
+	  }, {
+	    key: "rotation",
+	    get: function get() {
+	      return this._rotation;
+	    },
+	    set: function set(val) {
+	      this._rotation = val;
+	      while (this._rotation > Math.PI) {
+	        this._rotation -= Math.PI * 2;
+	      }
+	      while (this._rotation <= -Math.PI) {
+	        this._rotation += Math.PI * 2;
+	      }
+	    }
+	  }, {
+	    key: "direction",
+	    get: function get() {
+	      //Get cardinal direction
+	      //Favour East and West when rotation is exactly SW, NW, SE or NE.
+	      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
+	        return AVO.DIRECTION_EAST;
+	      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
+	        return AVO.DIRECTION_SOUTH;
+	      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
+	        return AVO.DIRECTION_NORTH;
+	      } else {
+	        return AVO.DIRECTION_WEST;
+	      }
+	    },
+	    set: function set(val) {
+	      switch (val) {
+	        case AVO.DIRECTION_EAST:
+	          this._rotation = AVO.ROTATION_EAST;
+	          break;
+	        case AVO.DIRECTION_SOUTH:
+	          this._rotation = AVO.ROTATION_SOUTH;
+	          break;
+	        case AVO.DIRECTION_WEST:
+	          this._rotation = AVO.ROTATION_WEST;
+	          break;
+	        case AVO.DIRECTION_NORTH:
+	          this._rotation = AVO.ROTATION_NORTH;
+	          break;
+	      }
+	    }
+	  }]);
+
+	  return Actor;
+	}();
+	//==============================================================================
+
+	/*  Area of Effect Class
+	 */
+	//==============================================================================
+
+
+	var AoE = exports.AoE = function () {
+	  function AoE() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
+	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
+	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
+
+	    _classCallCheck(this, AoE);
+
+	    this.name = name;
+	    this.x = x;
+	    this.y = y;
+	    this.size = size;
+	    this.shape = shape;
+	    this.duration = duration;
+	    this.startDuration = duration;
+	    this.effects = effects;
+
+	    this.spritesheet = null;
+	    this.animationStep = 0;
+	    this.animationSet = null;
+	    this.animationName = "";
+	  }
+
+	  _createClass(AoE, [{
+	    key: "hasInfiniteDuration",
+	    value: function hasInfiniteDuration() {
+	      return this.startDuration === AVO.DURATION_INFINITE;
+	    }
+	  }, {
+	    key: "playAnimation",
+	    value: function playAnimation() {
+	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+	      if (restart || this.animationName !== animationName) {
+	        //Set this as the new animation
+	        this.animationStep = 0;
+	        this.animationName = animationName;
+	      }
+	    }
+	  }, {
+	    key: "nextAnimationFrame",
+	    value: function nextAnimationFrame() {
+	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+	      var animationAction = this.animationSet.actions[this.animationName];
+	      this.animationStep++;
+	      if (animationAction.steps.length === 0) {
+	        this.animationStep = 0;
+	      } else if (animationAction.loop) {
+	        while (this.animationStep >= animationAction.steps.length) {
+	          this.animationStep -= animationAction.steps.length;
+	        }
+	      } else {
+	        this.animationStep = animationAction.steps.length - 1;
+	      }
+	    }
+	  }, {
+	    key: "left",
+	    get: function get() {
+	      return this.x - this.size / 2;
+	    }
+	  }, {
+	    key: "right",
+	    get: function get() {
+	      return this.x + this.size / 2;
+	    }
+	  }, {
+	    key: "top",
+	    get: function get() {
+	      return this.y - this.size / 2;
+	    }
+	  }, {
+	    key: "bottom",
+	    get: function get() {
+	      return this.y + this.size / 2;
+	    }
+	  }, {
+	    key: "radius",
+	    get: function get() {
+	      return this.size / 2;
+	    }
+	  }]);
+
+	  return AoE;
+	}();
+	//==============================================================================
+
+	/*  Effect Class
+	 */
+	//==============================================================================
+
+
+	var Effect = exports.Effect = function () {
+	  function Effect() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
+
+	    _classCallCheck(this, Effect);
+
+	    this.name = name;
+	    this.data = data;
+	    this.duration = duration;
+	    this.stackingRule = stackingRule;
+	    this.startDuration = duration;
+	  }
+
+	  _createClass(Effect, [{
+	    key: "hasInfiniteDuration",
+	    value: function hasInfiniteDuration() {
+	      return this.startDuration === AVO.DURATION_INFINITE;
+	    }
+	  }, {
+	    key: "copy",
+	    value: function copy() {
+	      return new Effect(this.name, this.data, this.duration, this.stackingRule);
+	    }
+	  }]);
+
+	  return Effect;
+	}();
+	//==============================================================================
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	exports.Utility = undefined;
 	exports.ImageAsset = ImageAsset;
 
@@ -1473,7 +1783,7 @@
 	}
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1485,13 +1795,13 @@
 
 	var _index = __webpack_require__(1);
 
-	var _entities = __webpack_require__(5);
+	var _entities = __webpack_require__(3);
 
 	var _constants = __webpack_require__(2);
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(3);
+	var _utility = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1685,103 +1995,9 @@
 	function runEnd() {}
 
 	function runAction() {
-	  //Input & Actions
-	  //--------------------------------
-	  var playerIsIdle = true;
-	  /*
-	  const PLAYER_SPEED = 4;
-	  if (this.pointer.state === AVO.INPUT_ACTIVE) {
-	    const distX = this.pointer.now.x - this.pointer.start.x;
-	    const distY = this.pointer.now.y - this.pointer.start.y;
-	    const dist = Math.sqrt(distX * distX + distY * distY);
-	    
-	    if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
-	      const angle = Math.atan2(distY, distX);
-	      const speed = PLAYER_SPEED;
-	      this.refs[AVO.REF.PLAYER].x += Math.cos(angle) * speed;
-	      this.refs[AVO.REF.PLAYER].y += Math.sin(angle) * speed;
-	      this.refs[AVO.REF.PLAYER].rotation = angle;
-	      playerIsIdle = false;
-	      
-	      //UX improvement: reset the base point of the pointer so the player can
-	      //switch directions much more easily.
-	      if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-	        this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
-	          AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	        this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
-	          AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	      }
-	    }
-	  }
-	  
-	  if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].y -= PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_NORTH;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].y += PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_SOUTH;
-	    playerIsIdle = false;
-	  }
-	  if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].x -= PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_WEST;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].x += PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].direction = AVO.DIRECTION_EAST;
-	    playerIsIdle = false;
-	  }
-	  
-	  if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].rotation -= Math.PI / 36;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].rotation += Math.PI / 36;
-	    playerIsIdle = false;
-	  }
-	  
-	  if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].x += Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].y += Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-	    this.refs[AVO.REF.PLAYER].x -= Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-	    this.refs[AVO.REF.PLAYER].y -= Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PLAYER_SPEED;
-	    playerIsIdle = false;
-	  }
-	  
-	  if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-	    this.refs[AVO.REF.PLAYER].shape = (this.refs[AVO.REF.PLAYER].shape === AVO.SHAPE_CIRCLE)
-	      ? AVO.SHAPE_SQUARE
-	      : AVO.SHAPE_CIRCLE;
-	  }
-	  
-	  if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
-	    const PUSH_POWER = 12;
-	    const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	    let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-	    let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	    let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	    let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
-	      [
-	        new Effect("push",
-	          { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
-	          2, AVO.STACKING_RULE_ADD)
-	      ]);
-	    this.areasOfEffect.push(newAoE);
-	  }
-	  */
-	  //--------------------------------
-
 	  //Animations
 	  //--------------------------------
-	  /*if (playerIsIdle) {
-	    this.refs[AVO.REF.PLAYER].setAnimation("idle");
-	  } else {
-	    this.refs[AVO.REF.PLAYER].setAnimation("walk");
-	  }*/
-
+	  //WARNING: This is no longer working due to new Action/Intent rules
 	  if (this.refs["boxes"]) {
 	    var _iteratorNormalCompletion2 = true;
 	    var _didIteratorError2 = false;
@@ -1794,9 +2010,9 @@
 	        if (box.effects.find(function (eff) {
 	          return eff.name === "charge";
 	        })) {
-	          box.setAnimation("glow");
+	          box.playAnimation("glow");
 	        } else {
-	          box.setAnimation("idle");
+	          box.playAnimation("idle");
 	        }
 	      }
 	    } catch (err) {
@@ -1857,13 +2073,13 @@
 	  this.refs["gate"].canBeMoved = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
-	  this.refs["gate"].setAnimation("idle");
+	  this.refs["gate"].playAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
 	  this.refs["goal"] = new _entities.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
-	  this.refs["goal"].setAnimation("glow");
+	  this.refs["goal"].playAnimation("glow");
 	  this.areasOfEffect.push(this.refs["goal"]);
 	}
 
@@ -1924,7 +2140,7 @@
 
 	      plate.spritesheet = this.assets.images.plate;
 	      plate.animationSet = this.animationSets.plate;
-	      plate.setAnimation("idle");
+	      plate.playAnimation("idle");
 	      this.areasOfEffect.push(plate);
 	    }
 	  } catch (err) {
@@ -1976,7 +2192,7 @@
 
 	            if (this.isATouchingB(box, plate)) {
 	              thisPlateIsCharged = true;
-	              plate.setAnimation("glow");
+	              plate.playAnimation("glow");
 	            }
 	          }
 	        } catch (err) {
@@ -1994,7 +2210,7 @@
 	          }
 	        }
 
-	        !thisPlateIsCharged && plate.setAnimation("idle");
+	        !thisPlateIsCharged && plate.playAnimation("idle");
 	        allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
 	      }
 	    } catch (err) {
@@ -2045,316 +2261,6 @@
 	    }
 	  }
 	}
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.Effect = exports.AoE = exports.Actor = undefined;
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ==============================
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161001)
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
-
-	//Naming note: all caps.
-
-
-	var _constants = __webpack_require__(2);
-
-	var AVO = _interopRequireWildcard(_constants);
-
-	var _utility = __webpack_require__(3);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	/*  Actor Class
-	 */
-	//==============================================================================
-	var Actor = exports.Actor = function () {
-	  function Actor() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
-
-	    _classCallCheck(this, Actor);
-
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.solid = shape !== AVO.SHAPE_NONE;
-	    this.canBeMoved = true;
-	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
-
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
-
-	    this.state = AVO.ACTOR_IDLE;
-	    this.intent = null;
-	    this.action = null;
-
-	    this.attributes = {};
-	    this.effects = [];
-	  }
-
-	  _createClass(Actor, [{
-	    key: "setAnimation",
-	    value: function setAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
-	  }, {
-	    key: "rotation",
-	    get: function get() {
-	      return this._rotation;
-	    },
-	    set: function set(val) {
-	      this._rotation = val;
-	      while (this._rotation > Math.PI) {
-	        this._rotation -= Math.PI * 2;
-	      }
-	      while (this._rotation <= -Math.PI) {
-	        this._rotation += Math.PI * 2;
-	      }
-	    }
-	  }, {
-	    key: "direction",
-	    get: function get() {
-	      //Get cardinal direction
-	      //Favour East and West when rotation is exactly SW, NW, SE or NE.
-	      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
-	        return AVO.DIRECTION_EAST;
-	      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
-	        return AVO.DIRECTION_SOUTH;
-	      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
-	        return AVO.DIRECTION_NORTH;
-	      } else {
-	        return AVO.DIRECTION_WEST;
-	      }
-	    },
-	    set: function set(val) {
-	      switch (val) {
-	        case AVO.DIRECTION_EAST:
-	          this._rotation = AVO.ROTATION_EAST;
-	          break;
-	        case AVO.DIRECTION_SOUTH:
-	          this._rotation = AVO.ROTATION_SOUTH;
-	          break;
-	        case AVO.DIRECTION_WEST:
-	          this._rotation = AVO.ROTATION_WEST;
-	          break;
-	        case AVO.DIRECTION_NORTH:
-	          this._rotation = AVO.ROTATION_NORTH;
-	          break;
-	      }
-	    }
-	  }]);
-
-	  return Actor;
-	}();
-	//==============================================================================
-
-	/*  Area of Effect Class
-	 */
-	//==============================================================================
-
-
-	var AoE = exports.AoE = function () {
-	  function AoE() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
-	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
-	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
-
-	    _classCallCheck(this, AoE);
-
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.duration = duration;
-	    this.startDuration = duration;
-	    this.effects = effects;
-
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
-	  }
-
-	  _createClass(AoE, [{
-	    key: "hasInfiniteDuration",
-	    value: function hasInfiniteDuration() {
-	      return this.startDuration === AVO.DURATION_INFINITE;
-	    }
-	  }, {
-	    key: "setAnimation",
-	    value: function setAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
-	  }]);
-
-	  return AoE;
-	}();
-	//==============================================================================
-
-	/*  Effect Class
-	 */
-	//==============================================================================
-
-
-	var Effect = exports.Effect = function () {
-	  function Effect() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
-
-	    _classCallCheck(this, Effect);
-
-	    this.name = name;
-	    this.data = data;
-	    this.duration = duration;
-	    this.stackingRule = stackingRule;
-	    this.startDuration = duration;
-	  }
-
-	  _createClass(Effect, [{
-	    key: "hasInfiniteDuration",
-	    value: function hasInfiniteDuration() {
-	      return this.startDuration === AVO.DURATION_INFINITE;
-	    }
-	  }, {
-	    key: "copy",
-	    value: function copy() {
-	      return new Effect(this.name, this.data, this.duration, this.stackingRule);
-	    }
-	  }]);
-
-	  return Effect;
-	}();
-	//==============================================================================
 
 /***/ }
 /******/ ]);
