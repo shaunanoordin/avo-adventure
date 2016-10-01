@@ -253,7 +253,7 @@ function startLevelInit() {
   this.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
   this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
   this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
-  this.refs[AVO.REF.PLAYER].attributes["speed"] = 4;
+  this.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
   this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
   this.actors.push(this.refs[AVO.REF.PLAYER]);
   

@@ -181,7 +181,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
           if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-            console.log("x");
             this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
               AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
             this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
@@ -265,12 +264,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           actor.action = actor.intent;
         } else {
           actor.action = null;
-        }        
+        }
       }
       
       //If the Actor has an action, perform it.
       if (actor.action) {
-        //TODO make this an external script
+        //TODO make this a "standard library"
         //----------------
         if (actor.action.name === AVO.ACTION.IDLE) {
           actor.state = AVO.ACTOR_IDLE;
@@ -284,6 +283,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           actor.state = AVO.ACTOR_WALKING;
           actor.playAnimation(AVO.ACTION.MOVE);
         } else if (actor.action.name === AVO.ACTION.PRIMARY) {
+          //TODO This is just a placeholder
+          //................
           const PUSH_POWER = 12;
           const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
           let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
@@ -295,9 +296,15 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
                 { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
                 2, AVO.STACKING_RULE_ADD)
             ]);
+          this.areasOfEffect.push(newAoE);
           actor.playAnimation(AVO.ACTION.PRIMARY);
+          //................
         }
-        //----------------        
+        //----------------
+        
+        //TODO run custom scripts
+        //----------------
+        //----------------
       }
     }
     //--------------------------------

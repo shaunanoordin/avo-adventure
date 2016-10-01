@@ -281,7 +281,6 @@
 	            //UX improvement: reset the base point of the pointer so the player can
 	            //switch directions much more easily.
 	            if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-	              console.log("x");
 	              this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
 	              this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
 	            }
@@ -460,7 +459,7 @@
 
 	          //If the Actor has an action, perform it.
 	          if (_actor.action) {
-	            //TODO make this an external script
+	            //TODO make this a "standard library"
 	            //----------------
 	            if (_actor.action.name === AVO.ACTION.IDLE) {
 	              _actor.state = AVO.ACTOR_IDLE;
@@ -474,15 +473,23 @@
 	              _actor.state = AVO.ACTOR_WALKING;
 	              _actor.playAnimation(AVO.ACTION.MOVE);
 	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
+	              //TODO This is just a placeholder
+	              //................
 	              var PUSH_POWER = 12;
 	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
 	              var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
 	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
 	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
 	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	              this.areasOfEffect.push(newAoE);
 	              _actor.playAnimation(AVO.ACTION.PRIMARY);
+	              //................
 	            }
-	            //----------------        
+	            //----------------
+
+	            //TODO run custom scripts
+	            //----------------
+	            //----------------
 	          }
 	        }
 	        //--------------------------------
@@ -2055,7 +2062,7 @@
 	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
 	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
 	  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
-	  this.refs[AVO.REF.PLAYER].attributes["speed"] = 4;
+	  this.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
 	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
