@@ -17,11 +17,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Initialise properties
     //--------------------------------
     this.debugMode = false;
-    this.runCycle = undefined;
+    this.runCycle = null;
     this.html = document.getElementById("app");
     this.canvas = document.getElementById("canvas");
     this.context2d = this.canvas.getContext("2d");
-    this.boundingBox = undefined;  //To be defined by this.updateSize().
+    this.boundingBox = null;  //To be defined by this.updateSize().
     this.sizeRatioX = 1;
     this.sizeRatioY = 1;
     this.width = this.canvas.width;
@@ -158,6 +158,68 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (this.scripts.runAction) this.scripts.runAction.apply(this);
     //--------------------------------
     
+    //Actors determine intent
+    //--------------------------------
+    if (this.refs[AVO.REF_PLAYER]) {
+      const player = this.refs[AVO.REF_PLAYER];
+      player.intent = null;
+      
+      //Mouse/touch input
+      if (this.pointer.state === AVO.INPUT_ACTIVE) {
+        const distX = this.pointer.now.x - this.pointer.start.x;
+        const distY = this.pointer.now.y - this.pointer.start.y;
+        const dist = Math.sqrt(distX * distX + distY * distY);
+
+        if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+          const angle = Math.atan2(distY, distX);
+          player.intent = {
+            name: AVO.ACTION_MOVE,
+            angle: angle,
+          };
+
+          //UX improvement: reset the base point of the pointer so the player can
+          //switch directions much more easily.
+          if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+            this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+            this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+          }
+        }
+      }
+      
+      //Keyboard input
+      if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
+        player.intent = {
+          name: AVO.ACTION_MOVE,
+          angle: AVO.ROTATION_NORTH,
+        };
+      } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
+        player.intent = {
+          name: AVO.ACTION_MOVE,
+          angle: AVO.ROTATION_SOUTH,
+        };
+      }
+      if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
+        player.intent = {
+          name: AVO.ACTION_MOVE,
+          angle: AVO.ROTATION_WEST,
+        };
+      } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
+        player.intent = {
+          name: AVO.ACTION_MOVE,
+          angle: AVO.ROTATION_EAST,
+        };
+      }
+      
+      if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
+        player.intent = {
+          name: "primary_action",
+        };
+      }
+    }
+    //--------------------------------
+    
     //AoEs apply Effects
     //--------------------------------
     for (let aoe of this.areasOfEffect) {
@@ -171,7 +233,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     //--------------------------------
     
-    //Actors react to Effects
+    //Actors react to Effects and perform actions
     //--------------------------------
     for (let actor of this.actors) {
       for (let effect of actor.effects) {
@@ -183,9 +245,36 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         }
         //----------------
       }
+      
+      if (actor.state !== AVO.ACTOR_BUSY) {
+        if (actor.intent) {
+          actor.action = actor.intent;
+        } else {
+          actor.action = null;
+        }        
+      }
+      
+      if (actor.action) {
+        //TODO make this an external script
+        //----------------
+        if (actor.action.name === AVO.ACTION_MOVE) {
+          const angle = actor.action.angle || 0;
+          const speed = actor.attributes["speed"] || 0;
+          actor.x += Math.cos(angle) * speed;
+          actor.y += Math.sin(angle) * speed;
+          actor.rotation = angle;
+          actor.state = AVO.ACTOR_WALKING;
+        }
+        //----------------
+        
+        actor.setAnimation(actor.action.name);
+      } else {
+        actor.state = AVO.ACTOR_IDLE;
+        actor.setAnimation("idle");
+      }
     }
     //--------------------------------
-    
+        
     //Physics
     //--------------------------------
     this.physics();
@@ -729,166 +818,5 @@ export class ComicStrip {
       return this.panels[this.currentPanel - 1];
     }
   }  
-}
-//==============================================================================
-
-/*  Actor Class
- */
-//==============================================================================
-export class Actor {
-  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_NONE) {
-    this.name = name;
-    this.x = x;
-    this.y = y;
-    this.size = size;
-    this.shape = shape;
-    this.solid = (shape !== AVO.SHAPE_NONE);
-    this.canBeMoved = true;
-    this.rotation = AVO.ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
-    
-    this.spritesheet = null;
-    this.animationStep = 0;
-    this.animationSet = null;
-    this.animationName = "";
-    
-    this.attributes = {};
-    this.effects = [];
-  }
-  
-  get left() { return this.x - this.size / 2; }
-  get right() { return this.x + this.size / 2; }
-  get top() { return this.y - this.size / 2; }
-  get bottom() { return this.y + this.size / 2; }
-  get radius() { return this.size / 2; }
-  
-  get rotation() { return this._rotation; }
-  set rotation(val) {
-    this._rotation = val;
-    while (this._rotation > Math.PI) { this._rotation -= Math.PI * 2; }
-    while (this._rotation <= -Math.PI) { this._rotation += Math.PI * 2; }
-  }
-  get direction() {  //Get cardinal direction
-    //Favour East and West when rotation is exactly SW, NW, SE or NE.
-    if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) { return AVO.DIRECTION_EAST; }
-    else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) { return AVO.DIRECTION_SOUTH; }
-    else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) { return AVO.DIRECTION_NORTH; }
-    else { return AVO.DIRECTION_WEST; }
-  }
-  set direction(val) {
-    switch (val) {
-      case AVO.DIRECTION_EAST:
-        this._rotation = AVO.ROTATION_EAST;
-        break;
-      case AVO.DIRECTION_SOUTH:
-        this._rotation = AVO.ROTATION_SOUTH;
-        break;
-      case AVO.DIRECTION_WEST:
-        this._rotation = AVO.ROTATION_WEST;
-        break;
-      case AVO.DIRECTION_NORTH:
-        this._rotation = AVO.ROTATION_NORTH;
-        break;
-    }
-  }
-  
-  setAnimation(animationName = "", restart = false) {
-    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-    
-    if (restart || this.animationName !== animationName) {  //Set this as the new animation
-      this.animationStep = 0;
-      this.animationName = animationName;
-    }
-  }
-  
-  nextAnimationFrame() {
-    if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-    
-    let animationAction = this.animationSet.actions[this.animationName];
-    this.animationStep++;
-    if (animationAction.steps.length === 0) {
-      this.animationStep = 0;
-    } else if (animationAction.loop) {
-      while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
-    } else {
-      this.animationStep = animationAction.steps.length - 1;
-    }
-  }
-}
-//==============================================================================
-
-/*  Area of Effect Class
- */
-//==============================================================================
-export class AoE {
-  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_CIRCLE, duration = 1, effects = []) {
-    this.name = name; 
-    this.x = x;
-    this.y = y;
-    this.size = size;
-    this.shape = shape;
-    this.duration = duration;
-    this.startDuration = duration;
-    this.effects = effects;
-        
-    this.spritesheet = null;
-    this.animationStep = 0;
-    this.animationSet = null;
-    this.animationName = "";
-  }
-  
-  get left() { return this.x - this.size / 2; }
-  get right() { return this.x + this.size / 2; }
-  get top() { return this.y - this.size / 2; }
-  get bottom() { return this.y + this.size / 2; }
-  get radius() { return this.size / 2; }
-  
-  hasInfiniteDuration() {
-    return this.startDuration === AVO.DURATION_INFINITE;
-  }
-  
-  setAnimation(animationName = "", restart = false) {
-    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-    
-    if (restart || this.animationName !== animationName) {  //Set this as the new animation
-      this.animationStep = 0;
-      this.animationName = animationName;
-    }
-  }
-  
-  nextAnimationFrame() {
-    if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-    
-    let animationAction = this.animationSet.actions[this.animationName];
-    this.animationStep++;
-    if (animationAction.steps.length === 0) {
-      this.animationStep = 0;
-    } else if (animationAction.loop) {
-      while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
-    } else {
-      this.animationStep = animationAction.steps.length - 1;
-    }
-  }
-}
-//==============================================================================
-
-/*  Effect Class
- */
-//==============================================================================
-export class Effect {
-  constructor(name = "", data = {}, duration = 1, stackingRule = AVO.STACKING_RULE_ADD) {
-    this.name = name;
-    this.data = data;
-    this.duration = duration;
-    this.stackingRule = stackingRule;
-    this.startDuration = duration;
-  }
-  
-  hasInfiniteDuration() {
-    return this.startDuration === AVO.DURATION_INFINITE;
-  }
-  
-  copy() {
-    return new Effect(this.name, this.data, this.duration, this.stackingRule);
-  }
 }
 //==============================================================================

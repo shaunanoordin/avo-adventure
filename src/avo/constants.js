@@ -17,6 +17,13 @@ export const STATE_ACTION = 1;
 export const STATE_COMIC = 2;
 export const STATE_END = 3;
 
+export const REF_PLAYER = "player";
+export const ACTOR_IDLE = 0;
+export const ACTOR_MOVING = 1;
+export const ACTOR_BUSY = 2;
+export const ACTION_MOVE = "move";
+export const ACTION_PRIMARY = "primary";
+
 export const ANIMATION_RULE_BASIC = "basic";
 export const ANIMATION_RULE_DIRECTIONAL = "directional";  
 

@@ -5,11 +5,12 @@ Example Game
 While AvO is the adventure game engine, this is a specific implementation of an
 adventure game idea.
 
-(Shaun A. Noordin || shaunanoordin.com || 20160901)
+(Shaun A. Noordin || shaunanoordin.com || 20161001)
 ********************************************************************************
  */
 
-import { AvO, Actor, AoE, Effect, ComicStrip } from "../avo/index.js"; 
+import { AvO, ComicStrip } from "../avo/index.js";
+import { Actor, AoE, Effect } from "../avo/entities.js";
 import * as AVO from  "../avo/constants.js";
 import { ImageAsset } from "../avo/utility.js";
 
@@ -55,7 +56,7 @@ export function initialise() {
             { row: 0, duration: 1 }
           ],
         },
-        walk: {
+        move: {
           loop: true,
           steps: [
             { row: 1, duration: STEPS_PER_SECOND },
@@ -201,32 +202,12 @@ function runStart() {
 function comicStart() {
   this.comicStrip = new ComicStrip(
     "startcomic",
-    [ this.assets.images.comicPanelA ],
+    [ //this.assets.images.comicPanelA,
+      //this.assets.images.comicPanelB,
+      //this.assets.images.comicPanelC,
+    ],
     comicStartFinished);
   this.comicStrip.start();
-  
-  //this.comicStrip = new ComicStrip(
-  //  "startcomic",
-  //  [ this.assets.images.comicPanelA,
-  //    this.assets.images.comicPanelB,
-  //    this.assets.images.comicPanelC ],
-  //  comicStartFinished);
-  //this.comicStrip.start();
-  
-  //this.comicStrip = new ComicStrip(
-  //  "startcomic",
-  //  [ this.assets.images.comicPanelA, 
-  //    this.assets.images.comicPanelSmall, 
-  //    this.assets.images.comicPanelBig, 
-  //    this.assets.images.comicPanelWide ],
-  //  comicStartFinished);
-  //this.comicStrip.start();
-  
-  //this.comicStrip = new ComicStrip(
-  //  "startcomic",
-  //  [],
-  //  comicStartFinished);
-  //this.comicStrip.start();
 }
 
 function comicStartFinished() {
@@ -239,6 +220,7 @@ function runAction() {
   //Input & Actions
   //--------------------------------
   let playerIsIdle = true;
+  /*
   const PLAYER_SPEED = 4;
   if (this.pointer.state === AVO.INPUT_ACTIVE) {
     const distX = this.pointer.now.x - this.pointer.start.x;
@@ -248,9 +230,9 @@ function runAction() {
     if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
       const angle = Math.atan2(distY, distX);
       const speed = PLAYER_SPEED;
-      this.refs["player"].x += Math.cos(angle) * speed;
-      this.refs["player"].y += Math.sin(angle) * speed;
-      this.refs["player"].rotation = angle;
+      this.refs[AVO.REF_PLAYER].x += Math.cos(angle) * speed;
+      this.refs[AVO.REF_PLAYER].y += Math.sin(angle) * speed;
+      this.refs[AVO.REF_PLAYER].rotation = angle;
       playerIsIdle = false;
       
       //UX improvement: reset the base point of the pointer so the player can
@@ -265,71 +247,72 @@ function runAction() {
   }
   
   if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-    this.refs["player"].y -= PLAYER_SPEED;
-    this.refs["player"].direction = AVO.DIRECTION_NORTH;
+    this.refs[AVO.REF_PLAYER].y -= PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_NORTH;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-    this.refs["player"].y += PLAYER_SPEED;
-    this.refs["player"].direction = AVO.DIRECTION_SOUTH;
+    this.refs[AVO.REF_PLAYER].y += PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_SOUTH;
     playerIsIdle = false;
   }
   if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-    this.refs["player"].x -= PLAYER_SPEED;
-    this.refs["player"].direction = AVO.DIRECTION_WEST;
+    this.refs[AVO.REF_PLAYER].x -= PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_WEST;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-    this.refs["player"].x += PLAYER_SPEED;
-    this.refs["player"].direction = AVO.DIRECTION_EAST;
+    this.refs[AVO.REF_PLAYER].x += PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].direction = AVO.DIRECTION_EAST;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-    this.refs["player"].rotation -= Math.PI / 36;
+    this.refs[AVO.REF_PLAYER].rotation -= Math.PI / 36;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-    this.refs["player"].rotation += Math.PI / 36;
+    this.refs[AVO.REF_PLAYER].rotation += Math.PI / 36;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-    this.refs["player"].x += Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
-    this.refs["player"].y += Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].x += Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].y += Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
     playerIsIdle = false;
   } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-    this.refs["player"].x -= Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
-    this.refs["player"].y -= Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].x -= Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
+    this.refs[AVO.REF_PLAYER].y -= Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PLAYER_SPEED;
     playerIsIdle = false;
   }
   
   if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-    this.refs["player"].shape = (this.refs["player"].shape === AVO.SHAPE_CIRCLE)
+    this.refs[AVO.REF_PLAYER].shape = (this.refs[AVO.REF_PLAYER].shape === AVO.SHAPE_CIRCLE)
       ? AVO.SHAPE_SQUARE
       : AVO.SHAPE_CIRCLE;
   }
   
   if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
     const PUSH_POWER = 12;
-    const AOE_SIZE = this.refs["player"].size;
-    let distance = this.refs["player"].radius + AOE_SIZE / 2;
-    let x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
-    let y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
+    const AOE_SIZE = this.refs[AVO.REF_PLAYER].size;
+    let distance = this.refs[AVO.REF_PLAYER].radius + AOE_SIZE / 2;
+    let x = this.refs[AVO.REF_PLAYER].x + Math.cos(this.refs[AVO.REF_PLAYER].rotation) * distance;
+    let y = this.refs[AVO.REF_PLAYER].y + Math.sin(this.refs[AVO.REF_PLAYER].rotation) * distance;;
     let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
       [
         new Effect("push",
-          { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER },
+          { x: Math.cos(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF_PLAYER].rotation) * PUSH_POWER },
           2, AVO.STACKING_RULE_ADD)
       ]);
     this.areasOfEffect.push(newAoE);
   }
+  */
   //--------------------------------
   
   //Animations
   //--------------------------------
-  if (playerIsIdle) {
-    this.refs["player"].setAnimation("idle");
+  /*if (playerIsIdle) {
+    this.refs[AVO.REF_PLAYER].setAnimation("idle");
   } else {
-    this.refs["player"].setAnimation("walk");
-  }
+    this.refs[AVO.REF_PLAYER].setAnimation("walk");
+  }*/
   
   if (this.refs["boxes"]) {
     for (let box of this.refs["boxes"]) {
@@ -361,11 +344,12 @@ function startLevelInit() {
   
   const midX = this.width / 2, midY = this.height / 2;
   
-  this.refs["player"] = new Actor("player", midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-  this.refs["player"].spritesheet = this.assets.images.actor;
-  this.refs["player"].animationSet = this.animationSets.actor;
-  this.refs["player"].rotation = AVO.ROTATION_NORTH;
-  this.actors.push(this.refs["player"]);
+  this.refs[AVO.REF_PLAYER] = new Actor(AVO.REF_PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
+  this.refs[AVO.REF_PLAYER].spritesheet = this.assets.images.actor;
+  this.refs[AVO.REF_PLAYER].animationSet = this.animationSets.actor;
+  this.refs[AVO.REF_PLAYER].attributes["speed"] = 4;
+  this.refs[AVO.REF_PLAYER].rotation = AVO.ROTATION_NORTH;
+  this.actors.push(this.refs[AVO.REF_PLAYER]);
   
   let wallN = new Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
   let wallS = new Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
@@ -411,7 +395,7 @@ function startLevel1() {
     new Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE),
   ];
   for (let box of this.refs.boxes) {
-    box.attributes.box = true;
+    box.attributes["box"] = true;
     box.spritesheet = this.assets.images.sarcophagus;
     box.animationSet = this.animationSets.sarcophagus;
     this.actors.push(box);
@@ -470,7 +454,7 @@ function checkIfAllBoxesAreCharged() {
 }
 
 function checkIfPlayerIsAtGoal() {
-  if (this.isATouchingB(this.refs["player"], this.refs["goal"])) {
+  if (this.isATouchingB(this.refs[AVO.REF_PLAYER], this.refs["goal"])) {
     this.store.level && this.store.level++;
     
     switch (this.store.level) {
