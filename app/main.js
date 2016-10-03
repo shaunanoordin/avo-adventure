@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(4);
+	var _index2 = __webpack_require__(5);
 
 	/*  Initialisations
 	 */
@@ -76,7 +76,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Effect = exports.AoE = exports.Actor = exports.ComicStrip = exports.AvO = undefined;
+	exports.ComicStrip = exports.AvO = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Adventure Game Engine
@@ -93,7 +93,9 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(3);
+	var _entities = __webpack_require__(3);
+
+	var _utility = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -109,12 +111,12 @@
 
 	    //Initialise properties
 	    //--------------------------------
-	    this.debugMode = false;
-	    this.runCycle = undefined;
+	    this.debugMode = true;
+	    this.runCycle = null;
 	    this.html = document.getElementById("app");
 	    this.canvas = document.getElementById("canvas");
 	    this.context2d = this.canvas.getContext("2d");
-	    this.boundingBox = undefined; //To be defined by this.updateSize().
+	    this.boundingBox = null; //To be defined by this.updateSize().
 	    this.sizeRatioX = 1;
 	    this.sizeRatioY = 1;
 	    this.width = this.canvas.width;
@@ -200,7 +202,7 @@
 	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
-	      var script = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+	      var script = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
 	      this.state = state;
 	      if (script && typeof script === "function") {
@@ -255,6 +257,76 @@
 	      //Run Global Scripts
 	      //--------------------------------
 	      if (this.scripts.runAction) this.scripts.runAction.apply(this);
+	      //--------------------------------
+
+	      //Actors determine intent
+	      //--------------------------------
+	      if (this.refs[AVO.REF.PLAYER]) {
+	        var player = this.refs[AVO.REF.PLAYER];
+	        player.intent = { name: AVO.ACTION.IDLE };
+
+	        //Mouse/touch input
+	        if (this.pointer.state === AVO.INPUT_ACTIVE) {
+	          var distX = this.pointer.now.x - this.pointer.start.x;
+	          var distY = this.pointer.now.y - this.pointer.start.y;
+	          var dist = Math.sqrt(distX * distX + distY * distY);
+
+	          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	            var angle = Math.atan2(distY, distX);
+	            player.intent = {
+	              name: AVO.ACTION.MOVE,
+	              angle: angle
+	            };
+
+	            //UX improvement: reset the base point of the pointer so the player can
+	            //switch directions much more easily.
+	            if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+	              this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+	              this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+	            }
+	          }
+	        } else if (this.pointer.state === AVO.INPUT_ENDED) {
+	          var _distX = this.pointer.now.x - this.pointer.start.x;
+	          var _distY = this.pointer.now.y - this.pointer.start.y;
+	          var _dist = Math.sqrt(_distX * _distX + _distY * _distY);
+
+	          if (_dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	            player.intent = {
+	              name: AVO.ACTION.PRIMARY
+	            };
+	          }
+	        }
+
+	        //Keyboard input
+	        if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
+	          player.intent = {
+	            name: AVO.ACTION.MOVE,
+	            angle: AVO.ROTATION_NORTH
+	          };
+	        } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
+	          player.intent = {
+	            name: AVO.ACTION.MOVE,
+	            angle: AVO.ROTATION_SOUTH
+	          };
+	        }
+	        if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
+	          player.intent = {
+	            name: AVO.ACTION.MOVE,
+	            angle: AVO.ROTATION_WEST
+	          };
+	        } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
+	          player.intent = {
+	            name: AVO.ACTION.MOVE,
+	            angle: AVO.ROTATION_EAST
+	          };
+	        }
+
+	        if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
+	          player.intent = {
+	            name: AVO.ACTION.PRIMARY
+	          };
+	        }
+	      }
 	      //--------------------------------
 
 	      //AoEs apply Effects
@@ -318,7 +390,7 @@
 	        }
 	        //--------------------------------
 
-	        //Actors react to Effects
+	        //Actors react to Effects and perform actions
 	        //--------------------------------
 	      } catch (err) {
 	        _didIteratorError = true;
@@ -342,6 +414,8 @@
 	      try {
 	        for (var _iterator2 = this.actors[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	          var _actor = _step2.value;
+
+	          //First react to Effects.
 	          var _iteratorNormalCompletion6 = true;
 	          var _didIteratorError6 = false;
 	          var _iteratorError6 = undefined;
@@ -358,6 +432,8 @@
 	              }
 	              //----------------
 	            }
+
+	            //If the actor is not busy, transform the intent into an action.
 	          } catch (err) {
 	            _didIteratorError6 = true;
 	            _iteratorError6 = err;
@@ -371,6 +447,49 @@
 	                throw _iteratorError6;
 	              }
 	            }
+	          }
+
+	          if (_actor.state !== AVO.ACTOR_BUSY) {
+	            if (_actor.intent) {
+	              _actor.action = _actor.intent;
+	            } else {
+	              _actor.action = null;
+	            }
+	          }
+
+	          //If the Actor has an action, perform it.
+	          if (_actor.action) {
+	            //TODO make this a "standard library"
+	            //----------------
+	            if (_actor.action.name === AVO.ACTION.IDLE) {
+	              _actor.state = AVO.ACTOR_IDLE;
+	              _actor.playAnimation(AVO.ACTION.IDLE);
+	            } else if (_actor.action.name === AVO.ACTION.MOVE) {
+	              var _angle = _actor.action.angle || 0;
+	              var speed = _actor.attributes[AVO.ATTR.SPEED] || 0;
+	              _actor.x += Math.cos(_angle) * speed;
+	              _actor.y += Math.sin(_angle) * speed;
+	              _actor.rotation = _angle;
+	              _actor.state = AVO.ACTOR_WALKING;
+	              _actor.playAnimation(AVO.ACTION.MOVE);
+	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
+	              //TODO This is just a placeholder
+	              //................
+	              var PUSH_POWER = 12;
+	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	              var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	              this.areasOfEffect.push(newAoE);
+	              _actor.playAnimation(AVO.ACTION.PRIMARY);
+	              //................
+	            }
+	            //----------------
+
+	            //TODO run custom scripts
+	            //----------------
+	            //----------------
 	          }
 	        }
 	        //--------------------------------
@@ -539,15 +658,15 @@
 	          return true;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
+	        var _distX2 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        var _distY2 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        if (_distX2 * _distX2 + _distY2 * _distY2 < objA.radius * objA.radius) {
 	          return true;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
+	        var _distX3 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        var _distY3 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        if (_distX3 * _distX3 + _distY3 * _distY3 < objB.radius * objB.radius) {
 	          return true;
 	        }
 	      }
@@ -583,40 +702,40 @@
 	        objB.x += cosAngle * (correctDist - dist) * fractionB;
 	        objB.y += sinAngle * (correctDist - dist) * fractionB;
 	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX3 = objB.x - objA.x;
-	        var _distY3 = objB.y - objA.y;
+	        var _distX4 = objB.x - objA.x;
+	        var _distY4 = objB.y - objA.y;
 	        var _correctDist = (objA.size + objB.size) / 2;
-	        if (Math.abs(_distX3) > Math.abs(_distY3)) {
-	          objA.x -= Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionA;
-	          objB.x += Math.sign(_distX3) * (_correctDist - Math.abs(_distX3)) * fractionB;
+	        if (Math.abs(_distX4) > Math.abs(_distY4)) {
+	          objA.x -= Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionA;
+	          objB.x += Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionB;
 	        } else {
-	          objA.y -= Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionA;
-	          objB.y += Math.sign(_distY3) * (_correctDist - Math.abs(_distY3)) * fractionB;
+	          objA.y -= Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionA;
+	          objB.y += Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionB;
 	        }
 	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX4 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY4 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        var _dist = Math.sqrt(_distX4 * _distX4 + _distY4 * _distY4);
-	        var _angle = Math.atan2(_distY4, _distX4);
-	        var _correctDist2 = objA.radius;
-	        var _cosAngle = Math.cos(_angle);
-	        var _sinAngle = Math.sin(_angle);
-	        objA.x += _cosAngle * (_correctDist2 - _dist) * fractionA;
-	        objA.y += _sinAngle * (_correctDist2 - _dist) * fractionA;
-	        objB.x -= _cosAngle * (_correctDist2 - _dist) * fractionB;
-	        objB.y -= _sinAngle * (_correctDist2 - _dist) * fractionB;
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX5 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY5 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        var _distX5 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        var _distY5 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
 	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
 	        var _angle2 = Math.atan2(_distY5, _distX5);
+	        var _correctDist2 = objA.radius;
+	        var _cosAngle = Math.cos(_angle2);
+	        var _sinAngle = Math.sin(_angle2);
+	        objA.x += _cosAngle * (_correctDist2 - _dist2) * fractionA;
+	        objA.y += _sinAngle * (_correctDist2 - _dist2) * fractionA;
+	        objB.x -= _cosAngle * (_correctDist2 - _dist2) * fractionB;
+	        objB.y -= _sinAngle * (_correctDist2 - _dist2) * fractionB;
+	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	        var _distX6 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        var _distY6 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        var _dist3 = Math.sqrt(_distX6 * _distX6 + _distY6 * _distY6);
+	        var _angle3 = Math.atan2(_distY6, _distX6);
 	        var _correctDist3 = objB.radius;
-	        var _cosAngle2 = Math.cos(_angle2);
-	        var _sinAngle2 = Math.sin(_angle2);
-	        objA.x -= _cosAngle2 * (_correctDist3 - _dist2) * fractionA;
-	        objA.y -= _sinAngle2 * (_correctDist3 - _dist2) * fractionA;
-	        objB.x += _cosAngle2 * (_correctDist3 - _dist2) * fractionB;
-	        objB.y += _sinAngle2 * (_correctDist3 - _dist2) * fractionB;
+	        var _cosAngle2 = Math.cos(_angle3);
+	        var _sinAngle2 = Math.sin(_angle3);
+	        objA.x -= _cosAngle2 * (_correctDist3 - _dist3) * fractionA;
+	        objA.y -= _sinAngle2 * (_correctDist3 - _dist3) * fractionA;
+	        objB.x += _cosAngle2 * (_correctDist3 - _dist3) * fractionB;
+	        objB.y += _sinAngle2 * (_correctDist3 - _dist3) * fractionB;
 	      }
 	    }
 
@@ -834,6 +953,9 @@
 	          _actor3.nextAnimationFrame();
 	        }
 	        //--------------------------------
+
+	        //DEBUG: Paint touch/mouse input
+	        //--------------------------------
 	      } catch (err) {
 	        _didIteratorError10 = true;
 	        _iteratorError10 = err;
@@ -848,6 +970,15 @@
 	          }
 	        }
 	      }
+
+	      if (this.debugMode) {
+	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+	        this.context2d.beginPath();
+	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+	        this.context2d.stroke();
+	        this.context2d.closePath();
+	      }
+	      //--------------------------------
 	    }
 	  }, {
 	    key: "paint_comic",
@@ -905,8 +1036,8 @@
 	  }, {
 	    key: "paintComicPanel",
 	    value: function paintComicPanel() {
-	      var panel = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-	      var offsetY = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	      var panel = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	      var offsetY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
 	      if (!panel || !panel.loaded) return;
 
@@ -1014,9 +1145,9 @@
 
 	var ComicStrip = exports.ComicStrip = function () {
 	  function ComicStrip() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
 
 	    _classCallCheck(this, ComicStrip);
 
@@ -1062,282 +1193,6 @@
 	}();
 	//==============================================================================
 
-	/*  Actor Class
-	 */
-	//==============================================================================
-
-
-	var Actor = exports.Actor = function () {
-	  function Actor() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
-
-	    _classCallCheck(this, Actor);
-
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.solid = shape !== AVO.SHAPE_NONE;
-	    this.canBeMoved = true;
-	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
-
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
-
-	    this.attributes = {};
-	    this.effects = [];
-	  }
-
-	  _createClass(Actor, [{
-	    key: "setAnimation",
-	    value: function setAnimation() {
-	      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
-	  }, {
-	    key: "rotation",
-	    get: function get() {
-	      return this._rotation;
-	    },
-	    set: function set(val) {
-	      this._rotation = val;
-	      while (this._rotation > Math.PI) {
-	        this._rotation -= Math.PI * 2;
-	      }
-	      while (this._rotation <= -Math.PI) {
-	        this._rotation += Math.PI * 2;
-	      }
-	    }
-	  }, {
-	    key: "direction",
-	    get: function get() {
-	      //Get cardinal direction
-	      //Favour East and West when rotation is exactly SW, NW, SE or NE.
-	      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
-	        return AVO.DIRECTION_EAST;
-	      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
-	        return AVO.DIRECTION_SOUTH;
-	      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
-	        return AVO.DIRECTION_NORTH;
-	      } else {
-	        return AVO.DIRECTION_WEST;
-	      }
-	    },
-	    set: function set(val) {
-	      switch (val) {
-	        case AVO.DIRECTION_EAST:
-	          this._rotation = AVO.ROTATION_EAST;
-	          break;
-	        case AVO.DIRECTION_SOUTH:
-	          this._rotation = AVO.ROTATION_SOUTH;
-	          break;
-	        case AVO.DIRECTION_WEST:
-	          this._rotation = AVO.ROTATION_WEST;
-	          break;
-	        case AVO.DIRECTION_NORTH:
-	          this._rotation = AVO.ROTATION_NORTH;
-	          break;
-	      }
-	    }
-	  }]);
-
-	  return Actor;
-	}();
-	//==============================================================================
-
-	/*  Area of Effect Class
-	 */
-	//==============================================================================
-
-
-	var AoE = exports.AoE = function () {
-	  function AoE() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_CIRCLE : arguments[4];
-	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
-	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
-
-	    _classCallCheck(this, AoE);
-
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.duration = duration;
-	    this.startDuration = duration;
-	    this.effects = effects;
-
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
-	  }
-
-	  _createClass(AoE, [{
-	    key: "hasInfiniteDuration",
-	    value: function hasInfiniteDuration() {
-	      return this.startDuration === AVO.DURATION_INFINITE;
-	    }
-	  }, {
-	    key: "setAnimation",
-	    value: function setAnimation() {
-	      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
-	  }]);
-
-	  return AoE;
-	}();
-	//==============================================================================
-
-	/*  Effect Class
-	 */
-	//==============================================================================
-
-
-	var Effect = exports.Effect = function () {
-	  function Effect() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-	    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
-	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? AVO.STACKING_RULE_ADD : arguments[3];
-
-	    _classCallCheck(this, Effect);
-
-	    this.name = name;
-	    this.data = data;
-	    this.duration = duration;
-	    this.stackingRule = stackingRule;
-	    this.startDuration = duration;
-	  }
-
-	  _createClass(Effect, [{
-	    key: "hasInfiniteDuration",
-	    value: function hasInfiniteDuration() {
-	      return this.startDuration === AVO.DURATION_INFINITE;
-	    }
-	  }, {
-	    key: "copy",
-	    value: function copy() {
-	      return new Effect(this.name, this.data, this.duration, this.stackingRule);
-	    }
-	  }]);
-
-	  return Effect;
-	}();
-	//==============================================================================
-
 /***/ },
 /* 2 */
 /***/ function(module, exports) {
@@ -1361,10 +1216,28 @@
 	var INPUT_DISTANCE_SENSITIVITY = exports.INPUT_DISTANCE_SENSITIVITY = 16;
 	var MAX_KEYS = exports.MAX_KEYS = 128;
 
-	var STATE_START = exports.STATE_START = 0;
+	var STATE_START = exports.STATE_START = 0; //AvO App states
 	var STATE_ACTION = exports.STATE_ACTION = 1;
 	var STATE_COMIC = exports.STATE_COMIC = 2;
 	var STATE_END = exports.STATE_END = 3;
+
+	var ACTOR_IDLE = exports.ACTOR_IDLE = 0; //Actor states
+	var ACTOR_MOVING = exports.ACTOR_MOVING = 1;
+	var ACTOR_BUSY = exports.ACTOR_BUSY = 2;
+
+	var REF = exports.REF = { //Standard References
+	  PLAYER: "player"
+	};
+
+	var ACTION = exports.ACTION = { //Standard Actions
+	  IDLE: "idle",
+	  MOVE: "move",
+	  PRIMARY: "primary"
+	};
+
+	var ATTR = exports.ATTR = { //Standard Attributes
+	  SPEED: "speed"
+	};
 
 	var ANIMATION_RULE_BASIC = exports.ANIMATION_RULE_BASIC = "basic";
 	var ANIMATION_RULE_DIRECTIONAL = exports.ANIMATION_RULE_DIRECTIONAL = "directional";
@@ -1549,6 +1422,316 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.Effect = exports.AoE = exports.Actor = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ==============================
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161001)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	//Naming note: all caps.
+
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _utility = __webpack_require__(4);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*  Actor Class
+	 */
+	//==============================================================================
+	var Actor = exports.Actor = function () {
+	  function Actor() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+
+	    _classCallCheck(this, Actor);
+
+	    this.name = name;
+	    this.x = x;
+	    this.y = y;
+	    this.size = size;
+	    this.shape = shape;
+	    this.solid = shape !== AVO.SHAPE_NONE;
+	    this.canBeMoved = true;
+	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
+
+	    this.spritesheet = null;
+	    this.animationStep = 0;
+	    this.animationSet = null;
+	    this.animationName = "";
+
+	    this.state = AVO.ACTOR_IDLE;
+	    this.intent = null;
+	    this.action = null;
+
+	    this.attributes = {};
+	    this.effects = [];
+	  }
+
+	  _createClass(Actor, [{
+	    key: "playAnimation",
+	    value: function playAnimation() {
+	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+	      if (restart || this.animationName !== animationName) {
+	        //Set this as the new animation
+	        this.animationStep = 0;
+	        this.animationName = animationName;
+	      }
+	    }
+	  }, {
+	    key: "nextAnimationFrame",
+	    value: function nextAnimationFrame() {
+	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+	      var animationAction = this.animationSet.actions[this.animationName];
+	      this.animationStep++;
+	      if (animationAction.steps.length === 0) {
+	        this.animationStep = 0;
+	      } else if (animationAction.loop) {
+	        while (this.animationStep >= animationAction.steps.length) {
+	          this.animationStep -= animationAction.steps.length;
+	        }
+	      } else {
+	        this.animationStep = animationAction.steps.length - 1;
+	      }
+	    }
+	  }, {
+	    key: "left",
+	    get: function get() {
+	      return this.x - this.size / 2;
+	    }
+	  }, {
+	    key: "right",
+	    get: function get() {
+	      return this.x + this.size / 2;
+	    }
+	  }, {
+	    key: "top",
+	    get: function get() {
+	      return this.y - this.size / 2;
+	    }
+	  }, {
+	    key: "bottom",
+	    get: function get() {
+	      return this.y + this.size / 2;
+	    }
+	  }, {
+	    key: "radius",
+	    get: function get() {
+	      return this.size / 2;
+	    }
+	  }, {
+	    key: "rotation",
+	    get: function get() {
+	      return this._rotation;
+	    },
+	    set: function set(val) {
+	      this._rotation = val;
+	      while (this._rotation > Math.PI) {
+	        this._rotation -= Math.PI * 2;
+	      }
+	      while (this._rotation <= -Math.PI) {
+	        this._rotation += Math.PI * 2;
+	      }
+	    }
+	  }, {
+	    key: "direction",
+	    get: function get() {
+	      //Get cardinal direction
+	      //Favour East and West when rotation is exactly SW, NW, SE or NE.
+	      if (this._rotation <= Math.PI * 0.25 && this._rotation >= Math.PI * -0.25) {
+	        return AVO.DIRECTION_EAST;
+	      } else if (this._rotation > Math.PI * 0.25 && this._rotation < Math.PI * 0.75) {
+	        return AVO.DIRECTION_SOUTH;
+	      } else if (this._rotation < Math.PI * -0.25 && this._rotation > Math.PI * -0.75) {
+	        return AVO.DIRECTION_NORTH;
+	      } else {
+	        return AVO.DIRECTION_WEST;
+	      }
+	    },
+	    set: function set(val) {
+	      switch (val) {
+	        case AVO.DIRECTION_EAST:
+	          this._rotation = AVO.ROTATION_EAST;
+	          break;
+	        case AVO.DIRECTION_SOUTH:
+	          this._rotation = AVO.ROTATION_SOUTH;
+	          break;
+	        case AVO.DIRECTION_WEST:
+	          this._rotation = AVO.ROTATION_WEST;
+	          break;
+	        case AVO.DIRECTION_NORTH:
+	          this._rotation = AVO.ROTATION_NORTH;
+	          break;
+	      }
+	    }
+	  }]);
+
+	  return Actor;
+	}();
+	//==============================================================================
+
+	/*  Area of Effect Class
+	 */
+	//==============================================================================
+
+
+	var AoE = exports.AoE = function () {
+	  function AoE() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
+	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
+	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
+
+	    _classCallCheck(this, AoE);
+
+	    this.name = name;
+	    this.x = x;
+	    this.y = y;
+	    this.size = size;
+	    this.shape = shape;
+	    this.duration = duration;
+	    this.startDuration = duration;
+	    this.effects = effects;
+
+	    this.spritesheet = null;
+	    this.animationStep = 0;
+	    this.animationSet = null;
+	    this.animationName = "";
+	  }
+
+	  _createClass(AoE, [{
+	    key: "hasInfiniteDuration",
+	    value: function hasInfiniteDuration() {
+	      return this.startDuration === AVO.DURATION_INFINITE;
+	    }
+	  }, {
+	    key: "playAnimation",
+	    value: function playAnimation() {
+	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+
+	      if (restart || this.animationName !== animationName) {
+	        //Set this as the new animation
+	        this.animationStep = 0;
+	        this.animationName = animationName;
+	      }
+	    }
+	  }, {
+	    key: "nextAnimationFrame",
+	    value: function nextAnimationFrame() {
+	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+
+	      var animationAction = this.animationSet.actions[this.animationName];
+	      this.animationStep++;
+	      if (animationAction.steps.length === 0) {
+	        this.animationStep = 0;
+	      } else if (animationAction.loop) {
+	        while (this.animationStep >= animationAction.steps.length) {
+	          this.animationStep -= animationAction.steps.length;
+	        }
+	      } else {
+	        this.animationStep = animationAction.steps.length - 1;
+	      }
+	    }
+	  }, {
+	    key: "left",
+	    get: function get() {
+	      return this.x - this.size / 2;
+	    }
+	  }, {
+	    key: "right",
+	    get: function get() {
+	      return this.x + this.size / 2;
+	    }
+	  }, {
+	    key: "top",
+	    get: function get() {
+	      return this.y - this.size / 2;
+	    }
+	  }, {
+	    key: "bottom",
+	    get: function get() {
+	      return this.y + this.size / 2;
+	    }
+	  }, {
+	    key: "radius",
+	    get: function get() {
+	      return this.size / 2;
+	    }
+	  }]);
+
+	  return AoE;
+	}();
+	//==============================================================================
+
+	/*  Effect Class
+	 */
+	//==============================================================================
+
+
+	var Effect = exports.Effect = function () {
+	  function Effect() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
+
+	    _classCallCheck(this, Effect);
+
+	    this.name = name;
+	    this.data = data;
+	    this.duration = duration;
+	    this.stackingRule = stackingRule;
+	    this.startDuration = duration;
+	  }
+
+	  _createClass(Effect, [{
+	    key: "hasInfiniteDuration",
+	    value: function hasInfiniteDuration() {
+	      return this.startDuration === AVO.DURATION_INFINITE;
+	    }
+	  }, {
+	    key: "copy",
+	    value: function copy() {
+	      return new Effect(this.name, this.data, this.duration, this.stackingRule);
+	    }
+	  }]);
+
+	  return Effect;
+	}();
+	//==============================================================================
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	exports.Utility = undefined;
 	exports.ImageAsset = ImageAsset;
 
@@ -1607,7 +1790,7 @@
 	}
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1619,13 +1802,26 @@
 
 	var _index = __webpack_require__(1);
 
+	var _entities = __webpack_require__(3);
+
 	var _constants = __webpack_require__(2);
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(3);
+	var _utility = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	/*
+	Example Game
+	============
+
+	While AvO is the adventure game engine, this is a specific implementation of an
+	adventure game idea.
+
+	(Shaun A. Noordin || shaunanoordin.com || 20161001)
+	********************************************************************************
+	 */
 
 	function initialise() {
 	  //Scripts
@@ -1667,9 +1863,9 @@
 	          loop: true,
 	          steps: [{ row: 0, duration: 1 }]
 	        },
-	        walk: {
+	        move: {
 	          loop: true,
-	          steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+	          steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 5, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
 	        }
 	      }
 	    },
@@ -1781,16 +1977,7 @@
 	    }
 	  }
 	  //--------------------------------
-	} /*
-	  Example Game
-	  ============
-	  
-	  While AvO is the adventure game engine, this is a specific implementation of an
-	  adventure game idea.
-	  
-	  (Shaun A. Noordin || shaunanoordin.com || 20160901)
-	  ********************************************************************************
-	   */
+	}
 
 	function runStart() {
 	  this.store.level = 1;
@@ -1801,23 +1988,11 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _index.ComicStrip("startcomic", [this.assets.images.comicPanelA, this.assets.images.comicPanelB, this.assets.images.comicPanelC], comicStartFinished);
+	  this.comicStrip = new _index.ComicStrip("startcomic", [//this.assets.images.comicPanelA,
+	    //this.assets.images.comicPanelB,
+	    //this.assets.images.comicPanelC,
+	  ], comicStartFinished);
 	  this.comicStrip.start();
-
-	  //this.comicStrip = new ComicStrip(
-	  //  "startcomic",
-	  //  [ this.assets.images.comicPanelA, 
-	  //    this.assets.images.comicPanelSmall, 
-	  //    this.assets.images.comicPanelBig, 
-	  //    this.assets.images.comicPanelWide ],
-	  //  comicStartFinished);
-	  //this.comicStrip.start();
-
-	  //this.comicStrip = new ComicStrip(
-	  //  "startcomic",
-	  //  [],
-	  //  comicStartFinished);
-	  //this.comicStrip.start();
 	}
 
 	function comicStartFinished() {
@@ -1827,92 +2002,9 @@
 	function runEnd() {}
 
 	function runAction() {
-	  //Input & Actions
-	  //--------------------------------
-	  var playerIsIdle = true;
-	  var PLAYER_SPEED = 4;
-	  if (this.pointer.state === AVO.INPUT_ACTIVE) {
-	    var distX = this.pointer.now.x - this.pointer.start.x;
-	    var distY = this.pointer.now.y - this.pointer.start.y;
-	    var dist = Math.sqrt(distX * distX + distY * distY);
-
-	    if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
-	      var angle = Math.atan2(distY, distX);
-	      var speed = PLAYER_SPEED;
-	      this.refs["player"].x += Math.cos(angle) * speed;
-	      this.refs["player"].y += Math.sin(angle) * speed;
-	      this.refs["player"].rotation = angle;
-	      playerIsIdle = false;
-
-	      //UX improvement: reset the base point of the pointer so the player can
-	      //switch directions much more easily.
-	      if (dist >= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-	        this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	        this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	      }
-	    }
-	  }
-
-	  if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
-	    this.refs["player"].y -= PLAYER_SPEED;
-	    this.refs["player"].direction = AVO.DIRECTION_NORTH;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
-	    this.refs["player"].y += PLAYER_SPEED;
-	    this.refs["player"].direction = AVO.DIRECTION_SOUTH;
-	    playerIsIdle = false;
-	  }
-	  if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
-	    this.refs["player"].x -= PLAYER_SPEED;
-	    this.refs["player"].direction = AVO.DIRECTION_WEST;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
-	    this.refs["player"].x += PLAYER_SPEED;
-	    this.refs["player"].direction = AVO.DIRECTION_EAST;
-	    playerIsIdle = false;
-	  }
-
-	  if (this.keys[AVO.KEY_CODES.A].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state !== AVO.INPUT_ACTIVE) {
-	    this.refs["player"].rotation -= Math.PI / 36;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.A].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.D].state === AVO.INPUT_ACTIVE) {
-	    this.refs["player"].rotation += Math.PI / 36;
-	    playerIsIdle = false;
-	  }
-
-	  if (this.keys[AVO.KEY_CODES.W].state === AVO.INPUT_ACTIVE) {
-	    this.refs["player"].x += Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
-	    this.refs["player"].y += Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
-	    playerIsIdle = false;
-	  } else if (this.keys[AVO.KEY_CODES.S].state === AVO.INPUT_ACTIVE) {
-	    this.refs["player"].x -= Math.cos(this.refs["player"].rotation) * PLAYER_SPEED;
-	    this.refs["player"].y -= Math.sin(this.refs["player"].rotation) * PLAYER_SPEED;
-	    playerIsIdle = false;
-	  }
-
-	  if (this.keys[AVO.KEY_CODES.Z].duration === 1) {
-	    this.refs["player"].shape = this.refs["player"].shape === AVO.SHAPE_CIRCLE ? AVO.SHAPE_SQUARE : AVO.SHAPE_CIRCLE;
-	  }
-
-	  if (this.keys[AVO.KEY_CODES.SPACE].duration === 1) {
-	    var PUSH_POWER = 12;
-	    var AOE_SIZE = this.refs["player"].size;
-	    var distance = this.refs["player"].radius + AOE_SIZE / 2;
-	    var x = this.refs["player"].x + Math.cos(this.refs["player"].rotation) * distance;
-	    var y = this.refs["player"].y + Math.sin(this.refs["player"].rotation) * distance;;
-	    var newAoE = new _index.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _index.Effect("push", { x: Math.cos(this.refs["player"].rotation) * PUSH_POWER, y: Math.sin(this.refs["player"].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	    this.areasOfEffect.push(newAoE);
-	  }
-	  //--------------------------------
-
 	  //Animations
 	  //--------------------------------
-	  if (playerIsIdle) {
-	    this.refs["player"].setAnimation("idle");
-	  } else {
-	    this.refs["player"].setAnimation("walk");
-	  }
-
+	  //WARNING: This is no longer working due to new Action/Intent rules
 	  if (this.refs["boxes"]) {
 	    var _iteratorNormalCompletion2 = true;
 	    var _didIteratorError2 = false;
@@ -1925,9 +2017,9 @@
 	        if (box.effects.find(function (eff) {
 	          return eff.name === "charge";
 	        })) {
-	          box.setAnimation("glow");
+	          box.playAnimation("glow");
 	        } else {
-	          box.setAnimation("idle");
+	          box.playAnimation("idle");
 	        }
 	      }
 	    } catch (err) {
@@ -1967,33 +2059,34 @@
 	  var midX = this.width / 2,
 	      midY = this.height / 2;
 
-	  this.refs["player"] = new _index.Actor("player", midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-	  this.refs["player"].spritesheet = this.assets.images.actor;
-	  this.refs["player"].animationSet = this.animationSets.actor;
-	  this.refs["player"].rotation = AVO.ROTATION_NORTH;
-	  this.actors.push(this.refs["player"]);
+	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
+	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
+	  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
+	  this.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
+	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
-	  var wallN = new _index.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-	  var wallS = new _index.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-	  var wallE = new _index.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  var wallW = new _index.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
+	  var wallN = new _entities.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
+	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
+	  var wallE = new _entities.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
+	  var wallW = new _entities.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
 	  wallE.canBeMoved = false;
 	  wallS.canBeMoved = false;
 	  wallW.canBeMoved = false;
 	  wallN.canBeMoved = false;
 	  this.actors.push(wallE, wallS, wallW, wallN);
 
-	  this.refs["gate"] = new _index.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
+	  this.refs["gate"] = new _entities.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
 	  this.refs["gate"].canBeMoved = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
-	  this.refs["gate"].setAnimation("idle");
+	  this.refs["gate"].playAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
-	  this.refs["goal"] = new _index.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	  this.refs["goal"] = new _entities.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
-	  this.refs["goal"].setAnimation("glow");
+	  this.refs["goal"].playAnimation("glow");
 	  this.areasOfEffect.push(this.refs["goal"]);
 	}
 
@@ -2012,9 +2105,9 @@
 	  this.refs.plates = [];
 	  var newBox = void 0,
 	      newPlate = void 0;
-	  var chargeEffect = new _index.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
+	  var chargeEffect = new _entities.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
 
-	  this.refs.boxes = [new _index.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _index.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
+	  this.refs.boxes = [new _entities.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _entities.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
 	  var _iteratorNormalCompletion3 = true;
 	  var _didIteratorError3 = false;
 	  var _iteratorError3 = undefined;
@@ -2023,7 +2116,7 @@
 	    for (var _iterator3 = this.refs.boxes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
 	      var box = _step3.value;
 
-	      box.attributes.box = true;
+	      box.attributes["box"] = true;
 	      box.spritesheet = this.assets.images.sarcophagus;
 	      box.animationSet = this.animationSets.sarcophagus;
 	      this.actors.push(box);
@@ -2043,7 +2136,7 @@
 	    }
 	  }
 
-	  this.refs.plates = [new _index.AoE("plate", midX - 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]), new _index.AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()])];
+	  this.refs.plates = [new _entities.AoE("plate", midX - 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]), new _entities.AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()])];
 	  var _iteratorNormalCompletion4 = true;
 	  var _didIteratorError4 = false;
 	  var _iteratorError4 = undefined;
@@ -2054,7 +2147,7 @@
 
 	      plate.spritesheet = this.assets.images.plate;
 	      plate.animationSet = this.animationSets.plate;
-	      plate.setAnimation("idle");
+	      plate.playAnimation("idle");
 	      this.areasOfEffect.push(plate);
 	    }
 	  } catch (err) {
@@ -2106,7 +2199,7 @@
 
 	            if (this.isATouchingB(box, plate)) {
 	              thisPlateIsCharged = true;
-	              plate.setAnimation("glow");
+	              plate.playAnimation("glow");
 	            }
 	          }
 	        } catch (err) {
@@ -2124,7 +2217,7 @@
 	          }
 	        }
 
-	        !thisPlateIsCharged && plate.setAnimation("idle");
+	        !thisPlateIsCharged && plate.playAnimation("idle");
 	        allBoxesAreCharged = allBoxesAreCharged && thisPlateIsCharged;
 	      }
 	    } catch (err) {
@@ -2157,7 +2250,7 @@
 	}
 
 	function checkIfPlayerIsAtGoal() {
-	  if (this.isATouchingB(this.refs["player"], this.refs["goal"])) {
+	  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
 	    this.store.level && this.store.level++;
 
 	    switch (this.store.level) {

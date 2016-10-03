@@ -12,10 +12,28 @@ export const INPUT_ENDED = 2;
 export const INPUT_DISTANCE_SENSITIVITY = 16;
 export const MAX_KEYS = 128;
 
-export const STATE_START = 0;
+export const STATE_START = 0;  //AvO App states
 export const STATE_ACTION = 1;
 export const STATE_COMIC = 2;
 export const STATE_END = 3;
+
+export const ACTOR_IDLE = 0;  //Actor states
+export const ACTOR_MOVING = 1;
+export const ACTOR_BUSY = 2;
+
+export const REF = {  //Standard References
+  PLAYER: "player",
+};
+
+export const ACTION = {  //Standard Actions
+  IDLE: "idle",
+  MOVE: "move",
+  PRIMARY: "primary",
+};
+
+export const ATTR = {  //Standard Attributes
+  SPEED: "speed",
+};
 
 export const ANIMATION_RULE_BASIC = "basic";
 export const ANIMATION_RULE_DIRECTIONAL = "directional";  
