@@ -9,6 +9,7 @@ AvO Adventure Game Engine
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { AoE, Effect } from "./entities.js";
 import { Utility } from "./utility.js";
+import { StandardActions } from "./standard-actions.js";
 
 /*  Primary AvO Game Engine
  */
@@ -54,6 +55,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       backgroundImage: null,
     };
     this.comicStrip = null;
+    this.actions = {};
     //--------------------------------
     
     //Prepare Input
@@ -211,6 +213,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           angle: AVO.ROTATION_SOUTH,
         };
       }
+      
       if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
         player.intent = {
           name: AVO.ACTION.MOVE,
@@ -269,42 +272,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       
       //If the Actor has an action, perform it.
       if (actor.action) {
-        //TODO make this a "standard library"
-        //----------------
-        if (actor.action.name === AVO.ACTION.IDLE) {
-          actor.state = AVO.ACTOR_IDLE;
-          actor.playAnimation(AVO.ACTION.IDLE);
-        } else if (actor.action.name === AVO.ACTION.MOVE) {
-          const angle = actor.action.angle || 0;
-          const speed = actor.attributes[AVO.ATTR.SPEED] || 0;
-          actor.x += Math.cos(angle) * speed;
-          actor.y += Math.sin(angle) * speed;
-          actor.rotation = angle;
-          actor.state = AVO.ACTOR_WALKING;
-          actor.playAnimation(AVO.ACTION.MOVE);
-        } else if (actor.action.name === AVO.ACTION.PRIMARY) {
-          //TODO This is just a placeholder
-          //................
-          const PUSH_POWER = 12;
-          const AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-          let distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-          let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-          let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-          let newAoE = new AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5,
-            [
-              new Effect("push",
-                { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
-                2, AVO.STACKING_RULE_ADD)
-            ]);
-          this.areasOfEffect.push(newAoE);
-          actor.playAnimation(AVO.ACTION.PRIMARY);
-          //................
+        if (this.actions[actor.action.name]) {  //Run a custom Action.
+          this.actions[actor.action.name].apply(this, [actor]);
+        } else if (StandardActions[actor.action.name]) {  //Run a standard Action.
+          StandardActions[actor.action.name].apply(this, [actor]);
         }
-        //----------------
         
-        //TODO run custom scripts
-        //----------------
-        //----------------
       }
     }
     //--------------------------------

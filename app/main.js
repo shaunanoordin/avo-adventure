@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(5);
+	var _index2 = __webpack_require__(6);
 
 	/*  Initialisations
 	 */
@@ -96,6 +96,8 @@
 	var _entities = __webpack_require__(3);
 
 	var _utility = __webpack_require__(4);
+
+	var _standardActions = __webpack_require__(5);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -148,6 +150,7 @@
 	      backgroundImage: null
 	    };
 	    this.comicStrip = null;
+	    this.actions = {};
 	    //--------------------------------
 
 	    //Prepare Input
@@ -309,6 +312,7 @@
 	            angle: AVO.ROTATION_SOUTH
 	          };
 	        }
+
 	        if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
 	          player.intent = {
 	            name: AVO.ACTION.MOVE,
@@ -459,37 +463,13 @@
 
 	          //If the Actor has an action, perform it.
 	          if (_actor.action) {
-	            //TODO make this a "standard library"
-	            //----------------
-	            if (_actor.action.name === AVO.ACTION.IDLE) {
-	              _actor.state = AVO.ACTOR_IDLE;
-	              _actor.playAnimation(AVO.ACTION.IDLE);
-	            } else if (_actor.action.name === AVO.ACTION.MOVE) {
-	              var _angle = _actor.action.angle || 0;
-	              var speed = _actor.attributes[AVO.ATTR.SPEED] || 0;
-	              _actor.x += Math.cos(_angle) * speed;
-	              _actor.y += Math.sin(_angle) * speed;
-	              _actor.rotation = _angle;
-	              _actor.state = AVO.ACTOR_WALKING;
-	              _actor.playAnimation(AVO.ACTION.MOVE);
-	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
-	              //TODO This is just a placeholder
-	              //................
-	              var PUSH_POWER = 12;
-	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	              var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	              this.areasOfEffect.push(newAoE);
-	              _actor.playAnimation(AVO.ACTION.PRIMARY);
-	              //................
+	            if (this.actions[_actor.action.name]) {
+	              //Run a custom Action.
+	              this.actions[_actor.action.name].apply(this, [_actor]);
+	            } else if (_standardActions.StandardActions[_actor.action.name]) {
+	              //Run a standard Action.
+	              _standardActions.StandardActions[_actor.action.name].apply(this, [_actor]);
 	            }
-	            //----------------
-
-	            //TODO run custom scripts
-	            //----------------
-	            //----------------
 	          }
 	        }
 	        //--------------------------------
@@ -716,10 +696,10 @@
 	        var _distX5 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
 	        var _distY5 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
 	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
-	        var _angle2 = Math.atan2(_distY5, _distX5);
+	        var _angle = Math.atan2(_distY5, _distX5);
 	        var _correctDist2 = objA.radius;
-	        var _cosAngle = Math.cos(_angle2);
-	        var _sinAngle = Math.sin(_angle2);
+	        var _cosAngle = Math.cos(_angle);
+	        var _sinAngle = Math.sin(_angle);
 	        objA.x += _cosAngle * (_correctDist2 - _dist2) * fractionA;
 	        objA.y += _sinAngle * (_correctDist2 - _dist2) * fractionA;
 	        objB.x -= _cosAngle * (_correctDist2 - _dist2) * fractionB;
@@ -728,10 +708,10 @@
 	        var _distX6 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
 	        var _distY6 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
 	        var _dist3 = Math.sqrt(_distX6 * _distX6 + _distY6 * _distY6);
-	        var _angle3 = Math.atan2(_distY6, _distX6);
+	        var _angle2 = Math.atan2(_distY6, _distX6);
 	        var _correctDist3 = objB.radius;
-	        var _cosAngle2 = Math.cos(_angle3);
-	        var _sinAngle2 = Math.sin(_angle3);
+	        var _cosAngle2 = Math.cos(_angle2);
+	        var _sinAngle2 = Math.sin(_angle2);
 	        objA.x -= _cosAngle2 * (_correctDist3 - _dist3) * fractionA;
 	        objA.y -= _sinAngle2 * (_correctDist3 - _dist3) * fractionA;
 	        objB.x += _cosAngle2 * (_correctDist3 - _dist3) * fractionB;
@@ -1791,6 +1771,65 @@
 
 /***/ },
 /* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.StandardActions = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _entities = __webpack_require__(3);
+
+	var _utility = __webpack_require__(4);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	//Naming note: all caps.
+	var StandardActions = exports.StandardActions = {}; /*  
+	                                                    AvO Standard Actions
+	                                                    ====================
+	                                                    
+	                                                    (Shaun A. Noordin || shaunanoordin.com || 20161008)
+	                                                    ********************************************************************************
+	                                                     */
+
+	StandardActions[AVO.ACTION.IDLE] = function (actor) {
+	  actor.state = AVO.ACTOR_IDLE;
+	  actor.playAnimation(AVO.ACTION.IDLE);
+	};
+
+	StandardActions[AVO.ACTION.MOVE] = function (actor) {
+	  var angle = actor.action.angle || 0;
+	  var speed = actor.attributes[AVO.ATTR.SPEED] || 0;
+	  actor.x += Math.cos(angle) * speed;
+	  actor.y += Math.sin(angle) * speed;
+	  actor.rotation = angle;
+	  actor.state = AVO.ACTOR_WALKING;
+	  actor.playAnimation(AVO.ACTION.MOVE);
+	};
+
+	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
+	  //TODO This is just a placeholder
+	  //................
+	  var PUSH_POWER = 12;
+	  var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  this.areasOfEffect.push(newAoE);
+	  actor.playAnimation(AVO.ACTION.PRIMARY);
+	  //................
+	};
+
+/***/ },
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
