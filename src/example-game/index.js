@@ -9,7 +9,8 @@ adventure game idea.
 ********************************************************************************
  */
 
-import { AvO, ComicStrip } from "../avo/index.js";
+import { AvO } from "../avo/index.js";
+import { ComicStrip } from "../avo/comic-strip.js";
 import { Actor, AoE, Effect } from "../avo/entities.js";
 import * as AVO from  "../avo/constants.js";
 import { ImageAsset } from "../avo/utility.js";
@@ -202,7 +203,7 @@ function runStart() {
 function comicStart() {
   this.comicStrip = new ComicStrip(
     "startcomic",
-    [ //this.assets.images.comicPanelA,
+    [ this.assets.images.comicPanelA,
       //this.assets.images.comicPanelB,
       //this.assets.images.comicPanelC,
     ],

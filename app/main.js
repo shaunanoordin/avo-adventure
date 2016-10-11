@@ -76,7 +76,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.ComicStrip = exports.AvO = undefined;
+	exports.AvO = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Adventure Game Engine
@@ -1118,61 +1118,6 @@
 
 	//==============================================================================
 
-	/*  4-Koma Comic Strip Class
-	 */
-	//==============================================================================
-
-
-	var ComicStrip = exports.ComicStrip = function () {
-	  function ComicStrip() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
-	    _classCallCheck(this, ComicStrip);
-
-	    this.name = name;
-	    this.panels = panels;
-	    this.onFinish = onFinish;
-
-	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
-	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
-	    this.background = "#333";
-
-	    this.start();
-	  }
-
-	  _createClass(ComicStrip, [{
-	    key: "start",
-	    value: function start() {
-	      this.currentPanel = 0;
-	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
-	      this.counter = 0;
-	    }
-	  }, {
-	    key: "getCurrentPanel",
-	    value: function getCurrentPanel() {
-	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel];
-	      }
-	    }
-	  }, {
-	    key: "getPreviousPanel",
-	    value: function getPreviousPanel() {
-	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel - 1];
-	      }
-	    }
-	  }]);
-
-	  return ComicStrip;
-	}();
-	//==============================================================================
-
 /***/ },
 /* 2 */
 /***/ function(module, exports) {
@@ -1841,6 +1786,8 @@
 
 	var _index = __webpack_require__(1);
 
+	var _comicStrip = __webpack_require__(7);
+
 	var _entities = __webpack_require__(3);
 
 	var _constants = __webpack_require__(2);
@@ -1850,17 +1797,6 @@
 	var _utility = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	/*
-	Example Game
-	============
-
-	While AvO is the adventure game engine, this is a specific implementation of an
-	adventure game idea.
-
-	(Shaun A. Noordin || shaunanoordin.com || 20161001)
-	********************************************************************************
-	 */
 
 	function initialise() {
 	  //Scripts
@@ -2016,7 +1952,16 @@
 	    }
 	  }
 	  //--------------------------------
-	}
+	} /*
+	  Example Game
+	  ============
+	  
+	  While AvO is the adventure game engine, this is a specific implementation of an
+	  adventure game idea.
+	  
+	  (Shaun A. Noordin || shaunanoordin.com || 20161001)
+	  ********************************************************************************
+	   */
 
 	function runStart() {
 	  this.store.level = 1;
@@ -2027,10 +1972,7 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _index.ComicStrip("startcomic", [//this.assets.images.comicPanelA,
-	    //this.assets.images.comicPanelB,
-	    //this.assets.images.comicPanelC,
-	  ], comicStartFinished);
+	  this.comicStrip = new _comicStrip.ComicStrip("startcomic", [this.assets.images.comicPanelA], comicStartFinished);
 	  this.comicStrip.start();
 	}
 
@@ -2307,6 +2249,88 @@
 	    }
 	  }
 	}
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.ComicStrip = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Comic Strip
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ===============
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
+
+	/*  4-Koma Comic Strip Class
+	 */
+	//==============================================================================
+	var ComicStrip = exports.ComicStrip = function () {
+	  function ComicStrip() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+	    _classCallCheck(this, ComicStrip);
+
+	    this.name = name;
+	    this.panels = panels;
+	    this.onFinish = onFinish;
+
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.background = "#333";
+
+	    this.start();
+	  }
+
+	  _createClass(ComicStrip, [{
+	    key: "start",
+	    value: function start() {
+	      this.currentPanel = 0;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
+	      this.counter = 0;
+	    }
+	  }, {
+	    key: "getCurrentPanel",
+	    value: function getCurrentPanel() {
+	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel];
+	      }
+	    }
+	  }, {
+	    key: "getPreviousPanel",
+	    value: function getPreviousPanel() {
+	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel - 1];
+	      }
+	    }
+	  }]);
+
+	  return ComicStrip;
+	}();
+	//==============================================================================
 
 /***/ }
 /******/ ]);
