@@ -9,9 +9,9 @@ adventure game idea.
 ********************************************************************************
  */
 
-import { AvO } from "../avo/index.js";
 import { ComicStrip } from "../avo/comic-strip.js";
-import { Actor, AoE, Effect } from "../avo/entities.js";
+import { Actor, AoE } from "../avo/entities.js";
+import { Effect } from "../avo/effect.js";
 import * as AVO from  "../avo/constants.js";
 import { ImageAsset } from "../avo/utility.js";
 
@@ -262,14 +262,14 @@ function startLevelInit() {
   let wallS = new Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
   let wallE = new Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
   let wallW = new Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-  wallE.canBeMoved = false;
-  wallS.canBeMoved = false;
-  wallW.canBeMoved = false;
-  wallN.canBeMoved = false;
+  wallE.movable = false;
+  wallS.movable = false;
+  wallW.movable = false;
+  wallN.movable = false;
   this.actors.push(wallE, wallS, wallW, wallN);
 
   this.refs["gate"] = new Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
-  this.refs["gate"].canBeMoved = false;
+  this.refs["gate"].movable = false;
   this.refs["gate"].spritesheet = this.assets.images.gate;
   this.refs["gate"].animationSet = this.animationSets.simple128;
   this.refs["gate"].playAnimation("idle");

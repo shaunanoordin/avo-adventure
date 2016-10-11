@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(6);
+	var _index2 = __webpack_require__(7);
 
 	/*  Initialisations
 	 */
@@ -93,11 +93,9 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _entities = __webpack_require__(3);
+	var _utility = __webpack_require__(3);
 
-	var _utility = __webpack_require__(4);
-
-	var _standardActions = __webpack_require__(5);
+	var _standardActions = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -430,7 +428,7 @@
 
 	              //TODO make this an external script
 	              //----------------
-	              if (_effect.name === "push" && _actor.canBeMoved) {
+	              if (_effect.name === "push" && _actor.movable) {
 	                _actor.x += _effect.data.x || 0;
 	                _actor.y += _effect.data.y || 0;
 	              }
@@ -660,12 +658,12 @@
 
 	      var fractionA = 0;
 	      var fractionB = 0;
-	      if (objA.canBeMoved && objB.canBeMoved) {
+	      if (objA.movable && objB.movable) {
 	        fractionA = 0.5;
 	        fractionB = 0.5;
-	      } else if (objA.canBeMoved) {
+	      } else if (objA.movable) {
 	        fractionA = 1;
-	      } else if (objB.canBeMoved) {
+	      } else if (objB.movable) {
 	        fractionB = 1;
 	      }
 
@@ -1347,7 +1345,136 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Effect = exports.AoE = exports.Actor = undefined;
+	exports.Utility = undefined;
+	exports.ImageAsset = ImageAsset;
+
+	var _constants = __webpack_require__(2);
+
+	var Utility = exports.Utility = {
+	  randomInt: function randomInt(min, max) {
+	    var a = min < max ? min : max;
+	    var b = min < max ? max : min;
+	    return Math.floor(a + Math.random() * (b - a + 1));
+	  },
+
+	  stopEvent: function stopEvent(e) {
+	    //var eve = e || window.event;
+	    e.preventDefault && e.preventDefault();
+	    e.stopPropagation && e.stopPropagation();
+	    e.returnValue = false;
+	    e.cancelBubble = true;
+	    return false;
+	  },
+
+	  getKeyCode: function getKeyCode(e) {
+	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
+	    //at the moment, but unfortunately it's being deprecated.
+	    if (e.keyCode) {
+	      return e.keyCode;
+	    }
+
+	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
+	    //far from being standardised between browsers.
+	    if (e.code && _constants.KEY_VALUES[e.code]) {
+	      return _constants.KEY_VALUES[e.code];
+	    } else if (e.key && _constants.KEY_VALUES[e.key]) {
+	      return _constants.KEY_VALUES[e.key];
+	    }
+
+	    return 0;
+	  }
+	}; /*
+	   Utility Classes
+	   ===============
+	   
+	   (Shaun A. Noordin || shaunanoordin.com || 20160901)
+	   ********************************************************************************
+	    */
+
+	function ImageAsset(url) {
+	  this.url = url;
+	  this.img = null;
+	  this.loaded = false;
+	  this.img = new Image();
+	  this.img.onload = function () {
+	    this.loaded = true;
+	  }.bind(this);
+	  this.img.src = this.url;
+	}
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.StandardActions = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _entities = __webpack_require__(5);
+
+	var _effect = __webpack_require__(6);
+
+	var _utility = __webpack_require__(3);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	/*  
+	AvO Standard Actions
+	====================
+
+	(Shaun A. Noordin || shaunanoordin.com || 20161008)
+	********************************************************************************
+	 */
+
+	var StandardActions = exports.StandardActions = {}; //Naming note: all caps.
+
+
+	StandardActions[AVO.ACTION.IDLE] = function (actor) {
+	  actor.state = AVO.ACTOR_IDLE;
+	  actor.playAnimation(AVO.ACTION.IDLE);
+	};
+
+	StandardActions[AVO.ACTION.MOVE] = function (actor) {
+	  var angle = actor.action.angle || 0;
+	  var speed = actor.attributes[AVO.ATTR.SPEED] || 0;
+	  actor.x += Math.cos(angle) * speed;
+	  actor.y += Math.sin(angle) * speed;
+	  actor.rotation = angle;
+	  actor.state = AVO.ACTOR_WALKING;
+	  actor.playAnimation(AVO.ACTION.MOVE);
+	};
+
+	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
+	  //TODO This is just a placeholder
+	  //................
+	  var PUSH_POWER = 12;
+	  var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  this.areasOfEffect.push(newAoE);
+	  actor.playAnimation(AVO.ACTION.PRIMARY);
+	  //................
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.AoE = exports.Actor = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
@@ -1364,24 +1491,29 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(4);
+	var _utility = __webpack_require__(3);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	/*  Actor Class
+	/*  Entity Class
+	    A general abstract object within the game.
 	 */
 	//==============================================================================
-	var Actor = exports.Actor = function () {
-	  function Actor() {
+	var Entity = function () {
+	  function Entity() {
 	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
 	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
 	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
 	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
 
-	    _classCallCheck(this, Actor);
+	    _classCallCheck(this, Entity);
 
 	    this.name = name;
 	    this.x = x;
@@ -1389,23 +1521,16 @@
 	    this.size = size;
 	    this.shape = shape;
 	    this.solid = shape !== AVO.SHAPE_NONE;
-	    this.canBeMoved = true;
+	    this.movable = true;
 	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
 
 	    this.spritesheet = null;
 	    this.animationStep = 0;
 	    this.animationSet = null;
 	    this.animationName = "";
-
-	    this.state = AVO.ACTOR_IDLE;
-	    this.intent = null;
-	    this.action = null;
-
-	    this.attributes = {};
-	    this.effects = [];
 	  }
 
-	  _createClass(Actor, [{
+	  _createClass(Entity, [{
 	    key: "playAnimation",
 	    value: function playAnimation() {
 	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -1508,16 +1633,53 @@
 	    }
 	  }]);
 
-	  return Actor;
+	  return Entity;
 	}();
 	//==============================================================================
 
-	/*  Area of Effect Class
+
+	/*  Actor Class
+	    An active character in the game.
 	 */
 	//==============================================================================
 
 
-	var AoE = exports.AoE = function () {
+	var Actor = exports.Actor = function (_Entity) {
+	  _inherits(Actor, _Entity);
+
+	  function Actor() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+
+	    _classCallCheck(this, Actor);
+
+	    var _this = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
+
+	    _this.state = AVO.ACTOR_IDLE;
+	    _this.intent = null;
+	    _this.action = null;
+
+	    _this.attributes = {};
+	    _this.effects = [];
+	    return _this;
+	  }
+
+	  return Actor;
+	}(Entity);
+	//==============================================================================
+
+	/*  Area of Effect Class
+	    An area that applies Effects to Actors that touch it.
+	 */
+	//==============================================================================
+
+
+	var AoE = exports.AoE = function (_Entity2) {
+	  _inherits(AoE, _Entity2);
+
 	  function AoE() {
 	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
 	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -1529,19 +1691,12 @@
 
 	    _classCallCheck(this, AoE);
 
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.duration = duration;
-	    this.startDuration = duration;
-	    this.effects = effects;
+	    var _this2 = _possibleConstructorReturn(this, (AoE.__proto__ || Object.getPrototypeOf(AoE)).call(this, name, x, y, size, shape));
 
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
+	    _this2.duration = duration;
+	    _this2.startDuration = duration;
+	    _this2.effects = effects;
+	    return _this2;
 	  }
 
 	  _createClass(AoE, [{
@@ -1549,73 +1704,45 @@
 	    value: function hasInfiniteDuration() {
 	      return this.startDuration === AVO.DURATION_INFINITE;
 	    }
-	  }, {
-	    key: "playAnimation",
-	    value: function playAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
 	  }]);
 
 	  return AoE;
-	}();
+	}(Entity);
 	//==============================================================================
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Effect = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     Effect
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ======
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
 
 	/*  Effect Class
+	    A general effect that's applied to an Actor. 
 	 */
 	//==============================================================================
-
-
 	var Effect = exports.Effect = function () {
 	  function Effect() {
 	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
@@ -1649,132 +1776,7 @@
 	//==============================================================================
 
 /***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.Utility = undefined;
-	exports.ImageAsset = ImageAsset;
-
-	var _constants = __webpack_require__(2);
-
-	var Utility = exports.Utility = {
-	  randomInt: function randomInt(min, max) {
-	    var a = min < max ? min : max;
-	    var b = min < max ? max : min;
-	    return Math.floor(a + Math.random() * (b - a + 1));
-	  },
-
-	  stopEvent: function stopEvent(e) {
-	    //var eve = e || window.event;
-	    e.preventDefault && e.preventDefault();
-	    e.stopPropagation && e.stopPropagation();
-	    e.returnValue = false;
-	    e.cancelBubble = true;
-	    return false;
-	  },
-
-	  getKeyCode: function getKeyCode(e) {
-	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
-	    //at the moment, but unfortunately it's being deprecated.
-	    if (e.keyCode) {
-	      return e.keyCode;
-	    }
-
-	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
-	    //far from being standardised between browsers.
-	    if (e.code && _constants.KEY_VALUES[e.code]) {
-	      return _constants.KEY_VALUES[e.code];
-	    } else if (e.key && _constants.KEY_VALUES[e.key]) {
-	      return _constants.KEY_VALUES[e.key];
-	    }
-
-	    return 0;
-	  }
-	}; /*
-	   Utility Classes
-	   ===============
-	   
-	   (Shaun A. Noordin || shaunanoordin.com || 20160901)
-	   ********************************************************************************
-	    */
-
-	function ImageAsset(url) {
-	  this.url = url;
-	  this.img = null;
-	  this.loaded = false;
-	  this.img = new Image();
-	  this.img.onload = function () {
-	    this.loaded = true;
-	  }.bind(this);
-	  this.img.src = this.url;
-	}
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.StandardActions = undefined;
-
-	var _constants = __webpack_require__(2);
-
-	var AVO = _interopRequireWildcard(_constants);
-
-	var _entities = __webpack_require__(3);
-
-	var _utility = __webpack_require__(4);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	//Naming note: all caps.
-	var StandardActions = exports.StandardActions = {}; /*  
-	                                                    AvO Standard Actions
-	                                                    ====================
-	                                                    
-	                                                    (Shaun A. Noordin || shaunanoordin.com || 20161008)
-	                                                    ********************************************************************************
-	                                                     */
-
-	StandardActions[AVO.ACTION.IDLE] = function (actor) {
-	  actor.state = AVO.ACTOR_IDLE;
-	  actor.playAnimation(AVO.ACTION.IDLE);
-	};
-
-	StandardActions[AVO.ACTION.MOVE] = function (actor) {
-	  var angle = actor.action.angle || 0;
-	  var speed = actor.attributes[AVO.ATTR.SPEED] || 0;
-	  actor.x += Math.cos(angle) * speed;
-	  actor.y += Math.sin(angle) * speed;
-	  actor.rotation = angle;
-	  actor.state = AVO.ACTOR_WALKING;
-	  actor.playAnimation(AVO.ACTION.MOVE);
-	};
-
-	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
-	  //TODO This is just a placeholder
-	  //................
-	  var PUSH_POWER = 12;
-	  var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	  this.areasOfEffect.push(newAoE);
-	  actor.playAnimation(AVO.ACTION.PRIMARY);
-	  //................
-	};
-
-/***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1784,17 +1786,17 @@
 	});
 	exports.initialise = initialise;
 
-	var _index = __webpack_require__(1);
+	var _comicStrip = __webpack_require__(8);
 
-	var _comicStrip = __webpack_require__(7);
+	var _entities = __webpack_require__(5);
 
-	var _entities = __webpack_require__(3);
+	var _effect = __webpack_require__(6);
 
 	var _constants = __webpack_require__(2);
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(4);
+	var _utility = __webpack_require__(3);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -2051,14 +2053,14 @@
 	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
 	  var wallE = new _entities.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
 	  var wallW = new _entities.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  wallE.canBeMoved = false;
-	  wallS.canBeMoved = false;
-	  wallW.canBeMoved = false;
-	  wallN.canBeMoved = false;
+	  wallE.movable = false;
+	  wallS.movable = false;
+	  wallW.movable = false;
+	  wallN.movable = false;
 	  this.actors.push(wallE, wallS, wallW, wallN);
 
 	  this.refs["gate"] = new _entities.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
-	  this.refs["gate"].canBeMoved = false;
+	  this.refs["gate"].movable = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
 	  this.refs["gate"].playAnimation("idle");
@@ -2086,7 +2088,7 @@
 	  this.refs.plates = [];
 	  var newBox = void 0,
 	      newPlate = void 0;
-	  var chargeEffect = new _entities.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
+	  var chargeEffect = new _effect.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
 
 	  this.refs.boxes = [new _entities.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _entities.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
 	  var _iteratorNormalCompletion3 = true;
@@ -2251,7 +2253,7 @@
 	}
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";

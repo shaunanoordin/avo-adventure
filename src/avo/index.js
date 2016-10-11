@@ -7,7 +7,6 @@ AvO Adventure Game Engine
  */
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
-import { AoE, Effect } from "./entities.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
@@ -254,7 +253,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       for (let effect of actor.effects) {
         //TODO make this an external script
         //----------------
-        if (effect.name === "push" && actor.canBeMoved) {
+        if (effect.name === "push" && actor.movable) {
           actor.x += effect.data.x || 0;
           actor.y += effect.data.y || 0;
         }
@@ -439,12 +438,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     let fractionA = 0;
     let fractionB = 0;
-    if (objA.canBeMoved && objB.canBeMoved) {
+    if (objA.movable && objB.movable) {
       fractionA = 0.5;
       fractionB = 0.5;
-    } else if (objA.canBeMoved) {
+    } else if (objA.movable) {
       fractionA = 1;
-    } else if (objB.canBeMoved) {
+    } else if (objB.movable) {
       fractionB = 1;
     }
     

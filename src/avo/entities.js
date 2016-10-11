@@ -9,10 +9,11 @@ AvO Entities (In-Game Objects)
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Utility } from "./utility.js";
 
-/*  Actor Class
+/*  Entity Class
+    A general abstract object within the game.
  */
 //==============================================================================
-export class Actor {
+class Entity {
   constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_NONE) {
     this.name = name;
     this.x = x;
@@ -20,20 +21,13 @@ export class Actor {
     this.size = size;
     this.shape = shape;
     this.solid = (shape !== AVO.SHAPE_NONE);
-    this.canBeMoved = true;
+    this.movable = true;
     this.rotation = AVO.ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
     
     this.spritesheet = null;
     this.animationStep = 0;
     this.animationSet = null;
     this.animationName = "";
-    
-    this.state = AVO.ACTOR_IDLE;
-    this.intent = null;
-    this.action = null;
-    
-    this.attributes = {};
-    this.effects = [];
   }
   
   get left() { return this.x - this.size / 2; }
@@ -97,79 +91,40 @@ export class Actor {
 }
 //==============================================================================
 
-/*  Area of Effect Class
+
+/*  Actor Class
+    An active character in the game.
  */
 //==============================================================================
-export class AoE {
-  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_CIRCLE, duration = 1, effects = []) {
-    this.name = name; 
-    this.x = x;
-    this.y = y;
-    this.size = size;
-    this.shape = shape;
-    this.duration = duration;
-    this.startDuration = duration;
-    this.effects = effects;
-        
-    this.spritesheet = null;
-    this.animationStep = 0;
-    this.animationSet = null;
-    this.animationName = "";
-  }
-  
-  get left() { return this.x - this.size / 2; }
-  get right() { return this.x + this.size / 2; }
-  get top() { return this.y - this.size / 2; }
-  get bottom() { return this.y + this.size / 2; }
-  get radius() { return this.size / 2; }
-  
-  hasInfiniteDuration() {
-    return this.startDuration === AVO.DURATION_INFINITE;
-  }
-  
-  playAnimation(animationName = "", restart = false) {
-    if (!this.animationSet || !this.animationSet.actions[animationName]) return;
+export class Actor extends Entity {
+  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_NONE) {
+    super(name, x, y, size, shape);
     
-    if (restart || this.animationName !== animationName) {  //Set this as the new animation
-      this.animationStep = 0;
-      this.animationName = animationName;
-    }
-  }
-  
-  nextAnimationFrame() {
-    if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
+    this.state = AVO.ACTOR_IDLE;
+    this.intent = null;
+    this.action = null;
     
-    let animationAction = this.animationSet.actions[this.animationName];
-    this.animationStep++;
-    if (animationAction.steps.length === 0) {
-      this.animationStep = 0;
-    } else if (animationAction.loop) {
-      while (this.animationStep >= animationAction.steps.length) this.animationStep -= animationAction.steps.length;
-    } else {
-      this.animationStep = animationAction.steps.length - 1;
-    }
+    this.attributes = {};
+    this.effects = [];
   }
 }
 //==============================================================================
 
-/*  Effect Class
+/*  Area of Effect Class
+    An area that applies Effects to Actors that touch it.
  */
 //==============================================================================
-export class Effect {
-  constructor(name = "", data = {}, duration = 1, stackingRule = AVO.STACKING_RULE_ADD) {
-    this.name = name;
-    this.data = data;
+export class AoE extends Entity {
+  constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_CIRCLE, duration = 1, effects = []) {
+    super(name, x, y, size, shape);
+    
     this.duration = duration;
-    this.stackingRule = stackingRule;
     this.startDuration = duration;
+    this.effects = effects;
   }
   
   hasInfiniteDuration() {
     return this.startDuration === AVO.DURATION_INFINITE;
-  }
-  
-  copy() {
-    return new Effect(this.name, this.data, this.duration, this.stackingRule);
   }
 }
 //==============================================================================

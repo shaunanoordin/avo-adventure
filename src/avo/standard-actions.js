@@ -7,7 +7,8 @@ AvO Standard Actions
  */
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
-import { AoE, Effect } from "./entities.js";
+import { AoE } from "./entities.js";
+import { Effect } from "./effect.js";
 import { Utility } from "./utility.js";
 
 export const StandardActions = {};
