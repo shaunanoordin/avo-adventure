@@ -203,7 +203,7 @@
 	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
-	      var script = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+	      var script = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
 	      this.state = state;
 	      if (script && typeof script === "function") {
@@ -1014,8 +1014,8 @@
 	  }, {
 	    key: "paintComicPanel",
 	    value: function paintComicPanel() {
-	      var panel = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-	      var offsetY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	      var panel = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+	      var offsetY = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 
 	      if (!panel || !panel.loaded) return;
 
@@ -1507,11 +1507,11 @@
 	//==============================================================================
 	var Entity = function () {
 	  function Entity() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
 
 	    _classCallCheck(this, Entity);
 
@@ -1533,8 +1533,8 @@
 	  _createClass(Entity, [{
 	    key: "playAnimation",
 	    value: function playAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+	      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
 	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
 
@@ -1648,11 +1648,11 @@
 	  _inherits(Actor, _Entity);
 
 	  function Actor() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
 
 	    _classCallCheck(this, Actor);
 
@@ -1681,13 +1681,13 @@
 	  _inherits(AoE, _Entity2);
 
 	  function AoE() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
-	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
-	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_CIRCLE : arguments[4];
+	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
+	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
 
 	    _classCallCheck(this, AoE);
 
@@ -1745,10 +1745,10 @@
 	//==============================================================================
 	var Effect = exports.Effect = function () {
 	  function Effect() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? AVO.STACKING_RULE_ADD : arguments[3];
 
 	    _classCallCheck(this, Effect);
 
@@ -1975,7 +1975,6 @@
 
 	function comicStart() {
 	  this.comicStrip = new _comicStrip.ComicStrip("startcomic", [this.assets.images.comicPanelA], comicStartFinished);
-	  this.comicStrip.start();
 	}
 
 	function comicStartFinished() {
@@ -2286,9 +2285,9 @@
 	//==============================================================================
 	var ComicStrip = exports.ComicStrip = function () {
 	  function ComicStrip() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
 
 	    _classCallCheck(this, ComicStrip);
 

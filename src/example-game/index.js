@@ -208,7 +208,6 @@ function comicStart() {
       //this.assets.images.comicPanelC,
     ],
     comicStartFinished);
-  this.comicStrip.start();
 }
 
 function comicStartFinished() {
