@@ -111,16 +111,23 @@
 
 	    //Initialise properties
 	    //--------------------------------
-	    this.debugMode = true;
+	    this.appConfig = {
+	      framesPerSecond: AVO.FRAMES_PER_SECOND,
+	      debugMode: false,
+	      topDownView: true, //Top-down view sorts Actors on paint().
+	      skipStandardRun: false, //Skips the standard run() code, including physics.
+	      skipStandardPaint: false };
 	    this.runCycle = null;
-	    this.html = document.getElementById("app");
-	    this.canvas = document.getElementById("canvas");
-	    this.context2d = this.canvas.getContext("2d");
+	    this.html = {
+	      app: document.getElementById("app"),
+	      canvas: document.getElementById("canvas")
+	    };
+	    this.context2d = this.html.canvas.getContext("2d");
 	    this.boundingBox = null; //To be defined by this.updateSize().
 	    this.sizeRatioX = 1;
 	    this.sizeRatioY = 1;
-	    this.width = this.canvas.width;
-	    this.height = this.canvas.height;
+	    this.canvasWidth = this.html.canvas.width;
+	    this.canvasHeight = this.html.canvas.height;
 	    this.state = null;
 	    this.animationSets = {};
 	    //--------------------------------
@@ -133,20 +140,20 @@
 	    this.assetsLoaded = 0;
 	    this.assetsTotal = 0;
 	    this.scripts = {
-	      run: null,
-	      runStart: null,
-	      runAction: null,
-	      runComic: null,
-	      runEnd: null
+	      preRun: null,
+	      postRun: null,
+	      customRunStart: null,
+	      customRunAction: null,
+	      customRunComic: null,
+	      customRunEnd: null,
+	      prePaint: null,
+	      postPaint: null
 	    };
 	    this.actors = [];
 	    this.areasOfEffect = [];
 	    this.refs = {};
 	    this.store = {};
-	    this.ui = {
-	      foregroundImage: null,
-	      backgroundImage: null
-	    };
+	    //this.ui = {};
 	    this.comicStrip = null;
 	    this.actions = {};
 	    //--------------------------------
@@ -170,16 +177,16 @@
 
 	    //Bind Events
 	    //--------------------------------
-	    if ("onmousedown" in this.canvas && "onmousemove" in this.canvas && "onmouseup" in this.canvas) {
-	      this.canvas.onmousedown = this.onPointerStart.bind(this);
-	      this.canvas.onmousemove = this.onPointerMove.bind(this);
-	      this.canvas.onmouseup = this.onPointerEnd.bind(this);
+	    if ("onmousedown" in this.html.canvas && "onmousemove" in this.html.canvas && "onmouseup" in this.html.canvas) {
+	      this.html.canvas.onmousedown = this.onPointerStart.bind(this);
+	      this.html.canvas.onmousemove = this.onPointerMove.bind(this);
+	      this.html.canvas.onmouseup = this.onPointerEnd.bind(this);
 	    }
-	    if ("ontouchstart" in this.canvas && "ontouchmove" in this.canvas && "ontouchend" in this.canvas && "ontouchcancel" in this.canvas) {
-	      this.canvas.ontouchstart = this.onPointerStart.bind(this);
-	      this.canvas.ontouchmove = this.onPointerMove.bind(this);
-	      this.canvas.ontouchend = this.onPointerEnd.bind(this);
-	      this.canvas.ontouchcancel = this.onPointerEnd.bind(this);
+	    if ("ontouchstart" in this.html.canvas && "ontouchmove" in this.html.canvas && "ontouchend" in this.html.canvas && "ontouchcancel" in this.html.canvas) {
+	      this.html.canvas.ontouchstart = this.onPointerStart.bind(this);
+	      this.html.canvas.ontouchmove = this.onPointerMove.bind(this);
+	      this.html.canvas.ontouchend = this.onPointerEnd.bind(this);
+	      this.html.canvas.ontouchcancel = this.onPointerEnd.bind(this);
 	    }
 	    if ("onkeydown" in window && "onkeyup" in window) {
 	      window.onkeydown = this.onKeyDown.bind(this);
@@ -194,7 +201,7 @@
 	    //Start!
 	    //--------------------------------
 	    this.changeState(AVO.STATE_START, startScript);
-	    this.runCycle = setInterval(this.run.bind(this), 1000 / AVO.FRAMES_PER_SECOND);
+	    this.runCycle = setInterval(this.run.bind(this), 1000 / this.appConfig.framesPerSecond);
 	    //--------------------------------
 	  }
 
@@ -213,22 +220,26 @@
 	  }, {
 	    key: "run",
 	    value: function run() {
-	      if (this.scripts.run) this.scripts.run.apply(this);
+	      if (this.scripts.preRun) this.scripts.preRun.apply(this);
 
-	      switch (this.state) {
-	        case AVO.STATE_START:
-	          this.run_start();
-	          break;
-	        case AVO.STATE_END:
-	          this.run_end();
-	          break;
-	        case AVO.STATE_ACTION:
-	          this.run_action();
-	          break;
-	        case AVO.STATE_COMIC:
-	          this.run_comic();
-	          break;
+	      if (!this.appConfig.skipCoreRun) {
+	        switch (this.state) {
+	          case AVO.STATE_START:
+	            this.run_start();
+	            break;
+	          case AVO.STATE_END:
+	            this.run_end();
+	            break;
+	          case AVO.STATE_ACTION:
+	            this.run_action();
+	            break;
+	          case AVO.STATE_COMIC:
+	            this.run_comic();
+	            break;
+	        }
 	      }
+
+	      if (this.scripts.postRun) this.scripts.postRun.apply(this);
 
 	      this.paint();
 	    }
@@ -245,19 +256,19 @@
 	      }
 	      if (this.assetsLoaded < this.assetsTotal) return;
 
-	      if (this.scripts.runStart) this.scripts.runStart.apply(this);
+	      if (this.scripts.customRunStart) this.scripts.customRunStart.apply(this);
 	    }
 	  }, {
 	    key: "run_end",
 	    value: function run_end() {
-	      if (this.scripts.runEnd) this.scripts.runEnd.apply(this);
+	      if (this.scripts.customRunEnd) this.scripts.customRunEnd.apply(this);
 	    }
 	  }, {
 	    key: "run_action",
 	    value: function run_action() {
 	      //Run Global Scripts
 	      //--------------------------------
-	      if (this.scripts.runAction) this.scripts.runAction.apply(this);
+	      if (this.scripts.customRunAction) this.scripts.customRunAction.apply(this);
 	      //--------------------------------
 
 	      //Actors determine intent
@@ -492,15 +503,6 @@
 	      this.physics();
 	      //--------------------------------
 
-	      //Visuals
-	      //--------------------------------
-	      //Arrange sprites by vertical order.
-	      this.actors.sort(function (a, b) {
-	        return a.bottom - b.bottom;
-	      });
-	      //this.paint();  //moved to run()
-	      //--------------------------------
-
 	      //Cleanup AoEs
 	      //--------------------------------
 	      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
@@ -569,7 +571,7 @@
 	  }, {
 	    key: "run_comic",
 	    value: function run_comic() {
-	      if (this.scripts.runComic) this.scripts.runComic.apply(this);
+	      if (this.scripts.customRunComic) this.scripts.customRunComic.apply(this);
 
 	      if (!this.comicStrip) return;
 	      var comic = this.comicStrip;
@@ -596,7 +598,7 @@
 	          }
 	          break;
 	        case AVO.COMIC_STRIP_STATE_IDLE:
-	          if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	          if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	            comic.currentPanel++;
 	            comic.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
 	          }
@@ -723,32 +725,28 @@
 	    key: "paint",
 	    value: function paint() {
 	      //Clear
-	      this.context2d.clearRect(0, 0, this.width, this.height);
+	      this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-	      if (this.ui.backgroundImage && this.ui.backgroundImage.loaded) {
-	        var image = this.ui.backgroundImage;
-	        this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
+	      if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+
+	      if (!this.appConfig.skipCorePaint) {
+	        switch (this.state) {
+	          case AVO.STATE_START:
+	            this.paint_start();
+	            break;
+	          case AVO.STATE_END:
+	            this.paint_end();
+	            break;
+	          case AVO.STATE_ACTION:
+	            this.paint_action();
+	            break;
+	          case AVO.STATE_COMIC:
+	            this.paint_comic();
+	            break;
+	        }
 	      }
 
-	      switch (this.state) {
-	        case AVO.STATE_START:
-	          this.paint_start();
-	          break;
-	        case AVO.STATE_END:
-	          this.paint_end();
-	          break;
-	        case AVO.STATE_ACTION:
-	          this.paint_action();
-	          break;
-	        case AVO.STATE_COMIC:
-	          this.paint_comic();
-	          break;
-	      }
-
-	      if (this.ui.foregroundImage && this.ui.foregroundImage.loaded) {
-	        var _image = this.ui.foregroundImage;
-	        this.context2d.drawImage(_image.img, (this.width - _image.img.width) / 2, (this.height - _image.img.height) / 2);
-	      }
+	      if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
 	    }
 	  }, {
 	    key: "paint_start",
@@ -762,19 +760,19 @@
 	      if (this.assetsLoaded < this.assetsTotal) {
 	        var rgb = Math.floor(percentage * 255);
 	        this.context2d.beginPath();
-	        this.context2d.rect(0, 0, this.width, this.height);
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	        this.context2d.fillStyle = "rgba(" + rgb + "," + rgb + "," + rgb + ",1)";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#fff";
-	        this.context2d.fillText("Loading... (" + this.assetsLoaded + "/" + this.assetsTotal + ")", this.width / 2, this.height / 2);
+	        this.context2d.fillText("Loading... (" + this.assetsLoaded + "/" + this.assetsTotal + ")", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      } else {
 	        this.context2d.beginPath();
-	        this.context2d.rect(0, 0, this.width, this.height);
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	        this.context2d.fillStyle = "#fff";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#000";
-	        this.context2d.fillText("Ready!", this.width / 2, this.height / 2);
+	        this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      }
 	    }
@@ -782,7 +780,7 @@
 	    key: "paint_end",
 	    value: function paint_end() {
 	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.width, this.height);
+	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	      this.context2d.fillStyle = "#3cc";
 	      this.context2d.fill();
 	      this.context2d.closePath();
@@ -790,9 +788,20 @@
 	  }, {
 	    key: "paint_action",
 	    value: function paint_action() {
+	      //Arrange sprites by vertical order.
+	      //--------------------------------
+	      if (this.appConfig.topDownView) {
+	        this.actors.sort(function (a, b) {
+	          return a.bottom - b.bottom;
+	        });
+	      }
+	      //--------------------------------
+
 	      //DEBUG: Paint hitboxes
 	      //--------------------------------
-	      if (this.debugMode) {
+	      if (this.appConfig.debugMode) {
+	        this.context2d.lineWidth = 1;
+
 	        //Areas of Effects
 	        var _iteratorNormalCompletion7 = true;
 	        var _didIteratorError7 = false;
@@ -949,8 +958,9 @@
 	        }
 	      }
 
-	      if (this.debugMode) {
+	      if (this.appConfig.debugMode) {
 	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+	        this.context2d.lineWidth = 1;
 	        this.context2d.beginPath();
 	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
 	        this.context2d.stroke();
@@ -965,16 +975,16 @@
 	      var comic = this.comicStrip;
 
 	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.width, this.height);
+	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	      this.context2d.fillStyle = comic.background;
 	      this.context2d.fill();
 	      this.context2d.closePath();
 
 	      switch (comic.state) {
 	        case AVO.COMIC_STRIP_STATE_TRANSITIONING:
-	          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.height) : 0;
+	          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.canvasHeight) : 0;
 	          this.paintComicPanel(comic.getPreviousPanel(), offsetY);
-	          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
+	          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.canvasHeight);
 	          break;
 	        case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
 	          this.paintComicPanel(comic.getCurrentPanel());
@@ -1019,8 +1029,8 @@
 
 	      if (!panel || !panel.loaded) return;
 
-	      var ratioX = this.width / panel.img.width;
-	      var ratioY = this.height / panel.img.height;
+	      var ratioX = this.canvasWidth / panel.img.width;
+	      var ratioY = this.canvasHeight / panel.img.height;
 	      var ratio = Math.min(1, Math.min(ratioX, ratioY));
 
 	      var srcX = 0;
@@ -1030,8 +1040,8 @@
 
 	      var tgtW = panel.img.width * ratio;
 	      var tgtH = panel.img.height * ratio;
-	      var tgtX = (this.width - tgtW) / 2; //TODO
-	      var tgtY = (this.height - tgtH) / 2 + offsetY; //TODO
+	      var tgtX = (this.canvasWidth - tgtW) / 2; //TODO
+	      var tgtY = (this.canvasHeight - tgtH) / 2 + offsetY; //TODO
 
 	      this.context2d.drawImage(panel.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
 	    }
@@ -1104,10 +1114,10 @@
 	  }, {
 	    key: "updateSize",
 	    value: function updateSize() {
-	      var boundingBox = this.canvas.getBoundingClientRect ? this.canvas.getBoundingClientRect() : { left: 0, top: 0 };
+	      var boundingBox = this.html.canvas.getBoundingClientRect ? this.html.canvas.getBoundingClientRect() : { left: 0, top: 0 };
 	      this.boundingBox = boundingBox;
-	      this.sizeRatioX = this.width / this.boundingBox.width;
-	      this.sizeRatioY = this.height / this.boundingBox.height;
+	      this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+	      this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
 	    }
 	  }]);
 
@@ -1170,9 +1180,14 @@
 	var SHAPE_CIRCLE = exports.SHAPE_CIRCLE = 2;
 
 	var ROTATION_EAST = exports.ROTATION_EAST = 0;
-	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI / 2;
+	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI * 0.5;
 	var ROTATION_WEST = exports.ROTATION_WEST = Math.PI;
-	var ROTATION_NORTH = exports.ROTATION_NORTH = -Math.PI / 2;
+	var ROTATION_NORTH = exports.ROTATION_NORTH = Math.PI * -0.5;
+
+	var ROTATION_SOUTHEAST = exports.ROTATION_SOUTHEAST = Math.PI * 0.25;
+	var ROTATION_SOUTHWEST = exports.ROTATION_SOUTHWEST = Math.PI * 0.75;
+	var ROTATION_NORTHWEST = exports.ROTATION_NORTHWEST = Math.PI * -0.75;
+	var ROTATION_NORTHEAST = exports.ROTATION_NORTHEAST = Math.PI * -0.25;
 
 	var DIRECTION_EAST = exports.DIRECTION_EAST = 0;
 	var DIRECTION_SOUTH = exports.DIRECTION_SOUTH = 1;
@@ -1801,11 +1816,16 @@
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function initialise() {
+	  //Config
+	  //--------------------------------
+	  this.appConfig.debugMode = true;
+	  //--------------------------------
+
 	  //Scripts
 	  //--------------------------------
-	  this.scripts.runStart = runStart;
-	  this.scripts.runAction = runAction;
-	  this.scripts.runEnd = runEnd;
+	  this.scripts.customRunStart = runStart;
+	  this.scripts.customRunAction = runAction;
+	  this.scripts.customRunEnd = runEnd;
 	  //--------------------------------
 
 	  //Images
@@ -1815,7 +1835,6 @@
 	  this.assets.images.gate = new _utility.ImageAsset("assets/example-game/gate.png");
 	  this.assets.images.plate = new _utility.ImageAsset("assets/example-game/plate.png");
 	  this.assets.images.goal = new _utility.ImageAsset("assets/example-game/goal.png");
-	  this.assets.images.background = new _utility.ImageAsset("assets/example-game/background.png");
 
 	  this.assets.images.comicPanelA = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-red.png");
 	  this.assets.images.comicPanelB = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-blue.png");
@@ -2038,8 +2057,8 @@
 	  this.areasOfEffect = [];
 	  this.refs = {};
 
-	  var midX = this.width / 2,
-	      midY = this.height / 2;
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
 
 	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
 	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
@@ -2048,16 +2067,6 @@
 	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
-	  var wallN = new _entities.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-	  var wallE = new _entities.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  var wallW = new _entities.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  wallE.movable = false;
-	  wallS.movable = false;
-	  wallW.movable = false;
-	  wallN.movable = false;
-	  this.actors.push(wallE, wallS, wallW, wallN);
-
 	  this.refs["gate"] = new _entities.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
 	  this.refs["gate"].movable = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
@@ -2065,7 +2074,7 @@
 	  this.refs["gate"].playAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
-	  this.refs["goal"] = new _entities.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	  this.refs["goal"] = new _entities.AoE("goal", this.canvasWidth / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
 	  this.refs["goal"].playAnimation("glow");
@@ -2075,13 +2084,13 @@
 	function startLevel1() {
 	  startLevelInit.apply(this);
 	  //this.areasOfEffect.push(
-	  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
+	  //  new AoE("conveyorBelt", this.canvasWidth / 2, this.canvasHeight / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
 	  //    [new Effect("push", { x: 0, y: 4 }, 4, AVO.STACKING_RULE_ADD, null)], null)
 	  //);
-	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
+	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.canvasWidth * 0.8) + this.canvasWidth * 0.1, Math.floor(Math.random() * this.canvasHeight * 0.8) + this.canvasHeight * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
 
-	  var midX = this.width / 2,
-	      midY = this.height / 2;
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
 
 	  this.refs.boxes = [];
 	  this.refs.plates = [];
@@ -2146,8 +2155,6 @@
 	      }
 	    }
 	  }
-
-	  this.ui.backgroundImage = this.assets.images.background;
 	}
 
 	function startLevel2() {
@@ -2220,12 +2227,12 @@
 
 	  if (allBoxesAreCharged) {
 	    if (this.refs["gate"] && this.refs["gate"].y >= -32) {
-	      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+	      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
 	      this.refs["gate"].y -= 1;
 	    }
 	  } else {
 	    if (this.refs["gate"] && this.refs["gate"].y <= 16) {
-	      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+	      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
 	      this.refs["gate"].y += 1;
 	    }
 	  }

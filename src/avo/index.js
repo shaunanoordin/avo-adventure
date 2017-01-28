@@ -17,16 +17,24 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   constructor(startScript) {
     //Initialise properties
     //--------------------------------
-    this.debugMode = true;
+    this.appConfig = {
+      framesPerSecond: AVO.FRAMES_PER_SECOND,
+      debugMode: false,
+      topDownView: true,  //Top-down view sorts Actors on paint().
+      skipStandardRun: false,  //Skips the standard run() code, including physics.
+      skipStandardPaint: false,  //Skips the standard paint() code.
+    };
     this.runCycle = null;
-    this.html = document.getElementById("app");
-    this.canvas = document.getElementById("canvas");
-    this.context2d = this.canvas.getContext("2d");
+    this.html = {
+      app: document.getElementById("app"),
+      canvas: document.getElementById("canvas"),
+    };
+    this.context2d = this.html.canvas.getContext("2d");
     this.boundingBox = null;  //To be defined by this.updateSize().
     this.sizeRatioX = 1;
     this.sizeRatioY = 1;
-    this.width = this.canvas.width;
-    this.height = this.canvas.height;
+    this.canvasWidth = this.html.canvas.width;
+    this.canvasHeight = this.html.canvas.height;
     this.state = null;
     this.animationSets = {};
     //--------------------------------
@@ -39,20 +47,20 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
     this.scripts = {
-      run: null,
-      runStart: null,
-      runAction: null,
-      runComic: null,
-      runEnd: null,
+      preRun: null,
+      postRun: null,
+      customRunStart: null,
+      customRunAction: null,
+      customRunComic: null,
+      customRunEnd: null,
+      prePaint: null,
+      postPaint: null,
     };
     this.actors = [];
     this.areasOfEffect = [];
     this.refs = {};
     this.store = {};
-    this.ui = {
-      foregroundImage: null,
-      backgroundImage: null,
-    };
+    //this.ui = {};
     this.comicStrip = null;
     this.actions = {};
     //--------------------------------
@@ -76,18 +84,18 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Bind Events
     //--------------------------------
-    if ("onmousedown" in this.canvas && "onmousemove" in this.canvas &&
-        "onmouseup" in this.canvas) {
-      this.canvas.onmousedown = this.onPointerStart.bind(this);
-      this.canvas.onmousemove = this.onPointerMove.bind(this);
-      this.canvas.onmouseup = this.onPointerEnd.bind(this);
+    if ("onmousedown" in this.html.canvas && "onmousemove" in this.html.canvas &&
+        "onmouseup" in this.html.canvas) {
+      this.html.canvas.onmousedown = this.onPointerStart.bind(this);
+      this.html.canvas.onmousemove = this.onPointerMove.bind(this);
+      this.html.canvas.onmouseup = this.onPointerEnd.bind(this);
     }    
-    if ("ontouchstart" in this.canvas && "ontouchmove" in this.canvas &&
-        "ontouchend" in this.canvas && "ontouchcancel" in this.canvas) {
-      this.canvas.ontouchstart = this.onPointerStart.bind(this);
-      this.canvas.ontouchmove = this.onPointerMove.bind(this);
-      this.canvas.ontouchend = this.onPointerEnd.bind(this);
-      this.canvas.ontouchcancel = this.onPointerEnd.bind(this);
+    if ("ontouchstart" in this.html.canvas && "ontouchmove" in this.html.canvas &&
+        "ontouchend" in this.html.canvas && "ontouchcancel" in this.html.canvas) {
+      this.html.canvas.ontouchstart = this.onPointerStart.bind(this);
+      this.html.canvas.ontouchmove = this.onPointerMove.bind(this);
+      this.html.canvas.ontouchend = this.onPointerEnd.bind(this);
+      this.html.canvas.ontouchcancel = this.onPointerEnd.bind(this);
     }
     if ("onkeydown" in window && "onkeyup" in window) {
       window.onkeydown = this.onKeyDown.bind(this);
@@ -102,7 +110,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Start!
     //--------------------------------
     this.changeState(AVO.STATE_START, startScript);
-    this.runCycle = setInterval(this.run.bind(this), 1000 / AVO.FRAMES_PER_SECOND);
+    this.runCycle = setInterval(this.run.bind(this), 1000 / this.appConfig.framesPerSecond);
     //--------------------------------
   }
   
@@ -116,22 +124,26 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   run() {
-    if (this.scripts.run) this.scripts.run.apply(this);
+    if (this.scripts.preRun) this.scripts.preRun.apply(this);
     
-    switch (this.state) {
-      case AVO.STATE_START:
-        this.run_start();
-        break;
-      case AVO.STATE_END:
-        this.run_end();
-        break;
-      case AVO.STATE_ACTION:
-        this.run_action();
-        break;
-      case AVO.STATE_COMIC:
-        this.run_comic();
-        break;
+    if (!this.appConfig.skipCoreRun) {
+      switch (this.state) {
+        case AVO.STATE_START:
+          this.run_start();
+          break;
+        case AVO.STATE_END:
+          this.run_end();
+          break;
+        case AVO.STATE_ACTION:
+          this.run_action();
+          break;
+        case AVO.STATE_COMIC:
+          this.run_comic();
+          break;
+      }
     }
+    
+    if (this.scripts.postRun) this.scripts.postRun.apply(this);
     
     this.paint();
   }
@@ -147,17 +159,17 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     if (this.assetsLoaded < this.assetsTotal) return;
     
-    if (this.scripts.runStart) this.scripts.runStart.apply(this);
+    if (this.scripts.customRunStart) this.scripts.customRunStart.apply(this);
   }
   
   run_end() {
-    if (this.scripts.runEnd) this.scripts.runEnd.apply(this);
+    if (this.scripts.customRunEnd) this.scripts.customRunEnd.apply(this);
   }
     
   run_action() {
     //Run Global Scripts
     //--------------------------------
-    if (this.scripts.runAction) this.scripts.runAction.apply(this);
+    if (this.scripts.customRunAction) this.scripts.customRunAction.apply(this);
     //--------------------------------
     
     //Actors determine intent
@@ -286,15 +298,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.physics();
     //--------------------------------
     
-    //Visuals
-    //--------------------------------
-    //Arrange sprites by vertical order.
-    this.actors.sort((a, b) => {
-      return a.bottom - b.bottom;
-    });
-    //this.paint();  //moved to run()
-    //--------------------------------
-    
     //Cleanup AoEs
     //--------------------------------
     for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
@@ -340,7 +343,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   run_comic() {
-    if (this.scripts.runComic) this.scripts.runComic.apply(this);
+    if (this.scripts.customRunComic) this.scripts.customRunComic.apply(this);
     
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
@@ -370,6 +373,9 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       case AVO.COMIC_STRIP_STATE_IDLE:
         if (this.pointer.state === AVO.INPUT_ACTIVE || 
             this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
+            this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
+            this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
+            this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
             this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
             this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
           comic.currentPanel++;
@@ -507,32 +513,28 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   
   paint() {
     //Clear
-    this.context2d.clearRect(0, 0, this.width, this.height);
+    this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    if (this.ui.backgroundImage && this.ui.backgroundImage.loaded) {
-      const image = this.ui.backgroundImage;
-      this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
+    if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    
+    if (!this.appConfig.skipCorePaint) {
+      switch (this.state) {
+        case AVO.STATE_START:
+          this.paint_start();
+          break;
+        case AVO.STATE_END:
+          this.paint_end();
+          break;
+        case AVO.STATE_ACTION:
+          this.paint_action();
+          break;
+        case AVO.STATE_COMIC:
+          this.paint_comic();
+          break;
+      }
     }
     
-    switch (this.state) {
-      case AVO.STATE_START:
-        this.paint_start();
-        break;
-      case AVO.STATE_END:
-        this.paint_end();
-        break;
-      case AVO.STATE_ACTION:
-        this.paint_action();
-        break;
-      case AVO.STATE_COMIC:
-        this.paint_comic();
-        break;
-    }
-    
-    if (this.ui.foregroundImage && this.ui.foregroundImage.loaded) {
-      const image = this.ui.foregroundImage;
-      this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
-    }
+    if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
   }
   
   paint_start() {
@@ -545,35 +547,46 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (this.assetsLoaded < this.assetsTotal) {
       const rgb = Math.floor(percentage * 255);
       this.context2d.beginPath();
-      this.context2d.rect(0, 0, this.width, this.height);
+      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
       this.context2d.fillStyle = "rgba("+rgb+","+rgb+","+rgb+",1)";
       this.context2d.fill();
       this.context2d.fillStyle = "#fff";
-      this.context2d.fillText("Loading... (" + this.assetsLoaded+"/" + this.assetsTotal + ")", this.width / 2, this.height / 2); 
+      this.context2d.fillText("Loading... (" + this.assetsLoaded+"/" + this.assetsTotal + ")", this.canvasWidth / 2, this.canvasHeight / 2); 
       this.context2d.closePath();
     } else {
       this.context2d.beginPath();
-      this.context2d.rect(0, 0, this.width, this.height);
+      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
       this.context2d.fillStyle = "#fff";
       this.context2d.fill();
       this.context2d.fillStyle = "#000";
-      this.context2d.fillText("Ready!", this.width / 2, this.height / 2); 
+      this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2); 
       this.context2d.closePath();
     }
     
   }
   paint_end() {
     this.context2d.beginPath();
-    this.context2d.rect(0, 0, this.width, this.height);
+    this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
     this.context2d.fillStyle = "#3cc";
     this.context2d.fill();
     this.context2d.closePath();    
   }
   
   paint_action() {
+    //Arrange sprites by vertical order.
+    //--------------------------------
+    if (this.appConfig.topDownView) {
+      this.actors.sort((a, b) => {
+        return a.bottom - b.bottom;
+      });
+    }
+    //--------------------------------
+    
     //DEBUG: Paint hitboxes
     //--------------------------------
-    if (this.debugMode) {
+    if (this.appConfig.debugMode) {
+      this.context2d.lineWidth = 1;
+      
       //Areas of Effects
       for (let aoe of this.areasOfEffect) {
         let durationPercentage = 1;
@@ -643,8 +656,9 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //DEBUG: Paint touch/mouse input
     //--------------------------------
-    if (this.debugMode) {      
+    if (this.appConfig.debugMode) {      
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+      this.context2d.lineWidth = 1;
       this.context2d.beginPath();
       this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
       this.context2d.stroke();
@@ -658,7 +672,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     const comic = this.comicStrip;
     
     this.context2d.beginPath();
-    this.context2d.rect(0, 0, this.width, this.height);
+    this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
     this.context2d.fillStyle = comic.background;
     this.context2d.fill();
     this.context2d.closePath();
@@ -666,10 +680,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     switch (comic.state) {
       case AVO.COMIC_STRIP_STATE_TRANSITIONING:
         const offsetY = (comic.transitionTime > 0)
-          ? Math.floor(comic.counter / comic.transitionTime * -this.height)
+          ? Math.floor(comic.counter / comic.transitionTime * -this.canvasHeight)
           : 0;
         this.paintComicPanel(comic.getPreviousPanel(), offsetY);
-        this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
+        this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.canvasHeight);
         break;
       case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
         this.paintComicPanel(comic.getCurrentPanel());
@@ -711,8 +725,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paintComicPanel(panel = null, offsetY = 0) {
     if (!panel || !panel.loaded) return;
     
-    const ratioX = this.width / panel.img.width;
-    const ratioY = this.height / panel.img.height;
+    const ratioX = this.canvasWidth / panel.img.width;
+    const ratioY = this.canvasHeight / panel.img.height;
     const ratio = Math.min(1, Math.min(ratioX, ratioY));
     
     const srcX = 0;
@@ -722,8 +736,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     const tgtW = panel.img.width * ratio;
     const tgtH = panel.img.height * ratio;
-    const tgtX = (this.width - tgtW) / 2;  //TODO
-    const tgtY = (this.height - tgtH) / 2 + offsetY;  //TODO
+    const tgtX = (this.canvasWidth - tgtW) / 2;  //TODO
+    const tgtY = (this.canvasHeight - tgtH) / 2 + offsetY;  //TODO
     
     this.context2d.drawImage(panel.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
   }
@@ -787,12 +801,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   //----------------------------------------------------------------
   
   updateSize() {
-    let boundingBox = (this.canvas.getBoundingClientRect)
-      ? this.canvas.getBoundingClientRect()
+    let boundingBox = (this.html.canvas.getBoundingClientRect)
+      ? this.html.canvas.getBoundingClientRect()
       : { left: 0, top: 0 };
     this.boundingBox = boundingBox;
-    this.sizeRatioX = this.width / this.boundingBox.width;
-    this.sizeRatioY = this.height / this.boundingBox.height;
+    this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+    this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
   }
 }
 
