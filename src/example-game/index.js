@@ -197,6 +197,7 @@ function runStart() {
       this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
     this.changeState(AVO.STATE_COMIC, comicStart);
   }
+  this.changeState(AVO.STATE_COMIC, comicStart);
 }
 
 function comicStart() {
@@ -251,32 +252,22 @@ function startLevelInit() {
   const midX = this.width / 2, midY = this.height / 2;
   
   this.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
-  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
+  //this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
+  //this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
   this.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
   this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
   this.actors.push(this.refs[AVO.REF.PLAYER]);
   
-  let wallN = new Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-  let wallS = new Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-  let wallE = new Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-  let wallW = new Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-  wallE.canBeMoved = false;
-  wallS.canBeMoved = false;
-  wallW.canBeMoved = false;
-  wallN.canBeMoved = false;
-  this.actors.push(wallE, wallS, wallW, wallN);
-
   this.refs["gate"] = new Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
   this.refs["gate"].canBeMoved = false;
-  this.refs["gate"].spritesheet = this.assets.images.gate;
-  this.refs["gate"].animationSet = this.animationSets.simple128;
+  //this.refs["gate"].spritesheet = this.assets.images.gate;
+  //this.refs["gate"].animationSet = this.animationSets.simple128;
   this.refs["gate"].playAnimation("idle");
   this.actors.push(this.refs["gate"]);
   
   this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
-  this.refs["goal"].spritesheet = this.assets.images.goal;
-  this.refs["goal"].animationSet = this.animationSets.simple64;
+  //this.refs["goal"].spritesheet = this.assets.images.goal;
+  //this.refs["goal"].animationSet = this.animationSets.simple64;
   this.refs["goal"].playAnimation("glow");
   this.areasOfEffect.push(this.refs["goal"]);
 }
@@ -302,8 +293,8 @@ function startLevel1() {
   ];
   for (let box of this.refs.boxes) {
     box.attributes["box"] = true;
-    box.spritesheet = this.assets.images.sarcophagus;
-    box.animationSet = this.animationSets.sarcophagus;
+    //box.spritesheet = this.assets.images.sarcophagus;
+    //box.animationSet = this.animationSets.sarcophagus;
     this.actors.push(box);
   }
   
@@ -312,13 +303,11 @@ function startLevel1() {
     new AoE("plate", midX + 128, midY + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, [chargeEffect.copy()]),
   ];
   for (let plate of this.refs.plates) {
-    plate.spritesheet = this.assets.images.plate;
-    plate.animationSet = this.animationSets.plate;
+    //plate.spritesheet = this.assets.images.plate;
+    //plate.animationSet = this.animationSets.plate;
     plate.playAnimation("idle");
     this.areasOfEffect.push(plate);
-  }
-  
-  this.ui.backgroundImage = this.assets.images.background;
+  }  
 }
 
 function startLevel2() {

@@ -9,6 +9,7 @@ AvO Adventure Game Engine
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { AoE, Effect } from "./entities.js";
 import { Utility } from "./utility.js";
+import { checkCollision } from "./physics.js";
 
 /*  Primary AvO Game Engine
  */
@@ -228,6 +229,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           name: AVO.ACTION.PRIMARY,
         };
       }
+      
+      if (this.keys[AVO.KEY_CODES.ENTER].duration === 1) {
+        player.shape = AVO.SHAPE_SQUARE;
+      }
     }
     //--------------------------------
     
@@ -414,9 +419,14 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       let actorA = this.actors[a];
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
-        if (this.isATouchingB(actorA, actorB)) {
-          this.correctCollision(actorA, actorB);
+        let correction = checkCollision(actorA, actorB);
+        if (correction) {
+          console.log(correction);
         }
+        
+        //if (this.isATouchingB(actorA, actorB)) {
+        //  this.correctCollision(actorA, actorB);
+        //}
       }
     }
   }

@@ -97,6 +97,8 @@
 
 	var _utility = __webpack_require__(4);
 
+	var _physics = __webpack_require__(6);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -325,6 +327,10 @@
 	          player.intent = {
 	            name: AVO.ACTION.PRIMARY
 	          };
+	        }
+
+	        if (this.keys[AVO.KEY_CODES.ENTER].duration === 1) {
+	          player.shape = AVO.SHAPE_SQUARE;
 	        }
 	      }
 	      //--------------------------------
@@ -635,9 +641,14 @@
 	        var actorA = this.actors[a];
 	        for (var b = a + 1; b < this.actors.length; b++) {
 	          var actorB = this.actors[b];
-	          if (this.isATouchingB(actorA, actorB)) {
-	            this.correctCollision(actorA, actorB);
+	          var correction = (0, _physics.checkCollision)(actorA, actorB);
+	          if (correction) {
+	            console.log(correction);
 	          }
+
+	          //if (this.isATouchingB(actorA, actorB)) {
+	          //  this.correctCollision(actorA, actorB);
+	          //}
 	        }
 	      }
 	    }
@@ -1985,6 +1996,7 @@
 	  if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	    this.changeState(AVO.STATE_COMIC, comicStart);
 	  }
+	  this.changeState(AVO.STATE_COMIC, comicStart);
 	}
 
 	function comicStart() {
@@ -2060,32 +2072,22 @@
 	      midY = this.height / 2;
 
 	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
-	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
-	  this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
+	  //this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
+	  //this.refs[AVO.REF.PLAYER].animationSet = this.animationSets.actor;
 	  this.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
 	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
-	  var wallN = new _entities.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-	  var wallE = new _entities.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  var wallW = new _entities.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  wallE.canBeMoved = false;
-	  wallS.canBeMoved = false;
-	  wallW.canBeMoved = false;
-	  wallN.canBeMoved = false;
-	  this.actors.push(wallE, wallS, wallW, wallN);
-
 	  this.refs["gate"] = new _entities.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
 	  this.refs["gate"].canBeMoved = false;
-	  this.refs["gate"].spritesheet = this.assets.images.gate;
-	  this.refs["gate"].animationSet = this.animationSets.simple128;
+	  //this.refs["gate"].spritesheet = this.assets.images.gate;
+	  //this.refs["gate"].animationSet = this.animationSets.simple128;
 	  this.refs["gate"].playAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
 	  this.refs["goal"] = new _entities.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
-	  this.refs["goal"].spritesheet = this.assets.images.goal;
-	  this.refs["goal"].animationSet = this.animationSets.simple64;
+	  //this.refs["goal"].spritesheet = this.assets.images.goal;
+	  //this.refs["goal"].animationSet = this.animationSets.simple64;
 	  this.refs["goal"].playAnimation("glow");
 	  this.areasOfEffect.push(this.refs["goal"]);
 	}
@@ -2117,8 +2119,8 @@
 	      var box = _step3.value;
 
 	      box.attributes["box"] = true;
-	      box.spritesheet = this.assets.images.sarcophagus;
-	      box.animationSet = this.animationSets.sarcophagus;
+	      //box.spritesheet = this.assets.images.sarcophagus;
+	      //box.animationSet = this.animationSets.sarcophagus;
 	      this.actors.push(box);
 	    }
 	  } catch (err) {
@@ -2145,8 +2147,8 @@
 	    for (var _iterator4 = this.refs.plates[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	      var plate = _step4.value;
 
-	      plate.spritesheet = this.assets.images.plate;
-	      plate.animationSet = this.animationSets.plate;
+	      //plate.spritesheet = this.assets.images.plate;
+	      //plate.animationSet = this.animationSets.plate;
 	      plate.playAnimation("idle");
 	      this.areasOfEffect.push(plate);
 	    }
@@ -2164,8 +2166,6 @@
 	      }
 	    }
 	  }
-
-	  this.ui.backgroundImage = this.assets.images.background;
 	}
 
 	function startLevel2() {
@@ -2268,6 +2268,67 @@
 	    }
 	  }
 	}
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.checkCollision = checkCollision;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	//Naming note: all caps.
+
+	/*  Checks collision based on Separating Axis Theorem.
+	    Non-convex object shapes only, please.
+	    Return false if objA and objB don't touch.
+	    Returns corrected coordinates { a.x, a.y, b.x, b.y } otherwise.
+	 */
+	function checkCollision(objA, objB) {
+	  if (!objA || !objB) return false;
+
+	  if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
+	    var distX = objA.x - objB.x;
+	    var distY = objA.y - objB.y;
+	    var minimumDist = objA.radius + objB.radius;
+	    if (distX * distX + distY * distY < minimumDist * minimumDist) {
+	      return true;
+	    }
+	  } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	    if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
+	      return true;
+	    }
+	  } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	    var _distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	    var _distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	    if (_distX * _distX + _distY * _distY < objA.radius * objA.radius) {
+	      return true;
+	    }
+	  } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	    var _distX2 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	    var _distY2 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	    if (_distX2 * _distX2 + _distY2 * _distY2 < objB.radius * objB.radius) {
+	      return true;
+	    }
+	  }
+
+	  return false;
+	} /*
+	  Experimental Physics Class
+	  ===============
+	  
+	  (Shaun A. Noordin || shaunanoordin.com || 20160901)
+	  ********************************************************************************
+	   */
 
 /***/ }
 /******/ ]);
