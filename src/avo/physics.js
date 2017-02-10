@@ -8,7 +8,7 @@ Physics Classes
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
 
-const USE_CIRCLE_APPROXIMATION = true;
+const USE_CIRCLE_APPROXIMATION = false;
 
 export const Physics = {
     //----------------------------------------------------------------
@@ -151,7 +151,6 @@ export const Physics = {
   
   //----------------------------------------------------------------
   
-  //TODO  //ERROR This isn't working too well!
   checkCollision_circlePolygon: function(objA, objB) {
     let fractionA = 0;
     let fractionB = 0;
@@ -175,22 +174,14 @@ export const Physics = {
       : { x: 0, y: 0 };
 
     let correction = null;
-    const verticesA = [
-      { x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius },
-      { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius },
-    ];
     const verticesB = objB.vertices;
     const projectionAxes = [centreToCentreAxis, ...this.getShapeNormals(objB)];
     for (let i = 0; i < projectionAxes.length; i++) {
       const axis = projectionAxes[i];
-      const projectionA = { min: Infinity, max: -Infinity };
+      const scalarA = this.dotProduct(axis, { x: objA.x, y: objA.y });
+      const projectionA = { min: scalarA - objA.radius, max: scalarA + objA.radius };
       const projectionB = { min: Infinity, max: -Infinity };
-
-      for (let j = 0; j < verticesA.length; j++) {
-        const val = this.dotProduct(axis, verticesA[j]);
-        projectionA.min = Math.min(projectionA.min, val);
-        projectionA.max = Math.max(projectionA.max, val);
-      }
+      
       for (let j = 0; j < verticesB.length; j++) {
         const val = this.dotProduct(axis, verticesB[j]);
         projectionB.min = Math.min(projectionB.min, val);

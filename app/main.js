@@ -1467,7 +1467,7 @@
 
 	//Naming note: all caps.
 
-	var USE_CIRCLE_APPROXIMATION = true;
+	var USE_CIRCLE_APPROXIMATION = false;
 
 	var Physics = exports.Physics = {
 	  //----------------------------------------------------------------
@@ -1604,7 +1604,6 @@
 
 	  //----------------------------------------------------------------
 
-	  //TODO  //ERROR This isn't working too well!
 	  checkCollision_circlePolygon: function checkCollision_circlePolygon(objA, objB) {
 	    var fractionA = 0;
 	    var fractionB = 0;
@@ -1626,23 +1625,18 @@
 	    var centreToCentreAxis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
 
 	    var correction = null;
-	    var verticesA = [{ x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius }, { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius }];
 	    var verticesB = objB.vertices;
 	    var projectionAxes = [centreToCentreAxis].concat(_toConsumableArray(this.getShapeNormals(objB)));
 	    for (var i = 0; i < projectionAxes.length; i++) {
 	      var axis = projectionAxes[i];
-	      var projectionA = { min: Infinity, max: -Infinity };
+	      var scalarA = this.dotProduct(axis, { x: objA.x, y: objA.y });
+	      var projectionA = { min: scalarA - objA.radius, max: scalarA + objA.radius };
 	      var projectionB = { min: Infinity, max: -Infinity };
 
-	      for (var j = 0; j < verticesA.length; j++) {
-	        var val = this.dotProduct(axis, verticesA[j]);
-	        projectionA.min = Math.min(projectionA.min, val);
-	        projectionA.max = Math.max(projectionA.max, val);
-	      }
-	      for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
-	        var _val2 = this.dotProduct(axis, verticesB[_j2]);
-	        projectionB.min = Math.min(projectionB.min, _val2);
-	        projectionB.max = Math.max(projectionB.max, _val2);
+	      for (var j = 0; j < verticesB.length; j++) {
+	        var val = this.dotProduct(axis, verticesB[j]);
+	        projectionB.min = Math.min(projectionB.min, val);
+	        projectionB.max = Math.max(projectionB.max, val);
 	      }
 
 	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
