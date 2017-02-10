@@ -73,21 +73,21 @@ export const Physics = {
     const distY = objB.y - objA.y;
     const dist = Math.sqrt(distX * distX + distY * distY);
     const minimumDist = objA.radius + objB.radius;
-    if (dist >= minimumDist) {
-      return null;
+    if (dist < minimumDist) {    
+      const angle = Math.atan2(distY, distX);
+      const correctDist = minimumDist;
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+
+      return {
+        ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
+        ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
+        bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
+        by: objB.y + sinAngle * (correctDist - dist) * fractionB,
+      };
     }
-
-    const angle = Math.atan2(distY, distX);
-    const correctDist = minimumDist;
-    const cosAngle = Math.cos(angle);
-    const sinAngle = Math.sin(angle);
-
-    return {
-      ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
-      ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
-      bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
-      by: objB.y + sinAngle * (correctDist - dist) * fractionB,
-    };
+    
+    return null;
   },
   
   //----------------------------------------------------------------
@@ -145,6 +145,8 @@ export const Physics = {
         by: objB.y + correction.y * fractionB,
       };
     }
+    
+    return null;
   },
   
   //----------------------------------------------------------------

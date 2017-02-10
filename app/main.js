@@ -1526,21 +1526,21 @@
 	    var distY = objB.y - objA.y;
 	    var dist = Math.sqrt(distX * distX + distY * distY);
 	    var minimumDist = objA.radius + objB.radius;
-	    if (dist >= minimumDist) {
-	      return null;
+	    if (dist < minimumDist) {
+	      var angle = Math.atan2(distY, distX);
+	      var correctDist = minimumDist;
+	      var cosAngle = Math.cos(angle);
+	      var sinAngle = Math.sin(angle);
+
+	      return {
+	        ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
+	        ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
+	        bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
+	        by: objB.y + sinAngle * (correctDist - dist) * fractionB
+	      };
 	    }
 
-	    var angle = Math.atan2(distY, distX);
-	    var correctDist = minimumDist;
-	    var cosAngle = Math.cos(angle);
-	    var sinAngle = Math.sin(angle);
-
-	    return {
-	      ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
-	      ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
-	      bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
-	      by: objB.y + sinAngle * (correctDist - dist) * fractionB
-	    };
+	    return null;
 	  },
 
 	  //----------------------------------------------------------------
@@ -1598,6 +1598,8 @@
 	        by: objB.y + correction.y * fractionB
 	      };
 	    }
+
+	    return null;
 	  },
 
 	  //----------------------------------------------------------------
