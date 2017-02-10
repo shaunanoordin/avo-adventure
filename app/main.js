@@ -1560,9 +1560,9 @@
 	    }
 
 	    var correction = null;
-	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
 	    var verticesA = objA.vertices;
 	    var verticesB = objB.vertices;
+	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
 	    for (var i = 0; i < projectionAxes.length; i++) {
 	      var axis = projectionAxes[i];
 	      var projectionA = { min: Infinity, max: -Infinity };
@@ -1621,34 +1621,37 @@
 	    var distY = objB.y - objA.y;
 	    var dist = Math.sqrt(distX * distX + distY * distY);
 	    var angle = Math.atan2(distY, distX);
+	    var centreToCentreAxis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
 
 	    var correction = null;
 	    var verticesA = [{ x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius }, { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius }];
 	    var verticesB = objB.vertices;
+	    var projectionAxes = [centreToCentreAxis].concat(_toConsumableArray(this.getShapeNormals(objB)));
+	    for (var i = 0; i < projectionAxes.length; i++) {
+	      var axis = projectionAxes[i];
+	      var projectionA = { min: Infinity, max: -Infinity };
+	      var projectionB = { min: Infinity, max: -Infinity };
 
-	    var axis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
-	    var projectionA = { min: Infinity, max: -Infinity };
-	    var projectionB = { min: Infinity, max: -Infinity };
+	      for (var j = 0; j < verticesA.length; j++) {
+	        var val = this.dotProduct(axis, verticesA[j]);
+	        projectionA.min = Math.min(projectionA.min, val);
+	        projectionA.max = Math.max(projectionA.max, val);
+	      }
+	      for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
+	        var _val2 = this.dotProduct(axis, verticesB[_j2]);
+	        projectionB.min = Math.min(projectionB.min, _val2);
+	        projectionB.max = Math.max(projectionB.max, _val2);
+	      }
 
-	    for (var j = 0; j < verticesA.length; j++) {
-	      var val = this.dotProduct(axis, verticesA[j]);
-	      projectionA.min = Math.min(projectionA.min, val);
-	      projectionA.max = Math.max(projectionA.max, val);
-	    }
-	    for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
-	      var _val2 = this.dotProduct(axis, verticesB[_j2]);
-	      projectionB.min = Math.min(projectionB.min, _val2);
-	      projectionB.max = Math.max(projectionB.max, _val2);
-	    }
-
-	    var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
-	    if (!correction || overlap < correction.magnitude) {
-	      var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
-	      correction = {
-	        magnitude: overlap,
-	        x: axis.x * overlap * sign,
-	        y: axis.y * overlap * sign
-	      };
+	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	      if (!correction || overlap < correction.magnitude) {
+	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	        correction = {
+	          magnitude: overlap,
+	          x: axis.x * overlap * sign,
+	          y: axis.y * overlap * sign
+	        };
+	      }
 	    }
 
 	    if (correction && correction.magnitude > 0) {

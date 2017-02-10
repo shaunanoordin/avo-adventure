@@ -107,9 +107,9 @@ export const Physics = {
     }
     
     let correction = null;
-    const projectionAxes = [...this.getShapeNormals(objA), ...this.getShapeNormals(objB)];
     const verticesA = objA.vertices;
     const verticesB = objB.vertices;
+    const projectionAxes = [...this.getShapeNormals(objA), ...this.getShapeNormals(objB)];
     for (let i = 0; i < projectionAxes.length; i++) {
       const axis = projectionAxes[i];
       const projectionA = { min: Infinity, max: -Infinity };
@@ -168,39 +168,42 @@ export const Physics = {
     const distY = objB.y - objA.y;
     const dist = Math.sqrt(distX * distX + distY * distY);
     const angle = Math.atan2(distY, distX);
-    
+    const centreToCentreAxis = (dist !== 0)
+      ? { x: distX / dist, y: distY / dist }
+      : { x: 0, y: 0 };
+
     let correction = null;
     const verticesA = [
       { x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius },
       { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius },
     ];
     const verticesB = objB.vertices;
-    
-    const axis = (dist !== 0)
-      ? { x: distX / dist, y: distY / dist }
-      : { x: 0, y: 0 };
-    const projectionA = { min: Infinity, max: -Infinity };
-    const projectionB = { min: Infinity, max: -Infinity };
+    const projectionAxes = [centreToCentreAxis, ...this.getShapeNormals(objB)];
+    for (let i = 0; i < projectionAxes.length; i++) {
+      const axis = projectionAxes[i];
+      const projectionA = { min: Infinity, max: -Infinity };
+      const projectionB = { min: Infinity, max: -Infinity };
 
-    for (let j = 0; j < verticesA.length; j++) {
-      const val = this.dotProduct(axis, verticesA[j]);
-      projectionA.min = Math.min(projectionA.min, val);
-      projectionA.max = Math.max(projectionA.max, val);
-    }
-    for (let j = 0; j < verticesB.length; j++) {
-      const val = this.dotProduct(axis, verticesB[j]);
-      projectionB.min = Math.min(projectionB.min, val);
-      projectionB.max = Math.max(projectionB.max, val);
-    }
+      for (let j = 0; j < verticesA.length; j++) {
+        const val = this.dotProduct(axis, verticesA[j]);
+        projectionA.min = Math.min(projectionA.min, val);
+        projectionA.max = Math.max(projectionA.max, val);
+      }
+      for (let j = 0; j < verticesB.length; j++) {
+        const val = this.dotProduct(axis, verticesB[j]);
+        projectionB.min = Math.min(projectionB.min, val);
+        projectionB.max = Math.max(projectionB.max, val);
+      }
 
-    const overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
-    if (!correction || overlap < correction.magnitude) {
-      const sign = Math.sign((projectionB.min + projectionB.max) - (projectionA.min + projectionA.max));
-      correction = {
-        magnitude: overlap,
-        x: axis.x * overlap * sign,
-        y: axis.y * overlap * sign,
-      };
+      const overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+      if (!correction || overlap < correction.magnitude) {
+        const sign = Math.sign((projectionB.min + projectionB.max) - (projectionA.min + projectionA.max));
+        correction = {
+          magnitude: overlap,
+          x: axis.x * overlap * sign,
+          y: axis.y * overlap * sign,
+        };
+      }
     }
 
     if (correction && correction.magnitude > 0) {
