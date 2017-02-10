@@ -95,6 +95,8 @@
 
 	var _utility = __webpack_require__(3);
 
+	var _physics = __webpack_require__(9);
+
 	var _standardActions = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
@@ -359,7 +361,7 @@
 	            for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	              var actor = _step4.value;
 
-	              if (this.isATouchingB(_aoe, actor)) {
+	              if (_physics.Physics.checkCollision(_aoe, actor)) {
 	                var _iteratorNormalCompletion5 = true;
 	                var _didIteratorError5 = false;
 	                var _iteratorError5 = undefined;
@@ -615,51 +617,65 @@
 	        var actorA = this.actors[a];
 	        for (var b = a + 1; b < this.actors.length; b++) {
 	          var actorB = this.actors[b];
-	          if (this.isATouchingB(actorA, actorB)) {
-	            this.correctCollision(actorA, actorB);
+	          var collisionCorrection = _physics.Physics.checkCollision(actorA, actorB);
+
+	          if (collisionCorrection) {
+	            //TODO: Check if this needs to be (!!collisionCorrection).
+	            actorA.x = collisionCorrection.ax;
+	            actorA.y = collisionCorrection.ay;
+	            actorB.x = collisionCorrection.bx;
+	            actorB.y = collisionCorrection.by;
 	          }
 	        }
 	      }
 	    }
-	  }, {
-	    key: "isATouchingB",
-	    value: function isATouchingB(objA, objB) {
-	      if (!objA || !objB) return false;
 
+	    /*
+	    isATouchingB(objA, objB) {
+	      if (!objA || !objB) return false;
+	      
 	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var distX = objA.x - objB.x;
-	        var distY = objA.y - objB.y;
-	        var minimumDist = objA.radius + objB.radius;
+	        const distX = objA.x - objB.x;
+	        const distY = objA.y - objB.y;
+	        const minimumDist = objA.radius + objB.radius;
 	        if (distX * distX + distY * distY < minimumDist * minimumDist) {
 	          return true;
 	        }
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
-	          return true;
-	        }
-	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX2 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY2 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        if (_distX2 * _distX2 + _distY2 * _distY2 < objA.radius * objA.radius) {
-	          return true;
-	        }
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX3 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY3 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        if (_distX3 * _distX3 + _distY3 * _distY3 < objB.radius * objB.radius) {
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	        if (objA.left < objB.right &&
+	            objA.right > objB.left &&
+	            objA.top < objB.bottom &&
+	            objA.bottom > objB.top) {
 	          return true;
 	        }
 	      }
-
+	      
+	      else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        if (distX * distX + distY * distY < objA.radius * objA.radius) {
+	          return true;
+	        }
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	        const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        if (distX * distX + distY * distY < objB.radius * objB.radius) {
+	          return true;
+	        }
+	      }
+	      
 	      return false;
 	    }
-	  }, {
-	    key: "correctCollision",
-	    value: function correctCollision(objA, objB) {
+	    
+	    correctCollision(objA, objB) {
 	      if (!objA || !objB || !objA.solid || !objB.solid) return;
-
-	      var fractionA = 0;
-	      var fractionB = 0;
+	      
+	      let fractionA = 0;
+	      let fractionB = 0;
 	      if (objA.movable && objB.movable) {
 	        fractionA = 0.5;
 	        fractionB = 0.5;
@@ -668,56 +684,63 @@
 	      } else if (objB.movable) {
 	        fractionB = 1;
 	      }
-
+	      
 	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var distX = objB.x - objA.x;
-	        var distY = objB.y - objA.y;
-	        var dist = Math.sqrt(distX * distX + distY * distY);
-	        var angle = Math.atan2(distY, distX);
-	        var correctDist = objA.radius + objB.radius;
-	        var cosAngle = Math.cos(angle);
-	        var sinAngle = Math.sin(angle);
+	        const distX = objB.x - objA.x;
+	        const distY = objB.y - objA.y;
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objA.radius + objB.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
 	        objA.x -= cosAngle * (correctDist - dist) * fractionA;
 	        objA.y -= sinAngle * (correctDist - dist) * fractionA;
 	        objB.x += cosAngle * (correctDist - dist) * fractionB;
 	        objB.y += sinAngle * (correctDist - dist) * fractionB;
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX4 = objB.x - objA.x;
-	        var _distY4 = objB.y - objA.y;
-	        var _correctDist = (objA.size + objB.size) / 2;
-	        if (Math.abs(_distX4) > Math.abs(_distY4)) {
-	          objA.x -= Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionA;
-	          objB.x += Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objB.x - objA.x;
+	        const distY = objB.y - objA.y;
+	        const correctDist = (objA.size + objB.size) / 2;
+	        if (Math.abs(distX) > Math.abs(distY)) {
+	          objA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
+	          objB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
 	        } else {
-	          objA.y -= Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionA;
-	          objB.y += Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionB;
+	          objA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
+	          objB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
 	        }
-	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX5 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY5 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
-	        var _angle = Math.atan2(_distY5, _distX5);
-	        var _correctDist2 = objA.radius;
-	        var _cosAngle = Math.cos(_angle);
-	        var _sinAngle = Math.sin(_angle);
-	        objA.x += _cosAngle * (_correctDist2 - _dist2) * fractionA;
-	        objA.y += _sinAngle * (_correctDist2 - _dist2) * fractionA;
-	        objB.x -= _cosAngle * (_correctDist2 - _dist2) * fractionB;
-	        objB.y -= _sinAngle * (_correctDist2 - _dist2) * fractionB;
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX6 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY6 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        var _dist3 = Math.sqrt(_distX6 * _distX6 + _distY6 * _distY6);
-	        var _angle2 = Math.atan2(_distY6, _distX6);
-	        var _correctDist3 = objB.radius;
-	        var _cosAngle2 = Math.cos(_angle2);
-	        var _sinAngle2 = Math.sin(_angle2);
-	        objA.x -= _cosAngle2 * (_correctDist3 - _dist3) * fractionA;
-	        objA.y -= _sinAngle2 * (_correctDist3 - _dist3) * fractionA;
-	        objB.x += _cosAngle2 * (_correctDist3 - _dist3) * fractionB;
-	        objB.y += _sinAngle2 * (_correctDist3 - _dist3) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objA.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
+	        objA.x += cosAngle * (correctDist - dist) * fractionA;
+	        objA.y += sinAngle * (correctDist - dist) * fractionA;
+	        objB.x -= cosAngle * (correctDist - dist) * fractionB;
+	        objB.y -= sinAngle * (correctDist - dist) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	        const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objB.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
+	        objA.x -= cosAngle * (correctDist - dist) * fractionA;
+	        objA.y -= sinAngle * (correctDist - dist) * fractionA;
+	        objB.x += cosAngle * (correctDist - dist) * fractionB;
+	        objB.y += sinAngle * (correctDist - dist) * fractionB;
 	      }
 	    }
+	    */
 
 	    //----------------------------------------------------------------
 
@@ -1646,6 +1669,18 @@
 	          break;
 	      }
 	    }
+	  }, {
+	    key: "vertices",
+	    get: function get() {
+	      var v = [];
+	      if (this.shape === AVO.SHAPE_SQUARE) {
+	        v.push({ x: this.left, y: this.top });
+	        v.push({ x: this.right, y: this.top });
+	        v.push({ x: this.right, y: this.bottom });
+	        v.push({ x: this.left, y: this.bottom });
+	      }
+	      return v;
+	    }
 	  }]);
 
 	  return Entity;
@@ -1813,7 +1848,20 @@
 
 	var _utility = __webpack_require__(3);
 
+	var _physics = __webpack_require__(9);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	/*
+	Example Game
+	============
+
+	While AvO is the adventure game engine, this is a specific implementation of an
+	adventure game idea.
+
+	(Shaun A. Noordin || shaunanoordin.com || 20161001)
+	********************************************************************************
+	 */
 
 	function initialise() {
 	  //Config
@@ -1973,16 +2021,7 @@
 	    }
 	  }
 	  //--------------------------------
-	} /*
-	  Example Game
-	  ============
-	  
-	  While AvO is the adventure game engine, this is a specific implementation of an
-	  adventure game idea.
-	  
-	  (Shaun A. Noordin || shaunanoordin.com || 20161001)
-	  ********************************************************************************
-	   */
+	}
 
 	function runStart() {
 	  this.store.level = 1;
@@ -1993,11 +2032,15 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _comicStrip.ComicStrip("startcomic", [this.assets.images.comicPanelA], comicStartFinished);
+	  this.comicStrip = new _comicStrip.ComicStrip("startcomic", [//this.assets.images.comicPanelA,
+	    //this.assets.images.comicPanelB,
+	    //this.assets.images.comicPanelC,
+	  ], comicStartFinished);
 	}
 
 	function comicStartFinished() {
-	  this.changeState(AVO.STATE_ACTION, startLevel1);
+	  //this.changeState(AVO.STATE_ACTION, startLevel1);  //TEST
+	  this.changeState(AVO.STATE_ACTION, startLevel2);
 	}
 
 	function runEnd() {}
@@ -2043,6 +2086,22 @@
 	  //Game rules
 	  //--------------------------------
 	  checkIfAllBoxesAreCharged.apply(this);
+	  //--------------------------------
+
+	  //Shape Tester
+	  //--------------------------------
+	  if (this.keys[AVO.KEY_CODES.Q].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_CIRCLE;
+	  }
+	  if (this.keys[AVO.KEY_CODES.E].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_SQUARE;
+	  }
+	  if (this.keys[AVO.KEY_CODES.R].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].size += 8;
+	  }
+	  if (this.keys[AVO.KEY_CODES.F].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].size -= 8;
+	  }
 	  //--------------------------------
 
 	  //Win Condition
@@ -2159,6 +2218,12 @@
 
 	function startLevel2() {
 	  startLevelInit.apply(this);
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
+	  this.refs["sq1"] = new _entities.Actor("sq1", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_SQUARE);
+	  this.refs["ci2"] = new _entities.Actor("ci2", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_CIRCLE);
+	  this.actors.push(this.refs["sq1"]);
+	  this.actors.push(this.refs["ci2"]);
 	}
 
 	function startLevel3() {
@@ -2186,7 +2251,7 @@
 	          for (var _iterator6 = this.refs["boxes"][Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
 	            var box = _step6.value;
 
-	            if (this.isATouchingB(box, plate)) {
+	            if (_physics.Physics.checkCollision(box, plate)) {
 	              thisPlateIsCharged = true;
 	              plate.playAnimation("glow");
 	            }
@@ -2239,7 +2304,7 @@
 	}
 
 	function checkIfPlayerIsAtGoal() {
-	  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
+	  if (_physics.Physics.checkCollision(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
 	    this.store.level && this.store.level++;
 
 	    switch (this.store.level) {
@@ -2339,6 +2404,265 @@
 	  return ComicStrip;
 	}();
 	//==============================================================================
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Physics = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /*
+	                                                                                                                                                                                                    Physics Classes
+	                                                                                                                                                                                                    ===============
+	                                                                                                                                                                                                    
+	                                                                                                                                                                                                    (Shaun A. Noordin || shaunanoordin.com || 20170209)
+	                                                                                                                                                                                                    ********************************************************************************
+	                                                                                                                                                                                                     */
+
+	//Naming note: all caps.
+
+	var Physics = exports.Physics = {
+	  //----------------------------------------------------------------
+
+	  /*  Checks if objA is touching objB.
+	      If true, returns the corrected coordinates for objA and objB, in form:
+	        { ax, ay, bx, by }
+	      If false, returns null.
+	   */
+	  checkCollision: function checkCollision(objA, objB) {
+	    if (!objA || !objB || objA === objB) return null;
+
+	    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      return this.checkCollision_circleCircle(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	      return this.checkCollision_polygonPolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	      return this.checkCollision_circlePolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      var correction = this.checkCollision_circlePolygon(objB, objA);
+	      if (correction) {
+	        correction = {
+	          ax: correction.bx,
+	          ay: correction.by,
+	          bx: correction.ax,
+	          by: correction.ay
+	        };
+	      }
+	      return correction;
+	    }
+
+	    return null;
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_circlePolygon: function checkCollision_circlePolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var angle = Math.atan2(distY, distX);
+
+	    var correction = null;
+	    var verticesA = [{ x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius }, { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius }];
+	    var verticesB = objB.vertices;
+
+	    var axis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
+	    var projectionA = { min: Infinity, max: -Infinity };
+	    var projectionB = { min: Infinity, max: -Infinity };
+
+	    for (var j = 0; j < verticesA.length; j++) {
+	      var val = this.dotProduct(axis, verticesA[j]);
+	      projectionA.min = Math.min(projectionA.min, val);
+	      projectionA.max = Math.max(projectionA.max, val);
+	    }
+	    for (var _j = 0; _j < verticesB.length; _j++) {
+	      var _val = this.dotProduct(axis, verticesB[_j]);
+	      projectionB.min = Math.min(projectionB.min, _val);
+	      projectionB.max = Math.max(projectionB.max, _val);
+	    }
+
+	    var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	    if (!correction || overlap < correction.magnitude) {
+	      var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	      correction = {
+	        magnitude: overlap,
+	        x: axis.x * overlap * sign,
+	        y: axis.y * overlap * sign
+	      };
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_circleCircle: function checkCollision_circleCircle(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var minimumDist = objA.radius + objB.radius;
+	    if (dist >= minimumDist) {
+	      return null;
+	    }
+
+	    var angle = Math.atan2(distY, distX);
+	    var correctDist = minimumDist;
+	    var cosAngle = Math.cos(angle);
+	    var sinAngle = Math.sin(angle);
+
+	    return {
+	      testA: objA.solid,
+	      testB: objB.solid,
+	      ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
+	      ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
+	      bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
+	      by: objB.y + sinAngle * (correctDist - dist) * fractionB
+	    };
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_polygonPolygon: function checkCollision_polygonPolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var correction = null;
+	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
+	    var verticesA = objA.vertices;
+	    var verticesB = objB.vertices;
+	    for (var i = 0; i < projectionAxes.length; i++) {
+	      var axis = projectionAxes[i];
+	      var projectionA = { min: Infinity, max: -Infinity };
+	      var projectionB = { min: Infinity, max: -Infinity };
+
+	      for (var j = 0; j < verticesA.length; j++) {
+	        var val = this.dotProduct(axis, verticesA[j]);
+	        projectionA.min = Math.min(projectionA.min, val);
+	        projectionA.max = Math.max(projectionA.max, val);
+	      }
+	      for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
+	        var _val2 = this.dotProduct(axis, verticesB[_j2]);
+	        projectionB.min = Math.min(projectionB.min, _val2);
+	        projectionB.max = Math.max(projectionB.max, _val2);
+	      }
+
+	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	      if (!correction || overlap < correction.magnitude) {
+	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	        correction = {
+	          magnitude: overlap,
+	          x: axis.x * overlap * sign,
+	          y: axis.y * overlap * sign
+	        };
+	      }
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+	  },
+
+	  //----------------------------------------------------------------
+
+	  /*  Gets the NORMALISED normals for each edge of the object's shape. Assumes the object has the 'vertices' property.
+	   */
+	  getShapeNormals: function getShapeNormals(obj) {
+	    var vertices = obj.vertices;
+	    if (!vertices) return null;
+	    if (vertices.length < 2) return []; //Look you need to have at least three vertices to be a shape.
+
+	    //First, calculate the edges connecting each vertice.
+	    //--------------------------------
+	    var edges = [];
+	    for (var i = 0; i < vertices.length; i++) {
+	      var p1 = vertices[i];
+	      var p2 = vertices[(i + 1) % vertices.length];
+	      edges.push({
+	        x: p2.x - p1.x,
+	        y: p2.y - p1.y
+	      });
+	    }
+	    //--------------------------------
+
+	    //Calculate the NORMALISED normals for each edge.
+	    //--------------------------------
+	    return edges.map(function (edge) {
+	      var dist = Math.sqrt(edge.x * edge.x + edge.y * edge.y);
+	      if (dist === 0) return { x: 0, y: 0 };
+	      return {
+	        x: -edge.y / dist,
+	        y: edge.x / dist
+	      };
+	    });
+	    //--------------------------------
+	  },
+
+	  //----------------------------------------------------------------
+
+	  dotProduct: function dotProduct(vectorA, vectorB) {
+	    if (!vectorA || !vectorB) return null;
+	    return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+	  }
+	};
 
 /***/ }
 /******/ ]);

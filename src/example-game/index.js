@@ -14,6 +14,7 @@ import { Actor, AoE } from "../avo/entities.js";
 import { Effect } from "../avo/effect.js";
 import * as AVO from  "../avo/constants.js";
 import { ImageAsset } from "../avo/utility.js";
+import { Physics } from "../avo/physics.js";
 
 export function initialise() {
   //Config
@@ -207,7 +208,7 @@ function runStart() {
 function comicStart() {
   this.comicStrip = new ComicStrip(
     "startcomic",
-    [ this.assets.images.comicPanelA,
+    [ //this.assets.images.comicPanelA,
       //this.assets.images.comicPanelB,
       //this.assets.images.comicPanelC,
     ],
@@ -215,7 +216,8 @@ function comicStart() {
 }
 
 function comicStartFinished() {
-  this.changeState(AVO.STATE_ACTION, startLevel1);
+  //this.changeState(AVO.STATE_ACTION, startLevel1);  //TEST
+  this.changeState(AVO.STATE_ACTION, startLevel2);
 }
 
 function runEnd() {}
@@ -238,6 +240,14 @@ function runAction() {
   //Game rules
   //--------------------------------
   checkIfAllBoxesAreCharged.apply(this);
+  //--------------------------------
+  
+  //Shape Tester
+  //--------------------------------
+  if (this.keys[AVO.KEY_CODES.Q].duration === 1) { this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_CIRCLE; }
+  if (this.keys[AVO.KEY_CODES.E].duration === 1) { this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_SQUARE; }
+  if (this.keys[AVO.KEY_CODES.R].duration === 1) { this.refs[AVO.REF.PLAYER].size += 8; }
+  if (this.keys[AVO.KEY_CODES.F].duration === 1) { this.refs[AVO.REF.PLAYER].size -= 8; }
   //--------------------------------
   
   //Win Condition
@@ -315,6 +325,11 @@ function startLevel1() {
 
 function startLevel2() {
   startLevelInit.apply(this);
+  const midX = this.canvasWidth / 2, midY = this.canvasHeight / 2;
+  this.refs["sq1"] = new Actor("sq1", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_SQUARE);
+  this.refs["ci2"] = new Actor("ci2", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_CIRCLE);
+  this.actors.push(this.refs["sq1"]);
+  this.actors.push(this.refs["ci2"]);  
 }
 
 function startLevel3() {
@@ -328,7 +343,7 @@ function checkIfAllBoxesAreCharged() {
     for (let plate of this.refs["plates"]) {
       let thisPlateIsCharged = false;
       for (let box of this.refs["boxes"]) {
-        if (this.isATouchingB(box, plate)) {
+        if (Physics.checkCollision(box, plate)) {
           thisPlateIsCharged = true;
           plate.playAnimation("glow");
         }
@@ -352,7 +367,7 @@ function checkIfAllBoxesAreCharged() {
 }
 
 function checkIfPlayerIsAtGoal() {
-  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
+  if (Physics.checkCollision(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
     this.store.level && this.store.level++;
     
     switch (this.store.level) {

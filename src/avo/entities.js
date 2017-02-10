@@ -66,6 +66,17 @@ class Entity {
     }
   }
   
+  get vertices() {
+    const v = [];
+    if (this.shape === AVO.SHAPE_SQUARE) {
+      v.push({ x: this.left, y: this.top });
+      v.push({ x: this.right, y: this.top });
+      v.push({ x: this.right, y: this.bottom });
+      v.push({ x: this.left, y: this.bottom });
+    }   
+    return v;
+  }
+  
   playAnimation(animationName = "", restart = false) {
     if (!this.animationSet || !this.animationSet.actions[animationName]) return;
     

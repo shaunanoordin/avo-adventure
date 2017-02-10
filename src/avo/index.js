@@ -8,6 +8,7 @@ AvO Adventure Game Engine
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Utility } from "./utility.js";
+import { Physics } from "../avo/physics.js";
 import { StandardActions } from "./standard-actions.js";
 
 /*  Primary AvO Game Engine
@@ -249,7 +250,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //--------------------------------
     for (let aoe of this.areasOfEffect) {
       for (let actor of this.actors) {
-        if (this.isATouchingB(aoe, actor)) {
+        if (Physics.checkCollision(aoe, actor)) {
           for (let effect of aoe.effects) {
             actor.effects.push(effect.copy());
           }
@@ -392,13 +393,19 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       let actorA = this.actors[a];
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
-        if (this.isATouchingB(actorA, actorB)) {
-          this.correctCollision(actorA, actorB);
+        let collisionCorrection = Physics.checkCollision(actorA, actorB);
+                
+        if (collisionCorrection) {  //TODO: Check if this needs to be (!!collisionCorrection).
+          actorA.x = collisionCorrection.ax;
+          actorA.y = collisionCorrection.ay;
+          actorB.x = collisionCorrection.bx;
+          actorB.y = collisionCorrection.by;
         }
       }
     }
   }
   
+  /*
   isATouchingB(objA, objB) {
     if (!objA || !objB) return false;
     
@@ -508,6 +515,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       objB.y += sinAngle * (correctDist - dist) * fractionB;
     }
   }
+  */
   
   //----------------------------------------------------------------
   
