@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(7);
+	var _index2 = __webpack_require__(8);
 
 	/*  Initialisations
 	 */
@@ -95,9 +95,9 @@
 
 	var _utility = __webpack_require__(3);
 
-	var _physics = __webpack_require__(9);
+	var _physics = __webpack_require__(4);
 
-	var _standardActions = __webpack_require__(4);
+	var _standardActions = __webpack_require__(5);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1449,15 +1449,279 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.Physics = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /*
+	                                                                                                                                                                                                    Physics Classes
+	                                                                                                                                                                                                    ===============
+	                                                                                                                                                                                                    
+	                                                                                                                                                                                                    (Shaun A. Noordin || shaunanoordin.com || 20170209)
+	                                                                                                                                                                                                    ********************************************************************************
+	                                                                                                                                                                                                     */
+
+	//Naming note: all caps.
+
+	var USE_CIRCLE_APPROXIMATION = true;
+
+	var Physics = exports.Physics = {
+	  //----------------------------------------------------------------
+
+	  /*  Checks if objA is touching objB.
+	      If true, returns the corrected coordinates for objA and objB, in form:
+	        { ax, ay, bx, by }
+	      If false, returns null.
+	   */
+	  checkCollision: function checkCollision(objA, objB) {
+	    if (!objA || !objB || objA === objB) return null;
+
+	    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      return this.checkCollision_circleCircle(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	      return this.checkCollision_polygonPolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
+
+	      return this.checkCollision_circlePolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
+
+	      var correction = this.checkCollision_circlePolygon(objB, objA);
+	      if (correction) {
+	        correction = {
+	          ax: correction.bx,
+	          ay: correction.by,
+	          bx: correction.ax,
+	          by: correction.ay
+	        };
+	      }
+	      return correction;
+	    }
+
+	    return null;
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_circleCircle: function checkCollision_circleCircle(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var minimumDist = objA.radius + objB.radius;
+	    if (dist >= minimumDist) {
+	      return null;
+	    }
+
+	    var angle = Math.atan2(distY, distX);
+	    var correctDist = minimumDist;
+	    var cosAngle = Math.cos(angle);
+	    var sinAngle = Math.sin(angle);
+
+	    return {
+	      ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
+	      ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
+	      bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
+	      by: objB.y + sinAngle * (correctDist - dist) * fractionB
+	    };
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_polygonPolygon: function checkCollision_polygonPolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var correction = null;
+	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
+	    var verticesA = objA.vertices;
+	    var verticesB = objB.vertices;
+	    for (var i = 0; i < projectionAxes.length; i++) {
+	      var axis = projectionAxes[i];
+	      var projectionA = { min: Infinity, max: -Infinity };
+	      var projectionB = { min: Infinity, max: -Infinity };
+
+	      for (var j = 0; j < verticesA.length; j++) {
+	        var val = this.dotProduct(axis, verticesA[j]);
+	        projectionA.min = Math.min(projectionA.min, val);
+	        projectionA.max = Math.max(projectionA.max, val);
+	      }
+	      for (var _j = 0; _j < verticesB.length; _j++) {
+	        var _val = this.dotProduct(axis, verticesB[_j]);
+	        projectionB.min = Math.min(projectionB.min, _val);
+	        projectionB.max = Math.max(projectionB.max, _val);
+	      }
+
+	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	      if (!correction || overlap < correction.magnitude) {
+	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	        correction = {
+	          magnitude: overlap,
+	          x: axis.x * overlap * sign,
+	          y: axis.y * overlap * sign
+	        };
+	      }
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+	  },
+
+	  //----------------------------------------------------------------
+
+	  //TODO  //ERROR This isn't working too well!
+	  checkCollision_circlePolygon: function checkCollision_circlePolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var angle = Math.atan2(distY, distX);
+
+	    var correction = null;
+	    var verticesA = [{ x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius }, { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius }];
+	    var verticesB = objB.vertices;
+
+	    var axis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
+	    var projectionA = { min: Infinity, max: -Infinity };
+	    var projectionB = { min: Infinity, max: -Infinity };
+
+	    for (var j = 0; j < verticesA.length; j++) {
+	      var val = this.dotProduct(axis, verticesA[j]);
+	      projectionA.min = Math.min(projectionA.min, val);
+	      projectionA.max = Math.max(projectionA.max, val);
+	    }
+	    for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
+	      var _val2 = this.dotProduct(axis, verticesB[_j2]);
+	      projectionB.min = Math.min(projectionB.min, _val2);
+	      projectionB.max = Math.max(projectionB.max, _val2);
+	    }
+
+	    var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	    if (!correction || overlap < correction.magnitude) {
+	      var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	      correction = {
+	        magnitude: overlap,
+	        x: axis.x * overlap * sign,
+	        y: axis.y * overlap * sign
+	      };
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+	  },
+
+	  //----------------------------------------------------------------
+
+	  /*  Gets the NORMALISED normals for each edge of the object's shape. Assumes the object has the 'vertices' property.
+	   */
+	  getShapeNormals: function getShapeNormals(obj) {
+	    var vertices = obj.vertices;
+	    if (!vertices) return null;
+	    if (vertices.length < 2) return []; //Look you need to have at least three vertices to be a shape.
+
+	    //First, calculate the edges connecting each vertice.
+	    //--------------------------------
+	    var edges = [];
+	    for (var i = 0; i < vertices.length; i++) {
+	      var p1 = vertices[i];
+	      var p2 = vertices[(i + 1) % vertices.length];
+	      edges.push({
+	        x: p2.x - p1.x,
+	        y: p2.y - p1.y
+	      });
+	    }
+	    //--------------------------------
+
+	    //Calculate the NORMALISED normals for each edge.
+	    //--------------------------------
+	    return edges.map(function (edge) {
+	      var dist = Math.sqrt(edge.x * edge.x + edge.y * edge.y);
+	      if (dist === 0) return { x: 0, y: 0 };
+	      return {
+	        x: -edge.y / dist,
+	        y: edge.x / dist
+	      };
+	    });
+	    //--------------------------------
+	  },
+
+	  //----------------------------------------------------------------
+
+	  dotProduct: function dotProduct(vectorA, vectorB) {
+	    if (!vectorA || !vectorB) return null;
+	    return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+	  }
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	exports.StandardActions = undefined;
 
 	var _constants = __webpack_require__(2);
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _entities = __webpack_require__(5);
+	var _entities = __webpack_require__(6);
 
-	var _effect = __webpack_require__(6);
+	var _effect = __webpack_require__(7);
 
 	var _utility = __webpack_require__(3);
 
@@ -1504,7 +1768,7 @@
 	};
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1672,12 +1936,19 @@
 	  }, {
 	    key: "vertices",
 	    get: function get() {
+	      var _this = this;
+
 	      var v = [];
 	      if (this.shape === AVO.SHAPE_SQUARE) {
 	        v.push({ x: this.left, y: this.top });
 	        v.push({ x: this.right, y: this.top });
 	        v.push({ x: this.right, y: this.bottom });
 	        v.push({ x: this.left, y: this.bottom });
+	      } else if (this.shape === AVO.SHAPE_CIRCLE) {
+	        //Approximation
+	        CIRCLE_TO_POLYGON_APPROXIMATOR.map(function (approximator) {
+	          v.push({ x: _this.x + _this.radius * approximator.cosAngle, y: _this.y + _this.radius * approximator.sinAngle });
+	        });
 	      }
 	      return v;
 	    }
@@ -1685,14 +1956,17 @@
 
 	  return Entity;
 	}();
-	//==============================================================================
 
+	var CIRCLE_TO_POLYGON_APPROXIMATOR = [AVO.ROTATION_EAST, AVO.ROTATION_SOUTHEAST, AVO.ROTATION_SOUTH, AVO.ROTATION_SOUTHWEST, AVO.ROTATION_WEST, AVO.ROTATION_NORTHWEST, AVO.ROTATION_NORTH, AVO.ROTATION_NORTHEAST].map(function (angle) {
+	  return { cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) };
+	});
+
+	//==============================================================================
 
 	/*  Actor Class
 	    An active character in the game.
 	 */
 	//==============================================================================
-
 
 	var Actor = exports.Actor = function (_Entity) {
 	  _inherits(Actor, _Entity);
@@ -1706,15 +1980,15 @@
 
 	    _classCallCheck(this, Actor);
 
-	    var _this = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
+	    var _this2 = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
 
-	    _this.state = AVO.ACTOR_IDLE;
-	    _this.intent = null;
-	    _this.action = null;
+	    _this2.state = AVO.ACTOR_IDLE;
+	    _this2.intent = null;
+	    _this2.action = null;
 
-	    _this.attributes = {};
-	    _this.effects = [];
-	    return _this;
+	    _this2.attributes = {};
+	    _this2.effects = [];
+	    return _this2;
 	  }
 
 	  return Actor;
@@ -1741,12 +2015,12 @@
 
 	    _classCallCheck(this, AoE);
 
-	    var _this2 = _possibleConstructorReturn(this, (AoE.__proto__ || Object.getPrototypeOf(AoE)).call(this, name, x, y, size, shape));
+	    var _this3 = _possibleConstructorReturn(this, (AoE.__proto__ || Object.getPrototypeOf(AoE)).call(this, name, x, y, size, shape));
 
-	    _this2.duration = duration;
-	    _this2.startDuration = duration;
-	    _this2.effects = effects;
-	    return _this2;
+	    _this3.duration = duration;
+	    _this3.startDuration = duration;
+	    _this3.effects = effects;
+	    return _this3;
 	  }
 
 	  _createClass(AoE, [{
@@ -1761,7 +2035,7 @@
 	//==============================================================================
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1826,7 +2100,7 @@
 	//==============================================================================
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1836,11 +2110,11 @@
 	});
 	exports.initialise = initialise;
 
-	var _comicStrip = __webpack_require__(8);
+	var _comicStrip = __webpack_require__(9);
 
-	var _entities = __webpack_require__(5);
+	var _entities = __webpack_require__(6);
 
-	var _effect = __webpack_require__(6);
+	var _effect = __webpack_require__(7);
 
 	var _constants = __webpack_require__(2);
 
@@ -1848,7 +2122,7 @@
 
 	var _utility = __webpack_require__(3);
 
-	var _physics = __webpack_require__(9);
+	var _physics = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -2324,7 +2598,7 @@
 	}
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -2404,265 +2678,6 @@
 	  return ComicStrip;
 	}();
 	//==============================================================================
-
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.Physics = undefined;
-
-	var _constants = __webpack_require__(2);
-
-	var AVO = _interopRequireWildcard(_constants);
-
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /*
-	                                                                                                                                                                                                    Physics Classes
-	                                                                                                                                                                                                    ===============
-	                                                                                                                                                                                                    
-	                                                                                                                                                                                                    (Shaun A. Noordin || shaunanoordin.com || 20170209)
-	                                                                                                                                                                                                    ********************************************************************************
-	                                                                                                                                                                                                     */
-
-	//Naming note: all caps.
-
-	var Physics = exports.Physics = {
-	  //----------------------------------------------------------------
-
-	  /*  Checks if objA is touching objB.
-	      If true, returns the corrected coordinates for objA and objB, in form:
-	        { ax, ay, bx, by }
-	      If false, returns null.
-	   */
-	  checkCollision: function checkCollision(objA, objB) {
-	    if (!objA || !objB || objA === objB) return null;
-
-	    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
-	      return this.checkCollision_circleCircle(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	      return this.checkCollision_polygonPolygon(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	      return this.checkCollision_circlePolygon(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	      var correction = this.checkCollision_circlePolygon(objB, objA);
-	      if (correction) {
-	        correction = {
-	          ax: correction.bx,
-	          ay: correction.by,
-	          bx: correction.ax,
-	          by: correction.ay
-	        };
-	      }
-	      return correction;
-	    }
-
-	    return null;
-	  },
-
-	  //----------------------------------------------------------------
-
-	  checkCollision_circlePolygon: function checkCollision_circlePolygon(objA, objB) {
-	    var fractionA = 0;
-	    var fractionB = 0;
-	    if (!objA.solid || !objB.solid) {
-	      //If either object isn't solid, there's no collision correction.
-	    } else if (objA.movable && objB.movable) {
-	      fractionA = 0.5;
-	      fractionB = 0.5;
-	    } else if (objA.movable) {
-	      fractionA = 1;
-	    } else if (objB.movable) {
-	      fractionB = 1;
-	    }
-
-	    var distX = objB.x - objA.x;
-	    var distY = objB.y - objA.y;
-	    var dist = Math.sqrt(distX * distX + distY * distY);
-	    var angle = Math.atan2(distY, distX);
-
-	    var correction = null;
-	    var verticesA = [{ x: objA.x + Math.cos(angle) * objA.radius, y: objA.y + Math.sin(angle) * objA.radius }, { x: objA.x - Math.cos(angle) * objA.radius, y: objA.y - Math.sin(angle) * objA.radius }];
-	    var verticesB = objB.vertices;
-
-	    var axis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
-	    var projectionA = { min: Infinity, max: -Infinity };
-	    var projectionB = { min: Infinity, max: -Infinity };
-
-	    for (var j = 0; j < verticesA.length; j++) {
-	      var val = this.dotProduct(axis, verticesA[j]);
-	      projectionA.min = Math.min(projectionA.min, val);
-	      projectionA.max = Math.max(projectionA.max, val);
-	    }
-	    for (var _j = 0; _j < verticesB.length; _j++) {
-	      var _val = this.dotProduct(axis, verticesB[_j]);
-	      projectionB.min = Math.min(projectionB.min, _val);
-	      projectionB.max = Math.max(projectionB.max, _val);
-	    }
-
-	    var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
-	    if (!correction || overlap < correction.magnitude) {
-	      var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
-	      correction = {
-	        magnitude: overlap,
-	        x: axis.x * overlap * sign,
-	        y: axis.y * overlap * sign
-	      };
-	    }
-
-	    if (correction && correction.magnitude > 0) {
-	      return {
-	        ax: objA.x - correction.x * fractionA,
-	        ay: objA.y - correction.y * fractionA,
-	        bx: objB.x + correction.x * fractionB,
-	        by: objB.y + correction.y * fractionB
-	      };
-	    }
-	  },
-
-	  //----------------------------------------------------------------
-
-	  checkCollision_circleCircle: function checkCollision_circleCircle(objA, objB) {
-	    var fractionA = 0;
-	    var fractionB = 0;
-	    if (!objA.solid || !objB.solid) {
-	      //If either object isn't solid, there's no collision correction.
-	    } else if (objA.movable && objB.movable) {
-	      fractionA = 0.5;
-	      fractionB = 0.5;
-	    } else if (objA.movable) {
-	      fractionA = 1;
-	    } else if (objB.movable) {
-	      fractionB = 1;
-	    }
-
-	    var distX = objB.x - objA.x;
-	    var distY = objB.y - objA.y;
-	    var dist = Math.sqrt(distX * distX + distY * distY);
-	    var minimumDist = objA.radius + objB.radius;
-	    if (dist >= minimumDist) {
-	      return null;
-	    }
-
-	    var angle = Math.atan2(distY, distX);
-	    var correctDist = minimumDist;
-	    var cosAngle = Math.cos(angle);
-	    var sinAngle = Math.sin(angle);
-
-	    return {
-	      testA: objA.solid,
-	      testB: objB.solid,
-	      ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
-	      ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
-	      bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
-	      by: objB.y + sinAngle * (correctDist - dist) * fractionB
-	    };
-	  },
-
-	  //----------------------------------------------------------------
-
-	  checkCollision_polygonPolygon: function checkCollision_polygonPolygon(objA, objB) {
-	    var fractionA = 0;
-	    var fractionB = 0;
-	    if (!objA.solid || !objB.solid) {
-	      //If either object isn't solid, there's no collision correction.
-	    } else if (objA.movable && objB.movable) {
-	      fractionA = 0.5;
-	      fractionB = 0.5;
-	    } else if (objA.movable) {
-	      fractionA = 1;
-	    } else if (objB.movable) {
-	      fractionB = 1;
-	    }
-
-	    var correction = null;
-	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
-	    var verticesA = objA.vertices;
-	    var verticesB = objB.vertices;
-	    for (var i = 0; i < projectionAxes.length; i++) {
-	      var axis = projectionAxes[i];
-	      var projectionA = { min: Infinity, max: -Infinity };
-	      var projectionB = { min: Infinity, max: -Infinity };
-
-	      for (var j = 0; j < verticesA.length; j++) {
-	        var val = this.dotProduct(axis, verticesA[j]);
-	        projectionA.min = Math.min(projectionA.min, val);
-	        projectionA.max = Math.max(projectionA.max, val);
-	      }
-	      for (var _j2 = 0; _j2 < verticesB.length; _j2++) {
-	        var _val2 = this.dotProduct(axis, verticesB[_j2]);
-	        projectionB.min = Math.min(projectionB.min, _val2);
-	        projectionB.max = Math.max(projectionB.max, _val2);
-	      }
-
-	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
-	      if (!correction || overlap < correction.magnitude) {
-	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
-	        correction = {
-	          magnitude: overlap,
-	          x: axis.x * overlap * sign,
-	          y: axis.y * overlap * sign
-	        };
-	      }
-	    }
-
-	    if (correction && correction.magnitude > 0) {
-	      return {
-	        ax: objA.x - correction.x * fractionA,
-	        ay: objA.y - correction.y * fractionA,
-	        bx: objB.x + correction.x * fractionB,
-	        by: objB.y + correction.y * fractionB
-	      };
-	    }
-	  },
-
-	  //----------------------------------------------------------------
-
-	  /*  Gets the NORMALISED normals for each edge of the object's shape. Assumes the object has the 'vertices' property.
-	   */
-	  getShapeNormals: function getShapeNormals(obj) {
-	    var vertices = obj.vertices;
-	    if (!vertices) return null;
-	    if (vertices.length < 2) return []; //Look you need to have at least three vertices to be a shape.
-
-	    //First, calculate the edges connecting each vertice.
-	    //--------------------------------
-	    var edges = [];
-	    for (var i = 0; i < vertices.length; i++) {
-	      var p1 = vertices[i];
-	      var p2 = vertices[(i + 1) % vertices.length];
-	      edges.push({
-	        x: p2.x - p1.x,
-	        y: p2.y - p1.y
-	      });
-	    }
-	    //--------------------------------
-
-	    //Calculate the NORMALISED normals for each edge.
-	    //--------------------------------
-	    return edges.map(function (edge) {
-	      var dist = Math.sqrt(edge.x * edge.x + edge.y * edge.y);
-	      if (dist === 0) return { x: 0, y: 0 };
-	      return {
-	        x: -edge.y / dist,
-	        y: edge.x / dist
-	      };
-	    });
-	    //--------------------------------
-	  },
-
-	  //----------------------------------------------------------------
-
-	  dotProduct: function dotProduct(vectorA, vectorB) {
-	    if (!vectorA || !vectorB) return null;
-	    return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
-	  }
-	};
 
 /***/ }
 /******/ ]);

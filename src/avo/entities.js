@@ -73,7 +73,11 @@ class Entity {
       v.push({ x: this.right, y: this.top });
       v.push({ x: this.right, y: this.bottom });
       v.push({ x: this.left, y: this.bottom });
-    }   
+    } else if (this.shape === AVO.SHAPE_CIRCLE) {  //Approximation
+      CIRCLE_TO_POLYGON_APPROXIMATOR.map((approximator) => {
+        v.push({ x: this.x + this.radius * approximator.cosAngle, y: this.y + this.radius * approximator.sinAngle });
+      });
+    }
     return v;
   }
   
@@ -100,8 +104,15 @@ class Entity {
     }
   }
 }
-//==============================================================================
 
+const CIRCLE_TO_POLYGON_APPROXIMATOR =
+  [AVO.ROTATION_EAST, AVO.ROTATION_SOUTHEAST, AVO.ROTATION_SOUTH, AVO.ROTATION_SOUTHWEST,
+   AVO.ROTATION_WEST, AVO.ROTATION_NORTHWEST, AVO.ROTATION_NORTH, AVO.ROTATION_NORTHEAST]
+  .map((angle) => {
+    return ({ cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) });
+  });
+
+//==============================================================================
 
 /*  Actor Class
     An active character in the game.
