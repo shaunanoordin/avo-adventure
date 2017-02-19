@@ -9,17 +9,24 @@ adventure game idea.
 ********************************************************************************
  */
 
-import { AvO, ComicStrip } from "../avo/index.js";
-import { Actor, AoE, Effect } from "../avo/entities.js";
+import { ComicStrip } from "../avo/comic-strip.js";
+import { Actor, AoE } from "../avo/entities.js";
+import { Effect } from "../avo/effect.js";
 import * as AVO from  "../avo/constants.js";
 import { ImageAsset } from "../avo/utility.js";
+import { Physics } from "../avo/physics.js";
 
 export function initialise() {
+  //Config
+  //--------------------------------
+  this.appConfig.debugMode = true;
+  //--------------------------------
+  
   //Scripts
   //--------------------------------
-  this.scripts.runStart = runStart;
-  this.scripts.runAction = runAction;
-  this.scripts.runEnd = runEnd;
+  this.scripts.customRunStart = runStart;
+  this.scripts.customRunAction = runAction;
+  this.scripts.customRunEnd = runEnd;
   //--------------------------------
   
   //Images
@@ -29,7 +36,6 @@ export function initialise() {
   this.assets.images.gate = new ImageAsset("assets/example-game/gate.png");
   this.assets.images.plate = new ImageAsset("assets/example-game/plate.png");
   this.assets.images.goal = new ImageAsset("assets/example-game/goal.png");
-  this.assets.images.background = new ImageAsset("assets/example-game/background.png");
   
   this.assets.images.comicPanelA = new ImageAsset("assets/example-game/comic-panel-800x600-red.png");
   this.assets.images.comicPanelB = new ImageAsset("assets/example-game/comic-panel-800x600-blue.png");
@@ -207,11 +213,11 @@ function comicStart() {
       //this.assets.images.comicPanelC,
     ],
     comicStartFinished);
-  this.comicStrip.start();
 }
 
 function comicStartFinished() {
-  this.changeState(AVO.STATE_ACTION, startLevel1);
+  //this.changeState(AVO.STATE_ACTION, startLevel1);  //TEST
+  this.changeState(AVO.STATE_ACTION, startLevel2);
 }
 
 function runEnd() {}
@@ -236,6 +242,14 @@ function runAction() {
   checkIfAllBoxesAreCharged.apply(this);
   //--------------------------------
   
+  //Shape Tester
+  //--------------------------------
+  if (this.keys[AVO.KEY_CODES.Q].duration === 1) { this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_CIRCLE; }
+  if (this.keys[AVO.KEY_CODES.E].duration === 1) { this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_SQUARE; }
+  if (this.keys[AVO.KEY_CODES.R].duration === 1) { this.refs[AVO.REF.PLAYER].size += 8; }
+  if (this.keys[AVO.KEY_CODES.F].duration === 1) { this.refs[AVO.REF.PLAYER].size -= 8; }
+  //--------------------------------
+  
   //Win Condition
   //--------------------------------
   checkIfPlayerIsAtGoal.apply(this);
@@ -248,7 +262,7 @@ function startLevelInit() {
   this.areasOfEffect = [];
   this.refs = {};
   
-  const midX = this.width / 2, midY = this.height / 2;
+  const midX = this.canvasWidth / 2, midY = this.canvasHeight / 2;
   
   this.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
   this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
@@ -257,24 +271,14 @@ function startLevelInit() {
   this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
   this.actors.push(this.refs[AVO.REF.PLAYER]);
   
-  let wallN = new Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-  let wallS = new Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-  let wallE = new Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-  let wallW = new Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-  wallE.canBeMoved = false;
-  wallS.canBeMoved = false;
-  wallW.canBeMoved = false;
-  wallN.canBeMoved = false;
-  this.actors.push(wallE, wallS, wallW, wallN);
-
   this.refs["gate"] = new Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
-  this.refs["gate"].canBeMoved = false;
+  this.refs["gate"].movable = false;
   this.refs["gate"].spritesheet = this.assets.images.gate;
   this.refs["gate"].animationSet = this.animationSets.simple128;
   this.refs["gate"].playAnimation("idle");
   this.actors.push(this.refs["gate"]);
   
-  this.refs["goal"] = new AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+  this.refs["goal"] = new AoE("goal", this.canvasWidth / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
   this.refs["goal"].spritesheet = this.assets.images.goal;
   this.refs["goal"].animationSet = this.animationSets.simple64;
   this.refs["goal"].playAnimation("glow");
@@ -284,12 +288,12 @@ function startLevelInit() {
 function startLevel1() {
   startLevelInit.apply(this);
   //this.areasOfEffect.push(
-  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
+  //  new AoE("conveyorBelt", this.canvasWidth / 2, this.canvasHeight / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
   //    [new Effect("push", { x: 0, y: 4 }, 4, AVO.STACKING_RULE_ADD, null)], null)
   //);
-  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
+  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.canvasWidth * 0.8) + this.canvasWidth * 0.1, Math.floor(Math.random() * this.canvasHeight * 0.8) + this.canvasHeight * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
   
-  const midX = this.width / 2, midY = this.height / 2;
+  const midX = this.canvasWidth / 2, midY = this.canvasHeight / 2;
   
   this.refs.boxes = [];
   this.refs.plates = [];
@@ -317,12 +321,15 @@ function startLevel1() {
     plate.playAnimation("idle");
     this.areasOfEffect.push(plate);
   }
-  
-  this.ui.backgroundImage = this.assets.images.background;
 }
 
 function startLevel2() {
   startLevelInit.apply(this);
+  const midX = this.canvasWidth / 2, midY = this.canvasHeight / 2;
+  this.refs["sq1"] = new Actor("sq1", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_SQUARE);
+  this.refs["ci2"] = new Actor("ci2", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_CIRCLE);
+  this.actors.push(this.refs["sq1"]);
+  this.actors.push(this.refs["ci2"]);  
 }
 
 function startLevel3() {
@@ -336,7 +343,7 @@ function checkIfAllBoxesAreCharged() {
     for (let plate of this.refs["plates"]) {
       let thisPlateIsCharged = false;
       for (let box of this.refs["boxes"]) {
-        if (this.isATouchingB(box, plate)) {
+        if (Physics.checkCollision(box, plate)) {
           thisPlateIsCharged = true;
           plate.playAnimation("glow");
         }
@@ -348,19 +355,19 @@ function checkIfAllBoxesAreCharged() {
   
   if (allBoxesAreCharged) {
     if (this.refs["gate"] && this.refs["gate"].y >= -32) {
-      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
       this.refs["gate"].y -= 1;
     }
   } else {
     if (this.refs["gate"] && this.refs["gate"].y <= 16) {
-      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
       this.refs["gate"].y += 1;
     }
   }
 }
 
 function checkIfPlayerIsAtGoal() {
-  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
+  if (Physics.checkCollision(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
     this.store.level && this.store.level++;
     
     switch (this.store.level) {

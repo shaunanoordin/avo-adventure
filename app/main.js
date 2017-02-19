@@ -48,7 +48,7 @@
 
 	var _index = __webpack_require__(1);
 
-	var _index2 = __webpack_require__(5);
+	var _index2 = __webpack_require__(8);
 
 	/*  Initialisations
 	 */
@@ -76,7 +76,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.ComicStrip = exports.AvO = undefined;
+	exports.AvO = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Adventure Game Engine
@@ -93,9 +93,11 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _entities = __webpack_require__(3);
+	var _utility = __webpack_require__(3);
 
-	var _utility = __webpack_require__(4);
+	var _physics = __webpack_require__(4);
+
+	var _standardActions = __webpack_require__(5);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -111,16 +113,23 @@
 
 	    //Initialise properties
 	    //--------------------------------
-	    this.debugMode = true;
+	    this.appConfig = {
+	      framesPerSecond: AVO.FRAMES_PER_SECOND,
+	      debugMode: false,
+	      topDownView: true, //Top-down view sorts Actors on paint().
+	      skipStandardRun: false, //Skips the standard run() code, including physics.
+	      skipStandardPaint: false };
 	    this.runCycle = null;
-	    this.html = document.getElementById("app");
-	    this.canvas = document.getElementById("canvas");
-	    this.context2d = this.canvas.getContext("2d");
+	    this.html = {
+	      app: document.getElementById("app"),
+	      canvas: document.getElementById("canvas")
+	    };
+	    this.context2d = this.html.canvas.getContext("2d");
 	    this.boundingBox = null; //To be defined by this.updateSize().
 	    this.sizeRatioX = 1;
 	    this.sizeRatioY = 1;
-	    this.width = this.canvas.width;
-	    this.height = this.canvas.height;
+	    this.canvasWidth = this.html.canvas.width;
+	    this.canvasHeight = this.html.canvas.height;
 	    this.state = null;
 	    this.animationSets = {};
 	    //--------------------------------
@@ -133,21 +142,22 @@
 	    this.assetsLoaded = 0;
 	    this.assetsTotal = 0;
 	    this.scripts = {
-	      run: null,
-	      runStart: null,
-	      runAction: null,
-	      runComic: null,
-	      runEnd: null
+	      preRun: null,
+	      postRun: null,
+	      customRunStart: null,
+	      customRunAction: null,
+	      customRunComic: null,
+	      customRunEnd: null,
+	      prePaint: null,
+	      postPaint: null
 	    };
 	    this.actors = [];
 	    this.areasOfEffect = [];
 	    this.refs = {};
 	    this.store = {};
-	    this.ui = {
-	      foregroundImage: null,
-	      backgroundImage: null
-	    };
+	    //this.ui = {};
 	    this.comicStrip = null;
+	    this.actions = {};
 	    //--------------------------------
 
 	    //Prepare Input
@@ -169,16 +179,16 @@
 
 	    //Bind Events
 	    //--------------------------------
-	    if ("onmousedown" in this.canvas && "onmousemove" in this.canvas && "onmouseup" in this.canvas) {
-	      this.canvas.onmousedown = this.onPointerStart.bind(this);
-	      this.canvas.onmousemove = this.onPointerMove.bind(this);
-	      this.canvas.onmouseup = this.onPointerEnd.bind(this);
+	    if ("onmousedown" in this.html.canvas && "onmousemove" in this.html.canvas && "onmouseup" in this.html.canvas) {
+	      this.html.canvas.onmousedown = this.onPointerStart.bind(this);
+	      this.html.canvas.onmousemove = this.onPointerMove.bind(this);
+	      this.html.canvas.onmouseup = this.onPointerEnd.bind(this);
 	    }
-	    if ("ontouchstart" in this.canvas && "ontouchmove" in this.canvas && "ontouchend" in this.canvas && "ontouchcancel" in this.canvas) {
-	      this.canvas.ontouchstart = this.onPointerStart.bind(this);
-	      this.canvas.ontouchmove = this.onPointerMove.bind(this);
-	      this.canvas.ontouchend = this.onPointerEnd.bind(this);
-	      this.canvas.ontouchcancel = this.onPointerEnd.bind(this);
+	    if ("ontouchstart" in this.html.canvas && "ontouchmove" in this.html.canvas && "ontouchend" in this.html.canvas && "ontouchcancel" in this.html.canvas) {
+	      this.html.canvas.ontouchstart = this.onPointerStart.bind(this);
+	      this.html.canvas.ontouchmove = this.onPointerMove.bind(this);
+	      this.html.canvas.ontouchend = this.onPointerEnd.bind(this);
+	      this.html.canvas.ontouchcancel = this.onPointerEnd.bind(this);
 	    }
 	    if ("onkeydown" in window && "onkeyup" in window) {
 	      window.onkeydown = this.onKeyDown.bind(this);
@@ -193,7 +203,7 @@
 	    //Start!
 	    //--------------------------------
 	    this.changeState(AVO.STATE_START, startScript);
-	    this.runCycle = setInterval(this.run.bind(this), 1000 / AVO.FRAMES_PER_SECOND);
+	    this.runCycle = setInterval(this.run.bind(this), 1000 / this.appConfig.framesPerSecond);
 	    //--------------------------------
 	  }
 
@@ -202,7 +212,7 @@
 	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
-	      var script = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+	      var script = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
 	      this.state = state;
 	      if (script && typeof script === "function") {
@@ -212,22 +222,26 @@
 	  }, {
 	    key: "run",
 	    value: function run() {
-	      if (this.scripts.run) this.scripts.run.apply(this);
+	      if (this.scripts.preRun) this.scripts.preRun.apply(this);
 
-	      switch (this.state) {
-	        case AVO.STATE_START:
-	          this.run_start();
-	          break;
-	        case AVO.STATE_END:
-	          this.run_end();
-	          break;
-	        case AVO.STATE_ACTION:
-	          this.run_action();
-	          break;
-	        case AVO.STATE_COMIC:
-	          this.run_comic();
-	          break;
+	      if (!this.appConfig.skipCoreRun) {
+	        switch (this.state) {
+	          case AVO.STATE_START:
+	            this.run_start();
+	            break;
+	          case AVO.STATE_END:
+	            this.run_end();
+	            break;
+	          case AVO.STATE_ACTION:
+	            this.run_action();
+	            break;
+	          case AVO.STATE_COMIC:
+	            this.run_comic();
+	            break;
+	        }
 	      }
+
+	      if (this.scripts.postRun) this.scripts.postRun.apply(this);
 
 	      this.paint();
 	    }
@@ -244,19 +258,19 @@
 	      }
 	      if (this.assetsLoaded < this.assetsTotal) return;
 
-	      if (this.scripts.runStart) this.scripts.runStart.apply(this);
+	      if (this.scripts.customRunStart) this.scripts.customRunStart.apply(this);
 	    }
 	  }, {
 	    key: "run_end",
 	    value: function run_end() {
-	      if (this.scripts.runEnd) this.scripts.runEnd.apply(this);
+	      if (this.scripts.customRunEnd) this.scripts.customRunEnd.apply(this);
 	    }
 	  }, {
 	    key: "run_action",
 	    value: function run_action() {
 	      //Run Global Scripts
 	      //--------------------------------
-	      if (this.scripts.runAction) this.scripts.runAction.apply(this);
+	      if (this.scripts.customRunAction) this.scripts.customRunAction.apply(this);
 	      //--------------------------------
 
 	      //Actors determine intent
@@ -309,6 +323,7 @@
 	            angle: AVO.ROTATION_SOUTH
 	          };
 	        }
+
 	        if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
 	          player.intent = {
 	            name: AVO.ACTION.MOVE,
@@ -346,7 +361,7 @@
 	            for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	              var actor = _step4.value;
 
-	              if (this.isATouchingB(_aoe, actor)) {
+	              if (_physics.Physics.checkCollision(_aoe, actor)) {
 	                var _iteratorNormalCompletion5 = true;
 	                var _didIteratorError5 = false;
 	                var _iteratorError5 = undefined;
@@ -426,7 +441,7 @@
 
 	              //TODO make this an external script
 	              //----------------
-	              if (_effect.name === "push" && _actor.canBeMoved) {
+	              if (_effect.name === "push" && _actor.movable) {
 	                _actor.x += _effect.data.x || 0;
 	                _actor.y += _effect.data.y || 0;
 	              }
@@ -459,37 +474,13 @@
 
 	          //If the Actor has an action, perform it.
 	          if (_actor.action) {
-	            //TODO make this a "standard library"
-	            //----------------
-	            if (_actor.action.name === AVO.ACTION.IDLE) {
-	              _actor.state = AVO.ACTOR_IDLE;
-	              _actor.playAnimation(AVO.ACTION.IDLE);
-	            } else if (_actor.action.name === AVO.ACTION.MOVE) {
-	              var _angle = _actor.action.angle || 0;
-	              var speed = _actor.attributes[AVO.ATTR.SPEED] || 0;
-	              _actor.x += Math.cos(_angle) * speed;
-	              _actor.y += Math.sin(_angle) * speed;
-	              _actor.rotation = _angle;
-	              _actor.state = AVO.ACTOR_WALKING;
-	              _actor.playAnimation(AVO.ACTION.MOVE);
-	            } else if (_actor.action.name === AVO.ACTION.PRIMARY) {
-	              //TODO This is just a placeholder
-	              //................
-	              var PUSH_POWER = 12;
-	              var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	              var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
-	              var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	              var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	              var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _entities.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	              this.areasOfEffect.push(newAoE);
-	              _actor.playAnimation(AVO.ACTION.PRIMARY);
-	              //................
+	            if (this.actions[_actor.action.name]) {
+	              //Run a custom Action.
+	              this.actions[_actor.action.name].apply(this, [_actor]);
+	            } else if (_standardActions.StandardActions[_actor.action.name]) {
+	              //Run a standard Action.
+	              _standardActions.StandardActions[_actor.action.name].apply(this, [_actor]);
 	            }
-	            //----------------
-
-	            //TODO run custom scripts
-	            //----------------
-	            //----------------
 	          }
 	        }
 	        //--------------------------------
@@ -512,15 +503,6 @@
 	      }
 
 	      this.physics();
-	      //--------------------------------
-
-	      //Visuals
-	      //--------------------------------
-	      //Arrange sprites by vertical order.
-	      this.actors.sort(function (a, b) {
-	        return a.bottom - b.bottom;
-	      });
-	      //this.paint();  //moved to run()
 	      //--------------------------------
 
 	      //Cleanup AoEs
@@ -591,7 +573,7 @@
 	  }, {
 	    key: "run_comic",
 	    value: function run_comic() {
-	      if (this.scripts.runComic) this.scripts.runComic.apply(this);
+	      if (this.scripts.customRunComic) this.scripts.customRunComic.apply(this);
 
 	      if (!this.comicStrip) return;
 	      var comic = this.comicStrip;
@@ -618,7 +600,7 @@
 	          }
 	          break;
 	        case AVO.COMIC_STRIP_STATE_IDLE:
-	          if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	          if (this.pointer.state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || this.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	            comic.currentPanel++;
 	            comic.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
 	          }
@@ -635,109 +617,130 @@
 	        var actorA = this.actors[a];
 	        for (var b = a + 1; b < this.actors.length; b++) {
 	          var actorB = this.actors[b];
-	          if (this.isATouchingB(actorA, actorB)) {
-	            this.correctCollision(actorA, actorB);
+	          var collisionCorrection = _physics.Physics.checkCollision(actorA, actorB);
+
+	          if (collisionCorrection) {
+	            //TODO: Check if this needs to be (!!collisionCorrection).
+	            actorA.x = collisionCorrection.ax;
+	            actorA.y = collisionCorrection.ay;
+	            actorB.x = collisionCorrection.bx;
+	            actorB.y = collisionCorrection.by;
 	          }
 	        }
 	      }
 	    }
-	  }, {
-	    key: "isATouchingB",
-	    value: function isATouchingB(objA, objB) {
-	      if (!objA || !objB) return false;
 
+	    /*
+	    isATouchingB(objA, objB) {
+	      if (!objA || !objB) return false;
+	      
 	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var distX = objA.x - objB.x;
-	        var distY = objA.y - objB.y;
-	        var minimumDist = objA.radius + objB.radius;
+	        const distX = objA.x - objB.x;
+	        const distY = objA.y - objB.y;
+	        const minimumDist = objA.radius + objB.radius;
 	        if (distX * distX + distY * distY < minimumDist * minimumDist) {
 	          return true;
 	        }
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        if (objA.left < objB.right && objA.right > objB.left && objA.top < objB.bottom && objA.bottom > objB.top) {
-	          return true;
-	        }
-	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX2 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY2 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        if (_distX2 * _distX2 + _distY2 * _distY2 < objA.radius * objA.radius) {
-	          return true;
-	        }
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX3 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY3 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        if (_distX3 * _distX3 + _distY3 * _distY3 < objB.radius * objB.radius) {
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	        if (objA.left < objB.right &&
+	            objA.right > objB.left &&
+	            objA.top < objB.bottom &&
+	            objA.bottom > objB.top) {
 	          return true;
 	        }
 	      }
-
+	      
+	      else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        if (distX * distX + distY * distY < objA.radius * objA.radius) {
+	          return true;
+	        }
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	        const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        if (distX * distX + distY * distY < objB.radius * objB.radius) {
+	          return true;
+	        }
+	      }
+	      
 	      return false;
 	    }
-	  }, {
-	    key: "correctCollision",
-	    value: function correctCollision(objA, objB) {
+	    
+	    correctCollision(objA, objB) {
 	      if (!objA || !objB || !objA.solid || !objB.solid) return;
-
-	      var fractionA = 0;
-	      var fractionB = 0;
-	      if (objA.canBeMoved && objB.canBeMoved) {
+	      
+	      let fractionA = 0;
+	      let fractionB = 0;
+	      if (objA.movable && objB.movable) {
 	        fractionA = 0.5;
 	        fractionB = 0.5;
-	      } else if (objA.canBeMoved) {
+	      } else if (objA.movable) {
 	        fractionA = 1;
-	      } else if (objB.canBeMoved) {
+	      } else if (objB.movable) {
 	        fractionB = 1;
 	      }
-
+	      
 	      if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var distX = objB.x - objA.x;
-	        var distY = objB.y - objA.y;
-	        var dist = Math.sqrt(distX * distX + distY * distY);
-	        var angle = Math.atan2(distY, distX);
-	        var correctDist = objA.radius + objB.radius;
-	        var cosAngle = Math.cos(angle);
-	        var sinAngle = Math.sin(angle);
+	        const distX = objB.x - objA.x;
+	        const distY = objB.y - objA.y;
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objA.radius + objB.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
 	        objA.x -= cosAngle * (correctDist - dist) * fractionA;
 	        objA.y -= sinAngle * (correctDist - dist) * fractionA;
 	        objB.x += cosAngle * (correctDist - dist) * fractionB;
 	        objB.y += sinAngle * (correctDist - dist) * fractionB;
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX4 = objB.x - objA.x;
-	        var _distY4 = objB.y - objA.y;
-	        var _correctDist = (objA.size + objB.size) / 2;
-	        if (Math.abs(_distX4) > Math.abs(_distY4)) {
-	          objA.x -= Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionA;
-	          objB.x += Math.sign(_distX4) * (_correctDist - Math.abs(_distX4)) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objB.x - objA.x;
+	        const distY = objB.y - objA.y;
+	        const correctDist = (objA.size + objB.size) / 2;
+	        if (Math.abs(distX) > Math.abs(distY)) {
+	          objA.x -= Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionA;
+	          objB.x += Math.sign(distX) * (correctDist - Math.abs(distX)) * fractionB;
 	        } else {
-	          objA.y -= Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionA;
-	          objB.y += Math.sign(_distY4) * (_correctDist - Math.abs(_distY4)) * fractionB;
+	          objA.y -= Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionA;
+	          objB.y += Math.sign(distY) * (correctDist - Math.abs(distY)) * fractionB;
 	        }
-	      } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
-	        var _distX5 = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
-	        var _distY5 = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
-	        var _dist2 = Math.sqrt(_distX5 * _distX5 + _distY5 * _distY5);
-	        var _angle2 = Math.atan2(_distY5, _distX5);
-	        var _correctDist2 = objA.radius;
-	        var _cosAngle = Math.cos(_angle2);
-	        var _sinAngle = Math.sin(_angle2);
-	        objA.x += _cosAngle * (_correctDist2 - _dist2) * fractionA;
-	        objA.y += _sinAngle * (_correctDist2 - _dist2) * fractionA;
-	        objB.x -= _cosAngle * (_correctDist2 - _dist2) * fractionB;
-	        objB.y -= _sinAngle * (_correctDist2 - _dist2) * fractionB;
-	      } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
-	        var _distX6 = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
-	        var _distY6 = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
-	        var _dist3 = Math.sqrt(_distX6 * _distX6 + _distY6 * _distY6);
-	        var _angle3 = Math.atan2(_distY6, _distX6);
-	        var _correctDist3 = objB.radius;
-	        var _cosAngle2 = Math.cos(_angle3);
-	        var _sinAngle2 = Math.sin(_angle3);
-	        objA.x -= _cosAngle2 * (_correctDist3 - _dist3) * fractionA;
-	        objA.y -= _sinAngle2 * (_correctDist3 - _dist3) * fractionA;
-	        objB.x += _cosAngle2 * (_correctDist3 - _dist3) * fractionB;
-	        objB.y += _sinAngle2 * (_correctDist3 - _dist3) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	        const distX = objA.x - Math.max(objB.left, Math.min(objB.right, objA.x));
+	        const distY = objA.y - Math.max(objB.top, Math.min(objB.bottom, objA.y));
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objA.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
+	        objA.x += cosAngle * (correctDist - dist) * fractionA;
+	        objA.y += sinAngle * (correctDist - dist) * fractionA;
+	        objB.x -= cosAngle * (correctDist - dist) * fractionB;
+	        objB.y -= sinAngle * (correctDist - dist) * fractionB;
+	      }
+	      
+	      else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	        const distX = objB.x - Math.max(objA.left, Math.min(objA.right, objB.x));
+	        const distY = objB.y - Math.max(objA.top, Math.min(objA.bottom, objB.y));
+	        const dist = Math.sqrt(distX * distX + distY * distY);
+	        const angle = Math.atan2(distY, distX);
+	        const correctDist = objB.radius;
+	        const cosAngle = Math.cos(angle);
+	        const sinAngle = Math.sin(angle);
+	        objA.x -= cosAngle * (correctDist - dist) * fractionA;
+	        objA.y -= sinAngle * (correctDist - dist) * fractionA;
+	        objB.x += cosAngle * (correctDist - dist) * fractionB;
+	        objB.y += sinAngle * (correctDist - dist) * fractionB;
 	      }
 	    }
+	    */
 
 	    //----------------------------------------------------------------
 
@@ -745,32 +748,28 @@
 	    key: "paint",
 	    value: function paint() {
 	      //Clear
-	      this.context2d.clearRect(0, 0, this.width, this.height);
+	      this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-	      if (this.ui.backgroundImage && this.ui.backgroundImage.loaded) {
-	        var image = this.ui.backgroundImage;
-	        this.context2d.drawImage(image.img, (this.width - image.img.width) / 2, (this.height - image.img.height) / 2);
+	      if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+
+	      if (!this.appConfig.skipCorePaint) {
+	        switch (this.state) {
+	          case AVO.STATE_START:
+	            this.paint_start();
+	            break;
+	          case AVO.STATE_END:
+	            this.paint_end();
+	            break;
+	          case AVO.STATE_ACTION:
+	            this.paint_action();
+	            break;
+	          case AVO.STATE_COMIC:
+	            this.paint_comic();
+	            break;
+	        }
 	      }
 
-	      switch (this.state) {
-	        case AVO.STATE_START:
-	          this.paint_start();
-	          break;
-	        case AVO.STATE_END:
-	          this.paint_end();
-	          break;
-	        case AVO.STATE_ACTION:
-	          this.paint_action();
-	          break;
-	        case AVO.STATE_COMIC:
-	          this.paint_comic();
-	          break;
-	      }
-
-	      if (this.ui.foregroundImage && this.ui.foregroundImage.loaded) {
-	        var _image = this.ui.foregroundImage;
-	        this.context2d.drawImage(_image.img, (this.width - _image.img.width) / 2, (this.height - _image.img.height) / 2);
-	      }
+	      if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
 	    }
 	  }, {
 	    key: "paint_start",
@@ -784,19 +783,19 @@
 	      if (this.assetsLoaded < this.assetsTotal) {
 	        var rgb = Math.floor(percentage * 255);
 	        this.context2d.beginPath();
-	        this.context2d.rect(0, 0, this.width, this.height);
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	        this.context2d.fillStyle = "rgba(" + rgb + "," + rgb + "," + rgb + ",1)";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#fff";
-	        this.context2d.fillText("Loading... (" + this.assetsLoaded + "/" + this.assetsTotal + ")", this.width / 2, this.height / 2);
+	        this.context2d.fillText("Loading... (" + this.assetsLoaded + "/" + this.assetsTotal + ")", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      } else {
 	        this.context2d.beginPath();
-	        this.context2d.rect(0, 0, this.width, this.height);
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	        this.context2d.fillStyle = "#fff";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#000";
-	        this.context2d.fillText("Ready!", this.width / 2, this.height / 2);
+	        this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      }
 	    }
@@ -804,7 +803,7 @@
 	    key: "paint_end",
 	    value: function paint_end() {
 	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.width, this.height);
+	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	      this.context2d.fillStyle = "#3cc";
 	      this.context2d.fill();
 	      this.context2d.closePath();
@@ -812,9 +811,20 @@
 	  }, {
 	    key: "paint_action",
 	    value: function paint_action() {
+	      //Arrange sprites by vertical order.
+	      //--------------------------------
+	      if (this.appConfig.topDownView) {
+	        this.actors.sort(function (a, b) {
+	          return a.bottom - b.bottom;
+	        });
+	      }
+	      //--------------------------------
+
 	      //DEBUG: Paint hitboxes
 	      //--------------------------------
-	      if (this.debugMode) {
+	      if (this.appConfig.debugMode) {
+	        this.context2d.lineWidth = 1;
+
 	        //Areas of Effects
 	        var _iteratorNormalCompletion7 = true;
 	        var _didIteratorError7 = false;
@@ -971,8 +981,9 @@
 	        }
 	      }
 
-	      if (this.debugMode) {
+	      if (this.appConfig.debugMode) {
 	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
+	        this.context2d.lineWidth = 1;
 	        this.context2d.beginPath();
 	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
 	        this.context2d.stroke();
@@ -987,16 +998,16 @@
 	      var comic = this.comicStrip;
 
 	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.width, this.height);
+	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
 	      this.context2d.fillStyle = comic.background;
 	      this.context2d.fill();
 	      this.context2d.closePath();
 
 	      switch (comic.state) {
 	        case AVO.COMIC_STRIP_STATE_TRANSITIONING:
-	          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.height) : 0;
+	          var offsetY = comic.transitionTime > 0 ? Math.floor(comic.counter / comic.transitionTime * -this.canvasHeight) : 0;
 	          this.paintComicPanel(comic.getPreviousPanel(), offsetY);
-	          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.height);
+	          this.paintComicPanel(comic.getCurrentPanel(), offsetY + this.canvasHeight);
 	          break;
 	        case AVO.COMIC_STRIP_STATE_WAIT_BEFORE_INPUT:
 	          this.paintComicPanel(comic.getCurrentPanel());
@@ -1036,13 +1047,13 @@
 	  }, {
 	    key: "paintComicPanel",
 	    value: function paintComicPanel() {
-	      var panel = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-	      var offsetY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	      var panel = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+	      var offsetY = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 
 	      if (!panel || !panel.loaded) return;
 
-	      var ratioX = this.width / panel.img.width;
-	      var ratioY = this.height / panel.img.height;
+	      var ratioX = this.canvasWidth / panel.img.width;
+	      var ratioY = this.canvasHeight / panel.img.height;
 	      var ratio = Math.min(1, Math.min(ratioX, ratioY));
 
 	      var srcX = 0;
@@ -1052,8 +1063,8 @@
 
 	      var tgtW = panel.img.width * ratio;
 	      var tgtH = panel.img.height * ratio;
-	      var tgtX = (this.width - tgtW) / 2; //TODO
-	      var tgtY = (this.height - tgtH) / 2 + offsetY; //TODO
+	      var tgtX = (this.canvasWidth - tgtW) / 2; //TODO
+	      var tgtY = (this.canvasHeight - tgtH) / 2 + offsetY; //TODO
 
 	      this.context2d.drawImage(panel.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
 	    }
@@ -1126,71 +1137,16 @@
 	  }, {
 	    key: "updateSize",
 	    value: function updateSize() {
-	      var boundingBox = this.canvas.getBoundingClientRect ? this.canvas.getBoundingClientRect() : { left: 0, top: 0 };
+	      var boundingBox = this.html.canvas.getBoundingClientRect ? this.html.canvas.getBoundingClientRect() : { left: 0, top: 0 };
 	      this.boundingBox = boundingBox;
-	      this.sizeRatioX = this.width / this.boundingBox.width;
-	      this.sizeRatioY = this.height / this.boundingBox.height;
+	      this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+	      this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
 	    }
 	  }]);
 
 	  return AvO;
 	}();
 
-	//==============================================================================
-
-	/*  4-Koma Comic Strip Class
-	 */
-	//==============================================================================
-
-
-	var ComicStrip = exports.ComicStrip = function () {
-	  function ComicStrip() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
-	    _classCallCheck(this, ComicStrip);
-
-	    this.name = name;
-	    this.panels = panels;
-	    this.onFinish = onFinish;
-
-	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
-	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
-	    this.background = "#333";
-
-	    this.start();
-	  }
-
-	  _createClass(ComicStrip, [{
-	    key: "start",
-	    value: function start() {
-	      this.currentPanel = 0;
-	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
-	      this.counter = 0;
-	    }
-	  }, {
-	    key: "getCurrentPanel",
-	    value: function getCurrentPanel() {
-	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel];
-	      }
-	    }
-	  }, {
-	    key: "getPreviousPanel",
-	    value: function getPreviousPanel() {
-	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
-	        return null;
-	      } else {
-	        return this.panels[this.currentPanel - 1];
-	      }
-	    }
-	  }]);
-
-	  return ComicStrip;
-	}();
 	//==============================================================================
 
 /***/ },
@@ -1247,9 +1203,14 @@
 	var SHAPE_CIRCLE = exports.SHAPE_CIRCLE = 2;
 
 	var ROTATION_EAST = exports.ROTATION_EAST = 0;
-	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI / 2;
+	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI * 0.5;
 	var ROTATION_WEST = exports.ROTATION_WEST = Math.PI;
-	var ROTATION_NORTH = exports.ROTATION_NORTH = -Math.PI / 2;
+	var ROTATION_NORTH = exports.ROTATION_NORTH = Math.PI * -0.5;
+
+	var ROTATION_SOUTHEAST = exports.ROTATION_SOUTHEAST = Math.PI * 0.25;
+	var ROTATION_SOUTHWEST = exports.ROTATION_SOUTHWEST = Math.PI * 0.75;
+	var ROTATION_NORTHWEST = exports.ROTATION_NORTHWEST = Math.PI * -0.75;
+	var ROTATION_NORTHEAST = exports.ROTATION_NORTHEAST = Math.PI * -0.25;
 
 	var DIRECTION_EAST = exports.DIRECTION_EAST = 0;
 	var DIRECTION_SOUTH = exports.DIRECTION_SOUTH = 1;
@@ -1422,7 +1383,399 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Effect = exports.AoE = exports.Actor = undefined;
+	exports.Utility = undefined;
+	exports.ImageAsset = ImageAsset;
+
+	var _constants = __webpack_require__(2);
+
+	var Utility = exports.Utility = {
+	  randomInt: function randomInt(min, max) {
+	    var a = min < max ? min : max;
+	    var b = min < max ? max : min;
+	    return Math.floor(a + Math.random() * (b - a + 1));
+	  },
+
+	  stopEvent: function stopEvent(e) {
+	    //var eve = e || window.event;
+	    e.preventDefault && e.preventDefault();
+	    e.stopPropagation && e.stopPropagation();
+	    e.returnValue = false;
+	    e.cancelBubble = true;
+	    return false;
+	  },
+
+	  getKeyCode: function getKeyCode(e) {
+	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
+	    //at the moment, but unfortunately it's being deprecated.
+	    if (e.keyCode) {
+	      return e.keyCode;
+	    }
+
+	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
+	    //far from being standardised between browsers.
+	    if (e.code && _constants.KEY_VALUES[e.code]) {
+	      return _constants.KEY_VALUES[e.code];
+	    } else if (e.key && _constants.KEY_VALUES[e.key]) {
+	      return _constants.KEY_VALUES[e.key];
+	    }
+
+	    return 0;
+	  }
+	}; /*
+	   Utility Classes
+	   ===============
+	   
+	   (Shaun A. Noordin || shaunanoordin.com || 20160901)
+	   ********************************************************************************
+	    */
+
+	function ImageAsset(url) {
+	  this.url = url;
+	  this.img = null;
+	  this.loaded = false;
+	  this.img = new Image();
+	  this.img.onload = function () {
+	    this.loaded = true;
+	  }.bind(this);
+	  this.img.src = this.url;
+	}
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Physics = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /*
+	                                                                                                                                                                                                    Physics Classes
+	                                                                                                                                                                                                    ===============
+	                                                                                                                                                                                                    
+	                                                                                                                                                                                                    (Shaun A. Noordin || shaunanoordin.com || 20170209)
+	                                                                                                                                                                                                    ********************************************************************************
+	                                                                                                                                                                                                     */
+
+	//Naming note: all caps.
+
+	var USE_CIRCLE_APPROXIMATION = false;
+
+	var Physics = exports.Physics = {
+	  //----------------------------------------------------------------
+
+	  /*  Checks if objA is touching objB.
+	      If true, returns the corrected coordinates for objA and objB, in form:
+	        { ax, ay, bx, by }
+	      If false, returns null.
+	   */
+	  checkCollision: function checkCollision(objA, objB) {
+	    if (!objA || !objB || objA === objB) return null;
+
+	    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      return this.checkCollision_circleCircle(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	      return this.checkCollision_polygonPolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
+
+	      return this.checkCollision_circlePolygon(objA, objB);
+	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
+
+	      var correction = this.checkCollision_circlePolygon(objB, objA);
+	      if (correction) {
+	        correction = {
+	          ax: correction.bx,
+	          ay: correction.by,
+	          bx: correction.ax,
+	          by: correction.ay
+	        };
+	      }
+	      return correction;
+	    }
+
+	    return null;
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_circleCircle: function checkCollision_circleCircle(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var minimumDist = objA.radius + objB.radius;
+	    if (dist < minimumDist) {
+	      var angle = Math.atan2(distY, distX);
+	      var correctDist = minimumDist;
+	      var cosAngle = Math.cos(angle);
+	      var sinAngle = Math.sin(angle);
+
+	      return {
+	        ax: objA.x - cosAngle * (correctDist - dist) * fractionA,
+	        ay: objA.y - sinAngle * (correctDist - dist) * fractionA,
+	        bx: objB.x + cosAngle * (correctDist - dist) * fractionB,
+	        by: objB.y + sinAngle * (correctDist - dist) * fractionB
+	      };
+	    }
+
+	    return null;
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_polygonPolygon: function checkCollision_polygonPolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var correction = null;
+	    var verticesA = objA.vertices;
+	    var verticesB = objB.vertices;
+	    var projectionAxes = [].concat(_toConsumableArray(this.getShapeNormals(objA)), _toConsumableArray(this.getShapeNormals(objB)));
+	    for (var i = 0; i < projectionAxes.length; i++) {
+	      var axis = projectionAxes[i];
+	      var projectionA = { min: Infinity, max: -Infinity };
+	      var projectionB = { min: Infinity, max: -Infinity };
+
+	      for (var j = 0; j < verticesA.length; j++) {
+	        var val = this.dotProduct(axis, verticesA[j]);
+	        projectionA.min = Math.min(projectionA.min, val);
+	        projectionA.max = Math.max(projectionA.max, val);
+	      }
+	      for (var _j = 0; _j < verticesB.length; _j++) {
+	        var _val = this.dotProduct(axis, verticesB[_j]);
+	        projectionB.min = Math.min(projectionB.min, _val);
+	        projectionB.max = Math.max(projectionB.max, _val);
+	      }
+
+	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	      if (!correction || overlap < correction.magnitude) {
+	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	        correction = {
+	          magnitude: overlap,
+	          x: axis.x * overlap * sign,
+	          y: axis.y * overlap * sign
+	        };
+	      }
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+
+	    return null;
+	  },
+
+	  //----------------------------------------------------------------
+
+	  checkCollision_circlePolygon: function checkCollision_circlePolygon(objA, objB) {
+	    var fractionA = 0;
+	    var fractionB = 0;
+	    if (!objA.solid || !objB.solid) {
+	      //If either object isn't solid, there's no collision correction.
+	    } else if (objA.movable && objB.movable) {
+	      fractionA = 0.5;
+	      fractionB = 0.5;
+	    } else if (objA.movable) {
+	      fractionA = 1;
+	    } else if (objB.movable) {
+	      fractionB = 1;
+	    }
+
+	    var distX = objB.x - objA.x;
+	    var distY = objB.y - objA.y;
+	    var dist = Math.sqrt(distX * distX + distY * distY);
+	    var angle = Math.atan2(distY, distX);
+	    var centreToCentreAxis = dist !== 0 ? { x: distX / dist, y: distY / dist } : { x: 0, y: 0 };
+
+	    var correction = null;
+	    var verticesB = objB.vertices;
+	    var projectionAxes = [centreToCentreAxis].concat(_toConsumableArray(this.getShapeNormals(objB)));
+	    for (var i = 0; i < projectionAxes.length; i++) {
+	      var axis = projectionAxes[i];
+	      var scalarA = this.dotProduct(axis, { x: objA.x, y: objA.y });
+	      var projectionA = { min: scalarA - objA.radius, max: scalarA + objA.radius };
+	      var projectionB = { min: Infinity, max: -Infinity };
+
+	      for (var j = 0; j < verticesB.length; j++) {
+	        var val = this.dotProduct(axis, verticesB[j]);
+	        projectionB.min = Math.min(projectionB.min, val);
+	        projectionB.max = Math.max(projectionB.max, val);
+	      }
+
+	      var overlap = Math.max(0, Math.min(projectionA.max, projectionB.max) - Math.max(projectionA.min, projectionB.min));
+	      if (!correction || overlap < correction.magnitude) {
+	        var sign = Math.sign(projectionB.min + projectionB.max - (projectionA.min + projectionA.max));
+	        correction = {
+	          magnitude: overlap,
+	          x: axis.x * overlap * sign,
+	          y: axis.y * overlap * sign
+	        };
+	      }
+	    }
+
+	    if (correction && correction.magnitude > 0) {
+	      return {
+	        ax: objA.x - correction.x * fractionA,
+	        ay: objA.y - correction.y * fractionA,
+	        bx: objB.x + correction.x * fractionB,
+	        by: objB.y + correction.y * fractionB
+	      };
+	    }
+	  },
+
+	  //----------------------------------------------------------------
+
+	  /*  Gets the NORMALISED normals for each edge of the object's shape. Assumes the object has the 'vertices' property.
+	   */
+	  getShapeNormals: function getShapeNormals(obj) {
+	    var vertices = obj.vertices;
+	    if (!vertices) return null;
+	    if (vertices.length < 2) return []; //Look you need to have at least three vertices to be a shape.
+
+	    //First, calculate the edges connecting each vertice.
+	    //--------------------------------
+	    var edges = [];
+	    for (var i = 0; i < vertices.length; i++) {
+	      var p1 = vertices[i];
+	      var p2 = vertices[(i + 1) % vertices.length];
+	      edges.push({
+	        x: p2.x - p1.x,
+	        y: p2.y - p1.y
+	      });
+	    }
+	    //--------------------------------
+
+	    //Calculate the NORMALISED normals for each edge.
+	    //--------------------------------
+	    return edges.map(function (edge) {
+	      var dist = Math.sqrt(edge.x * edge.x + edge.y * edge.y);
+	      if (dist === 0) return { x: 0, y: 0 };
+	      return {
+	        x: -edge.y / dist,
+	        y: edge.x / dist
+	      };
+	    });
+	    //--------------------------------
+	  },
+
+	  //----------------------------------------------------------------
+
+	  dotProduct: function dotProduct(vectorA, vectorB) {
+	    if (!vectorA || !vectorB) return null;
+	    return vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+	  }
+	};
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.StandardActions = undefined;
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	var _entities = __webpack_require__(6);
+
+	var _effect = __webpack_require__(7);
+
+	var _utility = __webpack_require__(3);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	/*  
+	AvO Standard Actions
+	====================
+
+	(Shaun A. Noordin || shaunanoordin.com || 20161008)
+	********************************************************************************
+	 */
+
+	var StandardActions = exports.StandardActions = {}; //Naming note: all caps.
+
+
+	StandardActions[AVO.ACTION.IDLE] = function (actor) {
+	  actor.state = AVO.ACTOR_IDLE;
+	  actor.playAnimation(AVO.ACTION.IDLE);
+	};
+
+	StandardActions[AVO.ACTION.MOVE] = function (actor) {
+	  var angle = actor.action.angle || 0;
+	  var speed = actor.attributes[AVO.ATTR.SPEED] || 0;
+	  actor.x += Math.cos(angle) * speed;
+	  actor.y += Math.sin(angle) * speed;
+	  actor.rotation = angle;
+	  actor.state = AVO.ACTOR_WALKING;
+	  actor.playAnimation(AVO.ACTION.MOVE);
+	};
+
+	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
+	  //TODO This is just a placeholder
+	  //................
+	  var PUSH_POWER = 12;
+	  var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  this.areasOfEffect.push(newAoE);
+	  actor.playAnimation(AVO.ACTION.PRIMARY);
+	  //................
+	};
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.AoE = exports.Actor = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
@@ -1439,24 +1792,29 @@
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(4);
+	var _utility = __webpack_require__(3);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	/*  Actor Class
+	/*  Entity Class
+	    A general abstract object within the game.
 	 */
 	//==============================================================================
-	var Actor = exports.Actor = function () {
-	  function Actor() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
+	var Entity = function () {
+	  function Entity() {
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
 
-	    _classCallCheck(this, Actor);
+	    _classCallCheck(this, Entity);
 
 	    this.name = name;
 	    this.x = x;
@@ -1464,27 +1822,20 @@
 	    this.size = size;
 	    this.shape = shape;
 	    this.solid = shape !== AVO.SHAPE_NONE;
-	    this.canBeMoved = true;
+	    this.movable = true;
 	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
 
 	    this.spritesheet = null;
 	    this.animationStep = 0;
 	    this.animationSet = null;
 	    this.animationName = "";
-
-	    this.state = AVO.ACTOR_IDLE;
-	    this.intent = null;
-	    this.action = null;
-
-	    this.attributes = {};
-	    this.effects = [];
 	  }
 
-	  _createClass(Actor, [{
+	  _createClass(Entity, [{
 	    key: "playAnimation",
 	    value: function playAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+	      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
 	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
 
@@ -1581,42 +1932,94 @@
 	          break;
 	      }
 	    }
+	  }, {
+	    key: "vertices",
+	    get: function get() {
+	      var _this = this;
+
+	      var v = [];
+	      if (this.shape === AVO.SHAPE_SQUARE) {
+	        v.push({ x: this.left, y: this.top });
+	        v.push({ x: this.right, y: this.top });
+	        v.push({ x: this.right, y: this.bottom });
+	        v.push({ x: this.left, y: this.bottom });
+	      } else if (this.shape === AVO.SHAPE_CIRCLE) {
+	        //Approximation
+	        CIRCLE_TO_POLYGON_APPROXIMATOR.map(function (approximator) {
+	          v.push({ x: _this.x + _this.radius * approximator.cosAngle, y: _this.y + _this.radius * approximator.sinAngle });
+	        });
+	      }
+	      return v;
+	    }
 	  }]);
 
-	  return Actor;
+	  return Entity;
 	}();
+
+	var CIRCLE_TO_POLYGON_APPROXIMATOR = [AVO.ROTATION_EAST, AVO.ROTATION_SOUTHEAST, AVO.ROTATION_SOUTH, AVO.ROTATION_SOUTHWEST, AVO.ROTATION_WEST, AVO.ROTATION_NORTHWEST, AVO.ROTATION_NORTH, AVO.ROTATION_NORTHEAST].map(function (angle) {
+	  return { cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) };
+	});
+
+	//==============================================================================
+
+	/*  Actor Class
+	    An active character in the game.
+	 */
+	//==============================================================================
+
+	var Actor = exports.Actor = function (_Entity) {
+	  _inherits(Actor, _Entity);
+
+	  function Actor() {
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
+
+	    _classCallCheck(this, Actor);
+
+	    var _this2 = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
+
+	    _this2.state = AVO.ACTOR_IDLE;
+	    _this2.intent = null;
+	    _this2.action = null;
+
+	    _this2.attributes = {};
+	    _this2.effects = [];
+	    return _this2;
+	  }
+
+	  return Actor;
+	}(Entity);
 	//==============================================================================
 
 	/*  Area of Effect Class
+	    An area that applies Effects to Actors that touch it.
 	 */
 	//==============================================================================
 
 
-	var AoE = exports.AoE = function () {
+	var AoE = exports.AoE = function (_Entity2) {
+	  _inherits(AoE, _Entity2);
+
 	  function AoE() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
-	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
-	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
-	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
+	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_CIRCLE : arguments[4];
+	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
+	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
 
 	    _classCallCheck(this, AoE);
 
-	    this.name = name;
-	    this.x = x;
-	    this.y = y;
-	    this.size = size;
-	    this.shape = shape;
-	    this.duration = duration;
-	    this.startDuration = duration;
-	    this.effects = effects;
+	    var _this3 = _possibleConstructorReturn(this, (AoE.__proto__ || Object.getPrototypeOf(AoE)).call(this, name, x, y, size, shape));
 
-	    this.spritesheet = null;
-	    this.animationStep = 0;
-	    this.animationSet = null;
-	    this.animationName = "";
+	    _this3.duration = duration;
+	    _this3.startDuration = duration;
+	    _this3.effects = effects;
+	    return _this3;
 	  }
 
 	  _createClass(AoE, [{
@@ -1624,79 +2027,51 @@
 	    value: function hasInfiniteDuration() {
 	      return this.startDuration === AVO.DURATION_INFINITE;
 	    }
-	  }, {
-	    key: "playAnimation",
-	    value: function playAnimation() {
-	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
-
-	      if (restart || this.animationName !== animationName) {
-	        //Set this as the new animation
-	        this.animationStep = 0;
-	        this.animationName = animationName;
-	      }
-	    }
-	  }, {
-	    key: "nextAnimationFrame",
-	    value: function nextAnimationFrame() {
-	      if (!this.animationSet || !this.animationSet.actions[this.animationName]) return;
-
-	      var animationAction = this.animationSet.actions[this.animationName];
-	      this.animationStep++;
-	      if (animationAction.steps.length === 0) {
-	        this.animationStep = 0;
-	      } else if (animationAction.loop) {
-	        while (this.animationStep >= animationAction.steps.length) {
-	          this.animationStep -= animationAction.steps.length;
-	        }
-	      } else {
-	        this.animationStep = animationAction.steps.length - 1;
-	      }
-	    }
-	  }, {
-	    key: "left",
-	    get: function get() {
-	      return this.x - this.size / 2;
-	    }
-	  }, {
-	    key: "right",
-	    get: function get() {
-	      return this.x + this.size / 2;
-	    }
-	  }, {
-	    key: "top",
-	    get: function get() {
-	      return this.y - this.size / 2;
-	    }
-	  }, {
-	    key: "bottom",
-	    get: function get() {
-	      return this.y + this.size / 2;
-	    }
-	  }, {
-	    key: "radius",
-	    get: function get() {
-	      return this.size / 2;
-	    }
 	  }]);
 
 	  return AoE;
-	}();
+	}(Entity);
 	//==============================================================================
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Effect = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     Effect
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ======
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
 
 	/*  Effect Class
+	    A general effect that's applied to an Actor. 
 	 */
 	//==============================================================================
-
-
 	var Effect = exports.Effect = function () {
 	  function Effect() {
-	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
-	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
+	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? AVO.STACKING_RULE_ADD : arguments[3];
 
 	    _classCallCheck(this, Effect);
 
@@ -1724,73 +2099,7 @@
 	//==============================================================================
 
 /***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.Utility = undefined;
-	exports.ImageAsset = ImageAsset;
-
-	var _constants = __webpack_require__(2);
-
-	var Utility = exports.Utility = {
-	  randomInt: function randomInt(min, max) {
-	    var a = min < max ? min : max;
-	    var b = min < max ? max : min;
-	    return Math.floor(a + Math.random() * (b - a + 1));
-	  },
-
-	  stopEvent: function stopEvent(e) {
-	    //var eve = e || window.event;
-	    e.preventDefault && e.preventDefault();
-	    e.stopPropagation && e.stopPropagation();
-	    e.returnValue = false;
-	    e.cancelBubble = true;
-	    return false;
-	  },
-
-	  getKeyCode: function getKeyCode(e) {
-	    //KeyboardEvent.keyCode is the most reliable identifier for a keyboard event
-	    //at the moment, but unfortunately it's being deprecated.
-	    if (e.keyCode) {
-	      return e.keyCode;
-	    }
-
-	    //KeyboardEvent.code and KeyboardEvent.key are the 'new' standards, but it's
-	    //far from being standardised between browsers.
-	    if (e.code && _constants.KEY_VALUES[e.code]) {
-	      return _constants.KEY_VALUES[e.code];
-	    } else if (e.key && _constants.KEY_VALUES[e.key]) {
-	      return _constants.KEY_VALUES[e.key];
-	    }
-
-	    return 0;
-	  }
-	}; /*
-	   Utility Classes
-	   ===============
-	   
-	   (Shaun A. Noordin || shaunanoordin.com || 20160901)
-	   ********************************************************************************
-	    */
-
-	function ImageAsset(url) {
-	  this.url = url;
-	  this.img = null;
-	  this.loaded = false;
-	  this.img = new Image();
-	  this.img.onload = function () {
-	    this.loaded = true;
-	  }.bind(this);
-	  this.img.src = this.url;
-	}
-
-/***/ },
-/* 5 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1800,15 +2109,19 @@
 	});
 	exports.initialise = initialise;
 
-	var _index = __webpack_require__(1);
+	var _comicStrip = __webpack_require__(9);
 
-	var _entities = __webpack_require__(3);
+	var _entities = __webpack_require__(6);
+
+	var _effect = __webpack_require__(7);
 
 	var _constants = __webpack_require__(2);
 
 	var AVO = _interopRequireWildcard(_constants);
 
-	var _utility = __webpack_require__(4);
+	var _utility = __webpack_require__(3);
+
+	var _physics = __webpack_require__(4);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1824,11 +2137,16 @@
 	 */
 
 	function initialise() {
+	  //Config
+	  //--------------------------------
+	  this.appConfig.debugMode = true;
+	  //--------------------------------
+
 	  //Scripts
 	  //--------------------------------
-	  this.scripts.runStart = runStart;
-	  this.scripts.runAction = runAction;
-	  this.scripts.runEnd = runEnd;
+	  this.scripts.customRunStart = runStart;
+	  this.scripts.customRunAction = runAction;
+	  this.scripts.customRunEnd = runEnd;
 	  //--------------------------------
 
 	  //Images
@@ -1838,7 +2156,6 @@
 	  this.assets.images.gate = new _utility.ImageAsset("assets/example-game/gate.png");
 	  this.assets.images.plate = new _utility.ImageAsset("assets/example-game/plate.png");
 	  this.assets.images.goal = new _utility.ImageAsset("assets/example-game/goal.png");
-	  this.assets.images.background = new _utility.ImageAsset("assets/example-game/background.png");
 
 	  this.assets.images.comicPanelA = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-red.png");
 	  this.assets.images.comicPanelB = new _utility.ImageAsset("assets/example-game/comic-panel-800x600-blue.png");
@@ -1988,15 +2305,15 @@
 	}
 
 	function comicStart() {
-	  this.comicStrip = new _index.ComicStrip("startcomic", [//this.assets.images.comicPanelA,
+	  this.comicStrip = new _comicStrip.ComicStrip("startcomic", [//this.assets.images.comicPanelA,
 	    //this.assets.images.comicPanelB,
 	    //this.assets.images.comicPanelC,
 	  ], comicStartFinished);
-	  this.comicStrip.start();
 	}
 
 	function comicStartFinished() {
-	  this.changeState(AVO.STATE_ACTION, startLevel1);
+	  //this.changeState(AVO.STATE_ACTION, startLevel1);  //TEST
+	  this.changeState(AVO.STATE_ACTION, startLevel2);
 	}
 
 	function runEnd() {}
@@ -2044,6 +2361,22 @@
 	  checkIfAllBoxesAreCharged.apply(this);
 	  //--------------------------------
 
+	  //Shape Tester
+	  //--------------------------------
+	  if (this.keys[AVO.KEY_CODES.Q].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_CIRCLE;
+	  }
+	  if (this.keys[AVO.KEY_CODES.E].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].shape = AVO.SHAPE_SQUARE;
+	  }
+	  if (this.keys[AVO.KEY_CODES.R].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].size += 8;
+	  }
+	  if (this.keys[AVO.KEY_CODES.F].duration === 1) {
+	    this.refs[AVO.REF.PLAYER].size -= 8;
+	  }
+	  //--------------------------------
+
 	  //Win Condition
 	  //--------------------------------
 	  checkIfPlayerIsAtGoal.apply(this);
@@ -2056,8 +2389,8 @@
 	  this.areasOfEffect = [];
 	  this.refs = {};
 
-	  var midX = this.width / 2,
-	      midY = this.height / 2;
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
 
 	  this.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY + 256, 32, AVO.SHAPE_CIRCLE);
 	  this.refs[AVO.REF.PLAYER].spritesheet = this.assets.images.actor;
@@ -2066,24 +2399,14 @@
 	  this.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
 	  this.actors.push(this.refs[AVO.REF.PLAYER]);
 
-	  var wallN = new _entities.Actor("wallN", midX, midY - 672, this.width, AVO.SHAPE_SQUARE);
-	  var wallS = new _entities.Actor("wallS", midX, midY + 688, this.width, AVO.SHAPE_SQUARE);
-	  var wallE = new _entities.Actor("wallE", midX + 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  var wallW = new _entities.Actor("wallW", midX - 688, midY, this.height, AVO.SHAPE_SQUARE);
-	  wallE.canBeMoved = false;
-	  wallS.canBeMoved = false;
-	  wallW.canBeMoved = false;
-	  wallN.canBeMoved = false;
-	  this.actors.push(wallE, wallS, wallW, wallN);
-
 	  this.refs["gate"] = new _entities.Actor("gate", midX, 16, 128, AVO.SHAPE_SQUARE);
-	  this.refs["gate"].canBeMoved = false;
+	  this.refs["gate"].movable = false;
 	  this.refs["gate"].spritesheet = this.assets.images.gate;
 	  this.refs["gate"].animationSet = this.animationSets.simple128;
 	  this.refs["gate"].playAnimation("idle");
 	  this.actors.push(this.refs["gate"]);
 
-	  this.refs["goal"] = new _entities.AoE("goal", this.width / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	  this.refs["goal"] = new _entities.AoE("goal", this.canvasWidth / 2, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	  this.refs["goal"].spritesheet = this.assets.images.goal;
 	  this.refs["goal"].animationSet = this.animationSets.simple64;
 	  this.refs["goal"].playAnimation("glow");
@@ -2093,19 +2416,19 @@
 	function startLevel1() {
 	  startLevelInit.apply(this);
 	  //this.areasOfEffect.push(
-	  //  new AoE("conveyorBelt", this.width / 2, this.height / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
+	  //  new AoE("conveyorBelt", this.canvasWidth / 2, this.canvasHeight / 2 + 64, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE,
 	  //    [new Effect("push", { x: 0, y: 4 }, 4, AVO.STACKING_RULE_ADD, null)], null)
 	  //);
-	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.width * 0.8) + this.width * 0.1, Math.floor(Math.random() * this.height * 0.8) + this.height * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
+	  //this.actors.push(new Actor("s1", Math.floor(Math.random() * this.canvasWidth * 0.8) + this.canvasWidth * 0.1, Math.floor(Math.random() * this.canvasHeight * 0.8) + this.canvasHeight * 0.1, 32 + Math.random() * 64, AVO.SHAPE_SQUARE));
 
-	  var midX = this.width / 2,
-	      midY = this.height / 2;
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
 
 	  this.refs.boxes = [];
 	  this.refs.plates = [];
 	  var newBox = void 0,
 	      newPlate = void 0;
-	  var chargeEffect = new _entities.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
+	  var chargeEffect = new _effect.Effect("charge", {}, 4, AVO.STACKING_RULE_ADD, null);
 
 	  this.refs.boxes = [new _entities.Actor("", midX - 128, midY - 64, 64, AVO.SHAPE_SQUARE), new _entities.Actor("", midX + 128, midY - 64, 64, AVO.SHAPE_SQUARE)];
 	  var _iteratorNormalCompletion3 = true;
@@ -2164,12 +2487,16 @@
 	      }
 	    }
 	  }
-
-	  this.ui.backgroundImage = this.assets.images.background;
 	}
 
 	function startLevel2() {
 	  startLevelInit.apply(this);
+	  var midX = this.canvasWidth / 2,
+	      midY = this.canvasHeight / 2;
+	  this.refs["sq1"] = new _entities.Actor("sq1", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_SQUARE);
+	  this.refs["ci2"] = new _entities.Actor("ci2", Math.floor(midX + Math.random() * 512 - 256), Math.floor(midX + Math.random() * 256 - 256), 64, AVO.SHAPE_CIRCLE);
+	  this.actors.push(this.refs["sq1"]);
+	  this.actors.push(this.refs["ci2"]);
 	}
 
 	function startLevel3() {
@@ -2197,7 +2524,7 @@
 	          for (var _iterator6 = this.refs["boxes"][Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
 	            var box = _step6.value;
 
-	            if (this.isATouchingB(box, plate)) {
+	            if (_physics.Physics.checkCollision(box, plate)) {
 	              thisPlateIsCharged = true;
 	              plate.playAnimation("glow");
 	            }
@@ -2238,19 +2565,19 @@
 
 	  if (allBoxesAreCharged) {
 	    if (this.refs["gate"] && this.refs["gate"].y >= -32) {
-	      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+	      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
 	      this.refs["gate"].y -= 1;
 	    }
 	  } else {
 	    if (this.refs["gate"] && this.refs["gate"].y <= 16) {
-	      this.refs["gate"].x = this.width / 2 - 1 + Math.random() * 2;
+	      this.refs["gate"].x = this.canvasWidth / 2 - 1 + Math.random() * 2;
 	      this.refs["gate"].y += 1;
 	    }
 	  }
 	}
 
 	function checkIfPlayerIsAtGoal() {
-	  if (this.isATouchingB(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
+	  if (_physics.Physics.checkCollision(this.refs[AVO.REF.PLAYER], this.refs["goal"])) {
 	    this.store.level && this.store.level++;
 
 	    switch (this.store.level) {
@@ -2268,6 +2595,88 @@
 	    }
 	  }
 	}
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.ComicStrip = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Comic Strip
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ===============
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
+
+	/*  4-Koma Comic Strip Class
+	 */
+	//==============================================================================
+	var ComicStrip = exports.ComicStrip = function () {
+	  function ComicStrip() {
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+	    _classCallCheck(this, ComicStrip);
+
+	    this.name = name;
+	    this.panels = panels;
+	    this.onFinish = onFinish;
+
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.background = "#333";
+
+	    this.start();
+	  }
+
+	  _createClass(ComicStrip, [{
+	    key: "start",
+	    value: function start() {
+	      this.currentPanel = 0;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
+	      this.counter = 0;
+	    }
+	  }, {
+	    key: "getCurrentPanel",
+	    value: function getCurrentPanel() {
+	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel];
+	      }
+	    }
+	  }, {
+	    key: "getPreviousPanel",
+	    value: function getPreviousPanel() {
+	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel - 1];
+	      }
+	    }
+	  }]);
+
+	  return ComicStrip;
+	}();
+	//==============================================================================
 
 /***/ }
 /******/ ]);

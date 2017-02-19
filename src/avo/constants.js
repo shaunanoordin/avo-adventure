@@ -43,9 +43,14 @@ export const SHAPE_SQUARE = 1;
 export const SHAPE_CIRCLE = 2;
 
 export const ROTATION_EAST = 0;
-export const ROTATION_SOUTH = Math.PI / 2;
+export const ROTATION_SOUTH = Math.PI * 0.5;
 export const ROTATION_WEST = Math.PI;
-export const ROTATION_NORTH = -Math.PI / 2;
+export const ROTATION_NORTH = Math.PI * -0.5;
+
+export const ROTATION_SOUTHEAST = Math.PI * 0.25;
+export const ROTATION_SOUTHWEST = Math.PI * 0.75;
+export const ROTATION_NORTHWEST = Math.PI * -0.75;
+export const ROTATION_NORTHEAST = Math.PI * -0.25;
 
 export const DIRECTION_EAST = 0;
 export const DIRECTION_SOUTH = 1;
