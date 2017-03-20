@@ -7,7 +7,7 @@ Artificial Intelligence
  */
 
 
-export const ArtInt = {
+export const ArtificialIntelligence = {
   /*  A* path-finding: Given a grid, finds a path from start to goal.
       Returns an array. Array will be empty if no path could be found.
       Input example:
