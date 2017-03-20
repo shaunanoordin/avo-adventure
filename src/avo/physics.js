@@ -11,7 +11,7 @@ import * as AVO from "./constants.js";  //Naming note: all caps.
 const USE_CIRCLE_APPROXIMATION = false;
 
 export const Physics = {
-    //----------------------------------------------------------------
+  //----------------------------------------------------------------
   
   /*  Checks if objA is touching objB.
       If true, returns the corrected coordinates for objA and objB, in form:
