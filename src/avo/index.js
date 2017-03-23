@@ -2,23 +2,24 @@
 AvO Adventure Game Engine
 =========================
 
-(Shaun A. Noordin || shaunanoordin.com || 20160517)
+(Shaun A. Noordin || shaunanoordin.com || 20170322)
 ********************************************************************************
  */
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
-import { Utility } from "./utility.js";
+import { Story } from "./story.js";
 import { Physics } from "../avo/physics.js";
+import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
 /*  Primary AvO Game Engine
  */
 //==============================================================================
 export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
-  constructor(startScript) {
+  constructor(story) {
     //Initialise properties
     //--------------------------------
-    this.appConfig = {
+    this.config = {
       framesPerSecond: AVO.FRAMES_PER_SECOND,
       debugMode: false,
       topDownView: true,  //Top-down view sorts Actors on paint().
@@ -42,21 +43,23 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Initialise Game Objects
     //--------------------------------
+    this.story = (story) ? story : new Story();
+    this.story.avo = this;
     this.assets = {
       images: {}
     };
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
-    this.scripts = {
-      preRun: null,
-      postRun: null,
-      customRunStart: null,
-      customRunAction: null,
-      customRunComic: null,
-      customRunEnd: null,
-      prePaint: null,
-      postPaint: null,
-    };
+    //this.scripts = {
+    //  preRun: null,
+    //  postRun: null,
+    //  customRunStart: null,
+    //  customRunAction: null,
+    //  customRunComic: null,
+    //  customRunEnd: null,
+    //  prePaint: null,
+    //  postPaint: null,
+    //};
     this.actors = [];
     this.areasOfEffect = [];
     this.refs = {};
@@ -110,24 +113,25 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Start!
     //--------------------------------
-    this.changeState(AVO.STATE_START, startScript);
-    this.runCycle = setInterval(this.run.bind(this), 1000 / this.appConfig.framesPerSecond);
+    this.changeState(AVO.STATE_START, this.story.init);
+    this.runCycle = setInterval(this.run.bind(this), 1000 / this.config.framesPerSecond);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
-  changeState(state, script = null) {
+  changeState(state, storyScript = null) {
     this.state = state;
-    if (script && typeof script === "function") {
-      script.apply(this);
+    if (storyScript && typeof storyScript === "function") {
+      storyScript();
     }
   }
   
   run() {
-    if (this.scripts.preRun) this.scripts.preRun.apply(this);
+    //if (this.scripts.preRun) this.scripts.preRun.apply(this);
+    this.story.preRun(this);
     
-    if (!this.appConfig.skipCoreRun) {
+    if (!this.config.skipCoreRun) {
       switch (this.state) {
         case AVO.STATE_START:
           this.run_start();
@@ -144,7 +148,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
     }
     
-    if (this.scripts.postRun) this.scripts.postRun.apply(this);
+    //if (this.scripts.postRun) this.scripts.postRun.apply(this);
+    this.story.postRun();
     
     this.paint();
   }
@@ -160,17 +165,23 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     if (this.assetsLoaded < this.assetsTotal) return;
     
-    if (this.scripts.customRunStart) this.scripts.customRunStart.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_start();
+    //--------------------------------
   }
   
   run_end() {
-    if (this.scripts.customRunEnd) this.scripts.customRunEnd.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_end();
+    //--------------------------------
   }
     
   run_action() {
-    //Run Global Scripts
+    //Run Story script
     //--------------------------------
-    if (this.scripts.customRunAction) this.scripts.customRunAction.apply(this);
+    this.story.run_action();
     //--------------------------------
     
     //Actors determine intent
@@ -344,7 +355,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   run_comic() {
-    if (this.scripts.customRunComic) this.scripts.customRunComic.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_comic();
+    //--------------------------------
     
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
@@ -523,9 +537,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Clear
     this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    //if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    this.story.prePaint();
     
-    if (!this.appConfig.skipCorePaint) {
+    if (!this.config.skipCorePaint) {
       switch (this.state) {
         case AVO.STATE_START:
           this.paint_start();
@@ -542,7 +557,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
     }
     
-    if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+    //if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+    this.story.postPaint();
   }
   
   paint_start() {
@@ -583,7 +599,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_action() {
     //Arrange sprites by vertical order.
     //--------------------------------
-    if (this.appConfig.topDownView) {
+    if (this.config.topDownView) {
       this.actors.sort((a, b) => {
         return a.bottom - b.bottom;
       });
@@ -592,7 +608,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //DEBUG: Paint hitboxes
     //--------------------------------
-    if (this.appConfig.debugMode) {
+    if (this.config.debugMode) {
       this.context2d.lineWidth = 1;
       
       //Areas of Effects
@@ -664,7 +680,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //DEBUG: Paint touch/mouse input
     //--------------------------------
-    if (this.appConfig.debugMode) {      
+    if (this.config.debugMode) {      
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
       this.context2d.lineWidth = 1;
       this.context2d.beginPath();
