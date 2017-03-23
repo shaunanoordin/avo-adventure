@@ -61,7 +61,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //  postPaint: null,
     //};
     this.actors = [];
-    this.areasOfEffect = [];
+    this.zones = [];
     this.refs = {};
     this.store = {};
     //this.ui = {};
@@ -257,12 +257,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     //--------------------------------
     
-    //AoEs apply Effects
+    //Zones apply Effects
     //--------------------------------
-    for (let aoe of this.areasOfEffect) {
+    for (let zone of this.zones) {
       for (let actor of this.actors) {
-        if (Physics.checkCollision(aoe, actor)) {
-          for (let effect of aoe.effects) {
+        if (Physics.checkCollision(zone, actor)) {
+          for (let effect of zone.effects) {
             actor.effects.push(effect.copy());
           }
         }
@@ -310,14 +310,14 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.physics();
     //--------------------------------
     
-    //Cleanup AoEs
+    //Cleanup Zones
     //--------------------------------
-    for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
-      var aoe = this.areasOfEffect[i];
-      if (!aoe.hasInfiniteDuration()) {
-        aoe.duration--;
-        if (aoe.duration <= 0) {
-          this.areasOfEffect.splice(i, 1);
+    for (let i = this.zones.length - 1; i >= 0; i--) {
+      var zone = this.zones[i];
+      if (!zone.hasInfiniteDuration()) {
+        zone.duration--;
+        if (zone.duration <= 0) {
+          this.zones.splice(i, 1);
         }
       }
     }
@@ -612,23 +612,23 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.lineWidth = 1;
       
       //Areas of Effects
-      for (let aoe of this.areasOfEffect) {
+      for (let zone of this.zones) {
         let durationPercentage = 1;
-        if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
-          durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+        if (!zone.hasInfiniteDuration() && zone.startDuration > 0) {
+          durationPercentage = Math.max(0, zone.duration / zone.startDuration);
         }
         this.context2d.strokeStyle = "rgba(204,51,51,"+durationPercentage+")";
         
-        switch (aoe.shape) {
+        switch (zone.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+            this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
@@ -665,10 +665,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //TODO: IMPROVE
     //TODO: Layering
     //--------------------------------
-    //AoEs
-    for (let aoe of this.areasOfEffect) {
-      this.paintSprite(aoe);
-      aoe.nextAnimationFrame();
+    //Zones
+    for (let zone of this.zones) {
+      this.paintSprite(zone);
+      zone.nextAnimationFrame();
     }
     
     //Actors

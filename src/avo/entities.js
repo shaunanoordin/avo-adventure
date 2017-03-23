@@ -132,11 +132,11 @@ export class Actor extends Entity {
 }
 //==============================================================================
 
-/*  Area of Effect Class
+/*  Zone Class
     An area that applies Effects to Actors that touch it.
  */
 //==============================================================================
-export class AoE extends Entity {
+export class Zone extends Entity {
   constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_CIRCLE, duration = 1, effects = []) {
     super(name, x, y, size, shape);
     

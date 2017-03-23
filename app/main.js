@@ -156,7 +156,7 @@
 	    //  postPaint: null,
 	    //};
 	    this.actors = [];
-	    this.areasOfEffect = [];
+	    this.zones = [];
 	    this.refs = {};
 	    this.store = {};
 	    //this.ui = {};
@@ -356,15 +356,15 @@
 	      }
 	      //--------------------------------
 
-	      //AoEs apply Effects
+	      //Zones apply Effects
 	      //--------------------------------
 	      var _iteratorNormalCompletion = true;
 	      var _didIteratorError = false;
 	      var _iteratorError = undefined;
 
 	      try {
-	        for (var _iterator = this.areasOfEffect[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var _aoe = _step.value;
+	        for (var _iterator = this.zones[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var _zone = _step.value;
 	          var _iteratorNormalCompletion4 = true;
 	          var _didIteratorError4 = false;
 	          var _iteratorError4 = undefined;
@@ -373,13 +373,13 @@
 	            for (var _iterator4 = this.actors[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	              var actor = _step4.value;
 
-	              if (_physics.Physics.checkCollision(_aoe, actor)) {
+	              if (_physics.Physics.checkCollision(_zone, actor)) {
 	                var _iteratorNormalCompletion5 = true;
 	                var _didIteratorError5 = false;
 	                var _iteratorError5 = undefined;
 
 	                try {
-	                  for (var _iterator5 = _aoe.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	                  for (var _iterator5 = _zone.effects[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	                    var effect = _step5.value;
 
 	                    actor.effects.push(effect.copy());
@@ -517,14 +517,14 @@
 	      this.physics();
 	      //--------------------------------
 
-	      //Cleanup AoEs
+	      //Cleanup Zones
 	      //--------------------------------
-	      for (var i = this.areasOfEffect.length - 1; i >= 0; i--) {
-	        var aoe = this.areasOfEffect[i];
-	        if (!aoe.hasInfiniteDuration()) {
-	          aoe.duration--;
-	          if (aoe.duration <= 0) {
-	            this.areasOfEffect.splice(i, 1);
+	      for (var i = this.zones.length - 1; i >= 0; i--) {
+	        var zone = this.zones[i];
+	        if (!zone.hasInfiniteDuration()) {
+	          zone.duration--;
+	          if (zone.duration <= 0) {
+	            this.zones.splice(i, 1);
 	          }
 	        }
 	      }
@@ -848,25 +848,25 @@
 	        var _iteratorError7 = undefined;
 
 	        try {
-	          for (var _iterator7 = this.areasOfEffect[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	            var aoe = _step7.value;
+	          for (var _iterator7 = this.zones[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+	            var zone = _step7.value;
 
 	            var durationPercentage = 1;
-	            if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
-	              durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+	            if (!zone.hasInfiniteDuration() && zone.startDuration > 0) {
+	              durationPercentage = Math.max(0, zone.duration / zone.startDuration);
 	            }
 	            this.context2d.strokeStyle = "rgba(204,51,51," + durationPercentage + ")";
 
-	            switch (aoe.shape) {
+	            switch (zone.shape) {
 	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
-	                this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+	                this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
-	                this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+	                this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
@@ -939,17 +939,17 @@
 	      //TODO: IMPROVE
 	      //TODO: Layering
 	      //--------------------------------
-	      //AoEs
+	      //Zones
 	      var _iteratorNormalCompletion9 = true;
 	      var _didIteratorError9 = false;
 	      var _iteratorError9 = undefined;
 
 	      try {
-	        for (var _iterator9 = this.areasOfEffect[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-	          var _aoe2 = _step9.value;
+	        for (var _iterator9 = this.zones[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+	          var _zone2 = _step9.value;
 
-	          this.paintSprite(_aoe2);
-	          _aoe2.nextAnimationFrame();
+	          this.paintSprite(_zone2);
+	          _zone2.nextAnimationFrame();
 	        }
 
 	        //Actors
@@ -1847,13 +1847,14 @@
 	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
 	  //TODO This is just a placeholder
 	  //................
+	  console.log('X');
 	  var PUSH_POWER = 12;
-	  var AOE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  var distance = this.refs[AVO.REF.PLAYER].radius + AOE_SIZE / 2;
+	  var ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
 	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
 	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  var newAoE = new _entities.AoE("", x, y, AOE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
-	  this.areasOfEffect.push(newAoE);
+	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  this.zones.push(newZone);
 	  actor.playAnimation(AVO.ACTION.PRIMARY);
 	  //................
 	};
@@ -1867,7 +1868,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.AoE = exports.Actor = undefined;
+	exports.Zone = exports.Actor = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Entities (In-Game Objects)
@@ -2086,16 +2087,16 @@
 	}(Entity);
 	//==============================================================================
 
-	/*  Area of Effect Class
+	/*  Zone Class
 	    An area that applies Effects to Actors that touch it.
 	 */
 	//==============================================================================
 
 
-	var AoE = exports.AoE = function (_Entity2) {
-	  _inherits(AoE, _Entity2);
+	var Zone = exports.Zone = function (_Entity2) {
+	  _inherits(Zone, _Entity2);
 
-	  function AoE() {
+	  function Zone() {
 	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
 	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
 	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
@@ -2104,9 +2105,9 @@
 	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
 	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
 
-	    _classCallCheck(this, AoE);
+	    _classCallCheck(this, Zone);
 
-	    var _this3 = _possibleConstructorReturn(this, (AoE.__proto__ || Object.getPrototypeOf(AoE)).call(this, name, x, y, size, shape));
+	    var _this3 = _possibleConstructorReturn(this, (Zone.__proto__ || Object.getPrototypeOf(Zone)).call(this, name, x, y, size, shape));
 
 	    _this3.duration = duration;
 	    _this3.startDuration = duration;
@@ -2114,14 +2115,14 @@
 	    return _this3;
 	  }
 
-	  _createClass(AoE, [{
+	  _createClass(Zone, [{
 	    key: "hasInfiniteDuration",
 	    value: function hasInfiniteDuration() {
 	      return this.startDuration === AVO.DURATION_INFINITE;
 	    }
 	  }]);
 
-	  return AoE;
+	  return Zone;
 	}(Entity);
 	//==============================================================================
 
