@@ -225,27 +225,51 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
       
       //Keyboard input
-      if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
+      let xDir = 0, yDir = 0;
+      if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE) yDir--;
+      if (this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) yDir++;
+      if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE) xDir--;
+      if (this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) xDir++;
+      
+      if (xDir > 0 && yDir === 0) {
         player.intent = {
           name: AVO.ACTION.MOVE,
-          angle: AVO.ROTATION_NORTH,
+          angle: AVO.ROTATION_EAST,
         };
-      } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
+      } else if (xDir > 0 && yDir > 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVE,
+          angle: AVO.ROTATION_SOUTHEAST,
+        };
+      } else if (xDir === 0 && yDir > 0) {
         player.intent = {
           name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_SOUTH,
         };
-      }
-      
-      if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
+      } else if (xDir < 0 && yDir > 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVE,
+          angle: AVO.ROTATION_SOUTHWEST,
+        };
+      } else if (xDir < 0 && yDir === 0) {
         player.intent = {
           name: AVO.ACTION.MOVE,
           angle: AVO.ROTATION_WEST,
         };
-      } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
+      } else if (xDir < 0 && yDir < 0) {
         player.intent = {
           name: AVO.ACTION.MOVE,
-          angle: AVO.ROTATION_EAST,
+          angle: AVO.ROTATION_NORTHWEST,
+        };
+      } else if (xDir === 0 && yDir < 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVE,
+          angle: AVO.ROTATION_NORTH,
+        };
+      } else if (xDir > 0 && yDir < 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVE,
+          angle: AVO.ROTATION_NORTHEAST,
         };
       }
       
