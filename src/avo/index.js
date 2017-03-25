@@ -199,7 +199,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
           const angle = Math.atan2(distY, distX);
           player.intent = {
-            name: AVO.ACTION.MOVE,
+            name: AVO.ACTION.MOVING,
             angle: angle,
           };
 
@@ -233,42 +233,42 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       
       if (xDir > 0 && yDir === 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_EAST,
         };
       } else if (xDir > 0 && yDir > 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_SOUTHEAST,
         };
       } else if (xDir === 0 && yDir > 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_SOUTH,
         };
       } else if (xDir < 0 && yDir > 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_SOUTHWEST,
         };
       } else if (xDir < 0 && yDir === 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_WEST,
         };
       } else if (xDir < 0 && yDir < 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_NORTHWEST,
         };
       } else if (xDir === 0 && yDir < 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_NORTH,
         };
       } else if (xDir > 0 && yDir < 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_NORTHEAST,
         };
       }
@@ -309,7 +309,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
       
       //If the actor is not busy, transform the intent into an action.
-      if (actor.state !== AVO.ACTOR_BUSY) {
+      if (actor.state !== AVO.ACTOR_ACTING && actor.state !== AVO.ACTOR_REACTING) {
         if (actor.intent) {
           actor.action = actor.intent;
         } else {
@@ -324,7 +324,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         } else if (StandardActions[actor.action.name]) {  //Run a standard Action.
           StandardActions[actor.action.name].apply(this, [actor]);
         }
-        
       }
     }
     //--------------------------------

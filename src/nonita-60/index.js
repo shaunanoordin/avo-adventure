@@ -9,21 +9,94 @@ Nonita 60
 import * as AVO from  "../avo/constants.js";
 import { Story } from "../avo/story.js";
 import { Actor } from "../avo/entities.js";
+import { ImageAsset } from "../avo/utility.js";
 
 export class Nonita60 extends Story {
   constructor() {
     super();
     this.init = this.init.bind(this);
     this.run_start = this.run_start.bind(this);
+    this.prepareRoom = this.prepareRoom.bind(this);
     this.enterRoom1 = this.enterRoom1.bind(this);
   }
   
   init() {
+    const avo = this.avo;
+    
     //Config
     //--------------------------------
-    console.log(this);
-    this.avo.config.debugMode = true;
+    avo.config.debugMode = true;
     //--------------------------------
+    
+    //Images
+    //--------------------------------
+    avo.assets.images.actor = new ImageAsset("assets/nonita-60/actor.png");
+    avo.assets.images.box = new ImageAsset("assets/nonita-60/box.png");
+    //--------------------------------
+    
+    //Animations
+  //--------------------------------
+  const STEPS_PER_SECOND = AVO.FRAMES_PER_SECOND / 10;
+  avo.animationSets = {
+    actor: {
+      rule: AVO.ANIMATION_RULE_DIRECTIONAL,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: -16,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { row: 0, duration: 1 }
+          ],
+        },
+        moving: {
+          loop: true,
+          steps: [
+            { row: 1, duration: STEPS_PER_SECOND },
+            { row: 2, duration: STEPS_PER_SECOND },
+            { row: 3, duration: STEPS_PER_SECOND },
+            { row: 4, duration: STEPS_PER_SECOND },
+            { row: 5, duration: STEPS_PER_SECOND },
+            { row: 4, duration: STEPS_PER_SECOND },
+            { row: 3, duration: STEPS_PER_SECOND },
+            { row: 2, duration: STEPS_PER_SECOND },
+          ],
+        },
+      },
+    },
+    
+    box: {
+      rule: AVO.ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: -32,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+      },
+    },    
+  };
+  
+  //Process Animations; expand steps to many frames per steps.
+  for (let animationTitle in avo.animationSets) {
+    let animationSet = avo.animationSets[animationTitle];
+    for (let animationName in animationSet.actions) {
+      let animationAction = animationSet.actions[animationName];
+      let newSteps = [];
+      for (let step of animationAction.steps) {
+        for (let i = 0; i < step.duration; i++) { newSteps.push(step); }
+      }
+      animationAction.steps = newSteps;
+    }
+  }
+  //--------------------------------
   }
   
   run_start() {
@@ -40,20 +113,39 @@ export class Nonita60 extends Story {
     }
   }
   
-  enterRoom1() {
+  prepareRoom() {
     const avo = this.avo;
+    
     //Reset
+    let player = avo.refs[AVO.REF.PLAYER];
     avo.actors = [];
     avo.areasOfEffect = [];
     avo.refs = {};
     
-    const midX = avo.canvasWidth / 2, midY = avo.canvasHeight / 2;
+    //Create the player character if she doesn't yet exist.
+    if (!player) {
+      avo.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, avo.canvasWidth / 2, avo.canvasHeight / 2, 32, AVO.SHAPE_CIRCLE);
+      avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
+      avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
+      avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
+      avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+      avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+    } else {
+      avo.refs[AVO.REF.PLAYER] = player;
+      avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+    }
+  }
+  
+  enterRoom1() {
+    const avo = this.avo;    
+    this.prepareRoom();
     
-    avo.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, midX, midY, 32, AVO.SHAPE_CIRCLE);
-    //avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
-    //avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
-    avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-    avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
-    avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+    let newActor;
+    newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 64, AVO.SHAPE_SQUARE);
+    newActor.spritesheet = avo.assets.images.box;
+    newActor.animationSet = avo.animationSets.box;
+    newActor.rotation = AVO.ROTATION_NORTH;
+    newActor.playAnimation("idle");
+    avo.actors.push(newActor);
   }
 }

@@ -300,7 +300,7 @@
 	          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
 	            var angle = Math.atan2(distY, distX);
 	            player.intent = {
-	              name: AVO.ACTION.MOVE,
+	              name: AVO.ACTION.MOVING,
 	              angle: angle
 	            };
 
@@ -333,42 +333,42 @@
 
 	        if (xDir > 0 && yDir === 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_EAST
 	          };
 	        } else if (xDir > 0 && yDir > 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_SOUTHEAST
 	          };
 	        } else if (xDir === 0 && yDir > 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_SOUTH
 	          };
 	        } else if (xDir < 0 && yDir > 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_SOUTHWEST
 	          };
 	        } else if (xDir < 0 && yDir === 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_WEST
 	          };
 	        } else if (xDir < 0 && yDir < 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_NORTHWEST
 	          };
 	        } else if (xDir === 0 && yDir < 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_NORTH
 	          };
 	        } else if (xDir > 0 && yDir < 0) {
 	          player.intent = {
-	            name: AVO.ACTION.MOVE,
+	            name: AVO.ACTION.MOVING,
 	            angle: AVO.ROTATION_NORTHEAST
 	          };
 	        }
@@ -501,7 +501,7 @@
 	            }
 	          }
 
-	          if (_actor.state !== AVO.ACTOR_BUSY) {
+	          if (_actor.state !== AVO.ACTOR_ACTING && _actor.state !== AVO.ACTOR_REACTING) {
 	            if (_actor.intent) {
 	              _actor.action = _actor.intent;
 	            } else {
@@ -1221,7 +1221,8 @@
 
 	var ACTOR_IDLE = exports.ACTOR_IDLE = 0; //Actor states
 	var ACTOR_MOVING = exports.ACTOR_MOVING = 1;
-	var ACTOR_BUSY = exports.ACTOR_BUSY = 2;
+	var ACTOR_ACTING = exports.ACTOR_ACTING = 2;
+	var ACTOR_REACTING = exports.ACTOR_REACTING = 3;
 
 	var REF = exports.REF = { //Standard References
 	  PLAYER: "player"
@@ -1229,7 +1230,7 @@
 
 	var ACTION = exports.ACTION = { //Standard Actions
 	  IDLE: "idle",
-	  MOVE: "move",
+	  MOVING: "moving",
 	  PRIMARY: "primary"
 	};
 
@@ -1859,14 +1860,14 @@
 	  actor.playAnimation(AVO.ACTION.IDLE);
 	};
 
-	StandardActions[AVO.ACTION.MOVE] = function (actor) {
+	StandardActions[AVO.ACTION.MOVING] = function (actor) {
 	  var angle = actor.action.angle || 0;
 	  var speed = actor.attributes[AVO.ATTR.SPEED] || 0;
 	  actor.x += Math.cos(angle) * speed;
 	  actor.y += Math.sin(angle) * speed;
 	  actor.rotation = angle;
-	  actor.state = AVO.ACTOR_WALKING;
-	  actor.playAnimation(AVO.ACTION.MOVE);
+	  actor.state = AVO.ACTOR_MOVING;
+	  actor.playAnimation(AVO.ACTION.MOVING);
 	};
 
 	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
@@ -2237,6 +2238,8 @@
 
 	var _entities = __webpack_require__(7);
 
+	var _utility = __webpack_require__(5);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2261,6 +2264,7 @@
 
 	    _this.init = _this.init.bind(_this);
 	    _this.run_start = _this.run_start.bind(_this);
+	    _this.prepareRoom = _this.prepareRoom.bind(_this);
 	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
 	    return _this;
 	  }
@@ -2268,10 +2272,92 @@
 	  _createClass(Nonita60, [{
 	    key: "init",
 	    value: function init() {
+	      var avo = this.avo;
+
 	      //Config
 	      //--------------------------------
-	      console.log(this);
-	      this.avo.config.debugMode = true;
+	      avo.config.debugMode = true;
+	      //--------------------------------
+
+	      //Images
+	      //--------------------------------
+	      avo.assets.images.actor = new _utility.ImageAsset("assets/nonita-60/actor.png");
+	      avo.assets.images.box = new _utility.ImageAsset("assets/nonita-60/box.png");
+	      //--------------------------------
+
+	      //Animations
+	      //--------------------------------
+	      var STEPS_PER_SECOND = AVO.FRAMES_PER_SECOND / 10;
+	      avo.animationSets = {
+	        actor: {
+	          rule: AVO.ANIMATION_RULE_DIRECTIONAL,
+	          tileWidth: 64,
+	          tileHeight: 64,
+	          tileOffsetX: 0,
+	          tileOffsetY: -16,
+	          actions: {
+	            idle: {
+	              loop: true,
+	              steps: [{ row: 0, duration: 1 }]
+	            },
+	            moving: {
+	              loop: true,
+	              steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 5, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+	            }
+	          }
+	        },
+
+	        box: {
+	          rule: AVO.ANIMATION_RULE_BASIC,
+	          tileWidth: 64,
+	          tileHeight: 128,
+	          tileOffsetX: 0,
+	          tileOffsetY: -32,
+	          actions: {
+	            idle: {
+	              loop: true,
+	              steps: [{ col: 0, row: 0, duration: 1 }]
+	            }
+	          }
+	        }
+	      };
+
+	      //Process Animations; expand steps to many frames per steps.
+	      for (var animationTitle in avo.animationSets) {
+	        var animationSet = avo.animationSets[animationTitle];
+	        for (var animationName in animationSet.actions) {
+	          var animationAction = animationSet.actions[animationName];
+	          var newSteps = [];
+	          var _iteratorNormalCompletion = true;
+	          var _didIteratorError = false;
+	          var _iteratorError = undefined;
+
+	          try {
+	            for (var _iterator = animationAction.steps[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	              var step = _step.value;
+
+	              for (var i = 0; i < step.duration; i++) {
+	                newSteps.push(step);
+	              }
+	            }
+	          } catch (err) {
+	            _didIteratorError = true;
+	            _iteratorError = err;
+	          } finally {
+	            try {
+	              if (!_iteratorNormalCompletion && _iterator.return) {
+	                _iterator.return();
+	              }
+	            } finally {
+	              if (_didIteratorError) {
+	                throw _iteratorError;
+	              }
+	            }
+	          }
+
+	          animationAction.steps = newSteps;
+	        }
+	      }
 	      //--------------------------------
 	    }
 	  }, {
@@ -2284,23 +2370,42 @@
 	      }
 	    }
 	  }, {
-	    key: "enterRoom1",
-	    value: function enterRoom1() {
+	    key: "prepareRoom",
+	    value: function prepareRoom() {
 	      var avo = this.avo;
+
 	      //Reset
+	      var player = avo.refs[AVO.REF.PLAYER];
 	      avo.actors = [];
 	      avo.areasOfEffect = [];
 	      avo.refs = {};
 
-	      var midX = avo.canvasWidth / 2,
-	          midY = avo.canvasHeight / 2;
+	      //Create the player character if she doesn't yet exist.
+	      if (!player) {
+	        avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, avo.canvasWidth / 2, avo.canvasHeight / 2, 32, AVO.SHAPE_CIRCLE);
+	        avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
+	        avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
+	        avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
+	        avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	      } else {
+	        avo.refs[AVO.REF.PLAYER] = player;
+	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	      }
+	    }
+	  }, {
+	    key: "enterRoom1",
+	    value: function enterRoom1() {
+	      var avo = this.avo;
+	      this.prepareRoom();
 
-	      avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, midX, midY, 32, AVO.SHAPE_CIRCLE);
-	      //avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
-	      //avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
-	      avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-	      avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
-	      avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	      var newActor = void 0;
+	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 64, AVO.SHAPE_SQUARE);
+	      newActor.spritesheet = avo.assets.images.box;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.rotation = AVO.ROTATION_NORTH;
+	      newActor.playAnimation("idle");
+	      avo.actors.push(newActor);
 	    }
 	  }]);
 

@@ -19,7 +19,8 @@ export const STATE_END = 3;
 
 export const ACTOR_IDLE = 0;  //Actor states
 export const ACTOR_MOVING = 1;
-export const ACTOR_BUSY = 2;
+export const ACTOR_ACTING = 2;
+export const ACTOR_REACTING = 3;
 
 export const REF = {  //Standard References
   PLAYER: "player",
@@ -27,7 +28,7 @@ export const REF = {  //Standard References
 
 export const ACTION = {  //Standard Actions
   IDLE: "idle",
-  MOVE: "move",
+  MOVING: "moving",
   PRIMARY: "primary",
 };
 

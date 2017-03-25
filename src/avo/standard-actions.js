@@ -18,14 +18,14 @@ StandardActions[AVO.ACTION.IDLE] = function (actor) {
   actor.playAnimation(AVO.ACTION.IDLE);
 };
       
-StandardActions[AVO.ACTION.MOVE] = function (actor) {
+StandardActions[AVO.ACTION.MOVING] = function (actor) {
   const angle = actor.action.angle || 0;
   const speed = actor.attributes[AVO.ATTR.SPEED] || 0;
   actor.x += Math.cos(angle) * speed;
   actor.y += Math.sin(angle) * speed;
   actor.rotation = angle;
-  actor.state = AVO.ACTOR_WALKING;
-  actor.playAnimation(AVO.ACTION.MOVE);
+  actor.state = AVO.ACTOR_MOVING;
+  actor.playAnimation(AVO.ACTION.MOVING);
 };
     
 StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
