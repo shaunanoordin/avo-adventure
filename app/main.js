@@ -105,9 +105,12 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+	var HTML_CANVAS_CSS_SCALE = 2;
+
 	/*  Primary AvO Game Engine
 	 */
 	//==============================================================================
+
 	var AvO = exports.AvO = function () {
 	  //Naming note: small 'v' between capital 'A' and 'O'.
 	  function AvO(story) {
@@ -134,6 +137,14 @@
 	    this.canvasHeight = this.html.canvas.height;
 	    this.state = null;
 	    this.animationSets = {};
+	    //--------------------------------
+
+	    //Account for graphical settings
+	    //--------------------------------
+	    this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+	    this.context2d.mozImageSmoothingEnabled = false;
+	    this.context2d.msImageSmoothingEnabled = false;
+	    this.context2d.imageSmoothingEnabled = false;
 	    //--------------------------------
 
 	    //Initialise Game Objects
@@ -1027,7 +1038,7 @@
 	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
 	        this.context2d.lineWidth = 1;
 	        this.context2d.beginPath();
-	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
 	        this.context2d.stroke();
 	        this.context2d.closePath();
 	      }
@@ -1081,8 +1092,8 @@
 
 	      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
 	      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
-	      var tgtW = srcW;
-	      var tgtH = srcH;
+	      var tgtW = Math.floor(srcW);
+	      var tgtH = Math.floor(srcH);
 
 	      this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
 	    }
@@ -2309,10 +2320,10 @@
 
 	        box: {
 	          rule: AVO.ANIMATION_RULE_BASIC,
-	          tileWidth: 64,
-	          tileHeight: 128,
+	          tileWidth: 32,
+	          tileHeight: 64,
 	          tileOffsetX: 0,
-	          tileOffsetY: -32,
+	          tileOffsetY: -16,
 	          actions: {
 	            idle: {
 	              loop: true,
@@ -2400,7 +2411,7 @@
 	      this.prepareRoom();
 
 	      var newActor = void 0;
-	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 64, AVO.SHAPE_SQUARE);
+	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
 	      newActor.spritesheet = avo.assets.images.box;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.rotation = AVO.ROTATION_NORTH;

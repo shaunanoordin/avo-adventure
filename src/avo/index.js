@@ -12,6 +12,8 @@ import { Physics } from "../avo/physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
+const HTML_CANVAS_CSS_SCALE = 2;
+
 /*  Primary AvO Game Engine
  */
 //==============================================================================
@@ -39,6 +41,14 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.canvasHeight = this.html.canvas.height;
     this.state = null;
     this.animationSets = {};
+    //--------------------------------
+    
+    //Account for graphical settings
+    //--------------------------------
+    this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+    this.context2d.mozImageSmoothingEnabled = false;
+    this.context2d.msImageSmoothingEnabled = false;
+    this.context2d.imageSmoothingEnabled = false;
     //--------------------------------
     
     //Initialise Game Objects
@@ -707,7 +717,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
       this.context2d.lineWidth = 1;
       this.context2d.beginPath();
-      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
       this.context2d.stroke();
       this.context2d.closePath();
     }
@@ -763,8 +773,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
     const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
-    const tgtW = srcW;
-    const tgtH = srcH;
+    const tgtW = Math.floor(srcW);
+    const tgtH = Math.floor(srcH);
     
     this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
   }

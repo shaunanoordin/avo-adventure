@@ -69,10 +69,10 @@ export class Nonita60 extends Story {
     
     box: {
       rule: AVO.ANIMATION_RULE_BASIC,
-      tileWidth: 64,
-      tileHeight: 128,
+      tileWidth: 32,
+      tileHeight: 64,
       tileOffsetX: 0,
-      tileOffsetY: -32,
+      tileOffsetY: -16,
       actions: {
         idle: {
           loop: true,
@@ -141,7 +141,7 @@ export class Nonita60 extends Story {
     this.prepareRoom();
     
     let newActor;
-    newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 64, AVO.SHAPE_SQUARE);
+    newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
     newActor.spritesheet = avo.assets.images.box;
     newActor.animationSet = avo.animationSets.box;
     newActor.rotation = AVO.ROTATION_NORTH;
