@@ -1884,15 +1884,21 @@
 	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
 	  //TODO This is just a placeholder
 	  //................
-	  console.log('X');
-	  var PUSH_POWER = 12;
-	  var ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  var distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
-	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  /*console.log('X');
+	  const PUSH_POWER = 12;
+	  const ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  let distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
+	  let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  let newZone = new Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5,
+	    [
+	      new Effect("push",
+	        { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
+	        2, AVO.STACKING_RULE_ADD)
+	    ]
+	  );
 	  this.zones.push(newZone);
-	  actor.playAnimation(AVO.ACTION.PRIMARY);
+	  actor.playAnimation(AVO.ACTION.PRIMARY);*/
 	  //................
 	};
 
@@ -2290,7 +2296,7 @@
 
 	      //Config
 	      //--------------------------------
-	      avo.config.debugMode = true;
+	      avo.config.debugMode = false;
 	      //--------------------------------
 
 	      //Images
@@ -2332,6 +2338,33 @@
 	            idle: {
 	              loop: true,
 	              steps: [{ col: 1, row: 0, duration: 1 }]
+	            },
+
+	            red: {
+	              loop: true,
+	              steps: [{ col: 0, row: 1, duration: 1 }]
+	            },
+	            red_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 1, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 1, duration: STEPS_PER_SECOND }]
+	            },
+
+	            blue: {
+	              loop: true,
+	              steps: [{ col: 0, row: 2, duration: 1 }]
+	            },
+	            blue_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 2, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 2, duration: STEPS_PER_SECOND }, { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 2, duration: STEPS_PER_SECOND }]
+	            },
+
+	            yellow: {
+	              loop: true,
+	              steps: [{ col: 0, row: 3, duration: 1 }]
+	            },
+	            yellow_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 3, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 3, duration: STEPS_PER_SECOND }, { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 3, duration: STEPS_PER_SECOND }]
 	            }
 	          }
 	        },
@@ -2347,13 +2380,32 @@
 	              loop: true,
 	              steps: [{ col: 0, row: 0, duration: 1 }]
 	            },
+
 	            red: {
 	              loop: true,
 	              steps: [{ col: 0, row: 1, duration: 1 }]
 	            },
 	            red_glow: {
 	              loop: true,
-	              steps: [{ col: 1, row: 1, duration: STEPS_PER_SECOND }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 3, row: 1, duration: STEPS_PER_SECOND }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 1, row: 1, duration: STEPS_PER_SECOND }]
+	              steps: [{ col: 1, row: 1, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 1, duration: STEPS_PER_SECOND }]
+	            },
+
+	            blue: {
+	              loop: true,
+	              steps: [{ col: 0, row: 2, duration: 1 }]
+	            },
+	            blue_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 2, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 2, duration: STEPS_PER_SECOND }, { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 2, duration: STEPS_PER_SECOND }]
+	            },
+
+	            yellow: {
+	              loop: true,
+	              steps: [{ col: 0, row: 3, duration: 1 }]
+	            },
+	            yellow_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 3, duration: STEPS_PER_SECOND * 10 }, { col: 2, row: 3, duration: STEPS_PER_SECOND }, { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 }, { col: 2, row: 3, duration: STEPS_PER_SECOND }]
 	            }
 	          }
 	        }
@@ -2419,7 +2471,7 @@
 
 	      //Create the player character if she doesn't yet exist.
 	      if (!player) {
-	        avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, avo.canvasWidth / 2, avo.canvasHeight / 2, 32, AVO.SHAPE_CIRCLE);
+	        avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
 	        avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
 	        avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
 	        avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
@@ -2436,32 +2488,89 @@
 	      var avo = this.avo;
 	      this.prepareRoom();
 
-	      var newActor = void 0;
+	      var newActor = void 0,
+	          newZone = void 0;
 
-	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
-	      newActor.spritesheet = avo.assets.images.boxes;
-	      newActor.animationSet = avo.animationSets.box;
-	      newActor.rotation = AVO.ROTATION_NORTH;
-	      newActor.playAnimation("idle");
-	      avo.actors.push(newActor);
-
-	      var newZone = void 0;
-	      newZone = new _entities.Zone("red_plate", 32, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      newZone = new _entities.Zone("red_plate", 3 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      avo.zones.push(newZone);
+	      avo.refs[newZone.name] = newZone;
 	      newZone.spritesheet = avo.assets.images.plates;
 	      newZone.animationSet = avo.animationSets.plate;
 	      newZone.playAnimation("red");
+
+	      newZone = new _entities.Zone("yellow_plate", 8 * 32, 4 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	      avo.zones.push(newZone);
-	      avo.refs.red_plate = newZone;
+	      avo.refs[newZone.name] = newZone;
+	      newZone.spritesheet = avo.assets.images.plates;
+	      newZone.animationSet = avo.animationSets.plate;
+	      newZone.playAnimation("yellow");
+
+	      newZone = new _entities.Zone("blue_plate", 13 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      avo.zones.push(newZone);
+	      avo.refs[newZone.name] = newZone;
+	      newZone.spritesheet = avo.assets.images.plates;
+	      newZone.animationSet = avo.animationSets.plate;
+	      newZone.playAnimation("blue");
+
+	      newActor = new _entities.Actor("red_box", 8 * 32, 4 * 32, 32, AVO.SHAPE_SQUARE);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("red");
+
+	      newActor = new _entities.Actor("yellow_box", 13 * 32, 7 * 32 - 8, 32, AVO.SHAPE_SQUARE);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("yellow");
+
+	      newActor = new _entities.Actor("blue_box", 3 * 32, 7 * 32, 32, AVO.SHAPE_SQUARE);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("blue");
 	    }
 	  }, {
 	    key: "run_action",
 	    value: function run_action() {
 	      var avo = this.avo;
 
-	      if (_physics.Physics.checkCollision(avo.refs.player, avo.refs.red_plate)) {
-	        avo.refs.red_plate.playAnimation("red_glow");
-	      } else {
-	        avo.refs.red_plate.playAnimation("red");
+	      var colours = ["red", "blue", "yellow"];
+	      var matches = 0;
+
+	      var _iteratorNormalCompletion2 = true;
+	      var _didIteratorError2 = false;
+	      var _iteratorError2 = undefined;
+
+	      try {
+	        for (var _iterator2 = colours[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	          var col = _step2.value;
+
+	          if (_physics.Physics.checkCollision(avo.refs[col + "_box"], avo.refs[col + "_plate"])) {
+	            avo.refs[col + "_box"].playAnimation(col + "_glow");
+	            avo.refs[col + "_plate"].playAnimation(col + "_glow");
+	            matches++;
+	          } else {
+	            avo.refs[col + "_box"].playAnimation(col);
+	            avo.refs[col + "_plate"].playAnimation(col);
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError2 = true;
+	        _iteratorError2 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+	            _iterator2.return();
+	          }
+	        } finally {
+	          if (_didIteratorError2) {
+	            throw _iteratorError2;
+	          }
+	        }
 	      }
 	    }
 	  }]);

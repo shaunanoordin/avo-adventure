@@ -27,7 +27,7 @@ export class Nonita60 extends Story {
     
     //Config
     //--------------------------------
-    avo.config.debugMode = true;
+    avo.config.debugMode = false;
     //--------------------------------
     
     //Images
@@ -83,6 +83,54 @@ export class Nonita60 extends Story {
             { col: 1, row: 0, duration: 1 }
           ],
         },
+        
+        red: {
+          loop: true,
+          steps: [
+            { col: 0, row: 1, duration: 1 }
+          ],
+        },
+        red_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
+            { col: 2, row: 1, duration: STEPS_PER_SECOND },
+            { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
+            { col: 2, row: 1, duration: STEPS_PER_SECOND },
+          ],
+        },
+        
+        blue: {
+          loop: true,
+          steps: [
+            { col: 0, row: 2, duration: 1 }
+          ],
+        },
+        blue_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
+            { col: 2, row: 2, duration: STEPS_PER_SECOND },
+            { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
+            { col: 2, row: 2, duration: STEPS_PER_SECOND },
+          ],
+        },
+        
+        yellow: {
+          loop: true,
+          steps: [
+            { col: 0, row: 3, duration: 1 }
+          ],
+        },
+        yellow_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
+            { col: 2, row: 3, duration: STEPS_PER_SECOND },
+            { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
+            { col: 2, row: 3, duration: STEPS_PER_SECOND },
+          ],
+        },
       },
     },
     
@@ -99,6 +147,7 @@ export class Nonita60 extends Story {
             { col: 0, row: 0, duration: 1 }
           ],
         },
+        
         red: {
           loop: true,
           steps: [
@@ -108,11 +157,42 @@ export class Nonita60 extends Story {
         red_glow: {
           loop: true,
           steps: [
-            { col: 1, row: 1, duration: STEPS_PER_SECOND },
+            { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
             { col: 2, row: 1, duration: STEPS_PER_SECOND },
-            { col: 3, row: 1, duration: STEPS_PER_SECOND },
+            { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
             { col: 2, row: 1, duration: STEPS_PER_SECOND },
-            { col: 1, row: 1, duration: STEPS_PER_SECOND },
+          ],
+        },
+        
+        blue: {
+          loop: true,
+          steps: [
+            { col: 0, row: 2, duration: 1 }
+          ],
+        },
+        blue_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
+            { col: 2, row: 2, duration: STEPS_PER_SECOND },
+            { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
+            { col: 2, row: 2, duration: STEPS_PER_SECOND },
+          ],
+        },
+        
+        yellow: {
+          loop: true,
+          steps: [
+            { col: 0, row: 3, duration: 1 }
+          ],
+        },
+        yellow_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
+            { col: 2, row: 3, duration: STEPS_PER_SECOND },
+            { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
+            { col: 2, row: 3, duration: STEPS_PER_SECOND },
           ],
         },
       },
@@ -159,7 +239,7 @@ export class Nonita60 extends Story {
     
     //Create the player character if she doesn't yet exist.
     if (!player) {
-      avo.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, avo.canvasWidth / 2, avo.canvasHeight / 2, 32, AVO.SHAPE_CIRCLE);
+      avo.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
       avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
       avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
       avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
@@ -175,33 +255,67 @@ export class Nonita60 extends Story {
     const avo = this.avo;    
     this.prepareRoom();
     
-    let newActor;
+    let newActor, newZone;
     
-    newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
-    newActor.spritesheet = avo.assets.images.boxes;
-    newActor.animationSet = avo.animationSets.box;
-    newActor.rotation = AVO.ROTATION_NORTH;
-    newActor.playAnimation("idle");
-    avo.actors.push(newActor);
-    
-    let newZone;
-    newZone = new Zone("red_plate", 32, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+    newZone = new Zone("red_plate", 3 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+    avo.zones.push(newZone);
+    avo.refs[newZone.name] = newZone;
     newZone.spritesheet = avo.assets.images.plates;
     newZone.animationSet = avo.animationSets.plate;
     newZone.playAnimation("red");
+    
+    newZone = new Zone("yellow_plate", 8 * 32, 4 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
     avo.zones.push(newZone);
-    avo.refs.red_plate = newZone;
+    avo.refs[newZone.name] = newZone;
+    newZone.spritesheet = avo.assets.images.plates;
+    newZone.animationSet = avo.animationSets.plate;
+    newZone.playAnimation("yellow");
     
+    newZone = new Zone("blue_plate", 13 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+    avo.zones.push(newZone);
+    avo.refs[newZone.name] = newZone;
+    newZone.spritesheet = avo.assets.images.plates;
+    newZone.animationSet = avo.animationSets.plate;
+    newZone.playAnimation("blue");
     
+    newActor = new Actor("red_box", 8 * 32, 4 * 32, 32, AVO.SHAPE_SQUARE);
+    avo.actors.push(newActor);
+    avo.refs[newActor.name] = newActor;
+    newActor.spritesheet = avo.assets.images.boxes;
+    newActor.animationSet = avo.animationSets.box;
+    newActor.playAnimation("red");
+    
+    newActor = new Actor("yellow_box", 13 * 32, 7 * 32 - 8, 32, AVO.SHAPE_SQUARE);
+    avo.actors.push(newActor);
+    avo.refs[newActor.name] = newActor;
+    newActor.spritesheet = avo.assets.images.boxes;
+    newActor.animationSet = avo.animationSets.box;
+    newActor.playAnimation("yellow");
+    
+    newActor = new Actor("blue_box", 3 * 32, 7 * 32, 32, AVO.SHAPE_SQUARE);
+    avo.actors.push(newActor);
+    avo.refs[newActor.name] = newActor;
+    newActor.spritesheet = avo.assets.images.boxes;
+    newActor.animationSet = avo.animationSets.box;
+    newActor.playAnimation("blue");
   }
   
   run_action() {
     const avo = this.avo;
     
-    if (Physics.checkCollision(avo.refs.player, avo.refs.red_plate)) {
-      avo.refs.red_plate.playAnimation("red_glow");
-    } else {
-      avo.refs.red_plate.playAnimation("red");
+    const colours = ["red", "blue", "yellow"];
+    let matches = 0;
+    
+    for (let col of colours) {
+      if (Physics.checkCollision(avo.refs[col+"_box"], avo.refs[col+"_plate"])) {
+        avo.refs[col+"_box"].playAnimation(col+"_glow");
+        avo.refs[col+"_plate"].playAnimation(col+"_glow");
+        matches++;
+      } else {
+        avo.refs[col+"_box"].playAnimation(col);
+        avo.refs[col+"_plate"].playAnimation(col);
+      }  
     }
+    
   }
 }
