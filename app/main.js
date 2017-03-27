@@ -2251,6 +2251,8 @@
 
 	var _utility = __webpack_require__(5);
 
+	var _physics = __webpack_require__(4);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2275,6 +2277,7 @@
 
 	    _this.init = _this.init.bind(_this);
 	    _this.run_start = _this.run_start.bind(_this);
+	    _this.run_action = _this.run_action.bind(_this);
 	    _this.prepareRoom = _this.prepareRoom.bind(_this);
 	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
 	    return _this;
@@ -2294,6 +2297,7 @@
 	      //--------------------------------
 	      avo.assets.images.actor = new _utility.ImageAsset("assets/nonita-60/actor.png");
 	      avo.assets.images.boxes = new _utility.ImageAsset("assets/nonita-60/boxes.png");
+	      avo.assets.images.plates = new _utility.ImageAsset("assets/nonita-60/plates.png");
 	      //--------------------------------
 
 	      //Animations
@@ -2305,7 +2309,7 @@
 	          tileWidth: 64,
 	          tileHeight: 64,
 	          tileOffsetX: 0,
-	          tileOffsetY: -16,
+	          tileOffsetY: -24, //-16,
 	          actions: {
 	            idle: {
 	              loop: true,
@@ -2328,6 +2332,28 @@
 	            idle: {
 	              loop: true,
 	              steps: [{ col: 1, row: 0, duration: 1 }]
+	            }
+	          }
+	        },
+
+	        plate: {
+	          rule: AVO.ANIMATION_RULE_BASIC,
+	          tileWidth: 64,
+	          tileHeight: 64,
+	          tileOffsetX: 0,
+	          tileOffsetY: 0,
+	          actions: {
+	            idle: {
+	              loop: true,
+	              steps: [{ col: 0, row: 0, duration: 1 }]
+	            },
+	            red: {
+	              loop: true,
+	              steps: [{ col: 0, row: 1, duration: 1 }]
+	            },
+	            red_glow: {
+	              loop: true,
+	              steps: [{ col: 1, row: 1, duration: STEPS_PER_SECOND }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 3, row: 1, duration: STEPS_PER_SECOND }, { col: 2, row: 1, duration: STEPS_PER_SECOND }, { col: 1, row: 1, duration: STEPS_PER_SECOND }]
 	            }
 	          }
 	        }
@@ -2411,12 +2437,32 @@
 	      this.prepareRoom();
 
 	      var newActor = void 0;
+
 	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.rotation = AVO.ROTATION_NORTH;
 	      newActor.playAnimation("idle");
 	      avo.actors.push(newActor);
+
+	      var newZone = void 0;
+	      newZone = new _entities.Zone("red_plate", 32, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      newZone.spritesheet = avo.assets.images.plates;
+	      newZone.animationSet = avo.animationSets.plate;
+	      newZone.playAnimation("red");
+	      avo.zones.push(newZone);
+	      avo.refs.red_plate = newZone;
+	    }
+	  }, {
+	    key: "run_action",
+	    value: function run_action() {
+	      var avo = this.avo;
+
+	      if (_physics.Physics.checkCollision(avo.refs.player, avo.refs.red_plate)) {
+	        avo.refs.red_plate.playAnimation("red_glow");
+	      } else {
+	        avo.refs.red_plate.playAnimation("red");
+	      }
 	    }
 	  }]);
 

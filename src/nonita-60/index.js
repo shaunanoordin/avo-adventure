@@ -8,14 +8,16 @@ Nonita 60
 
 import * as AVO from  "../avo/constants.js";
 import { Story } from "../avo/story.js";
-import { Actor } from "../avo/entities.js";
+import { Actor, Zone } from "../avo/entities.js";
 import { ImageAsset } from "../avo/utility.js";
+import { Physics } from "../avo/physics.js";
 
 export class Nonita60 extends Story {
   constructor() {
     super();
     this.init = this.init.bind(this);
     this.run_start = this.run_start.bind(this);
+    this.run_action = this.run_action.bind(this);
     this.prepareRoom = this.prepareRoom.bind(this);
     this.enterRoom1 = this.enterRoom1.bind(this);
   }
@@ -32,6 +34,7 @@ export class Nonita60 extends Story {
     //--------------------------------
     avo.assets.images.actor = new ImageAsset("assets/nonita-60/actor.png");
     avo.assets.images.boxes = new ImageAsset("assets/nonita-60/boxes.png");
+    avo.assets.images.plates = new ImageAsset("assets/nonita-60/plates.png");
     //--------------------------------
     
     //Animations
@@ -43,7 +46,7 @@ export class Nonita60 extends Story {
       tileWidth: 64,
       tileHeight: 64,
       tileOffsetX: 0,
-      tileOffsetY: -16,
+      tileOffsetY: -24,  //-16,
       actions: {
         idle: {
           loop: true,
@@ -81,7 +84,39 @@ export class Nonita60 extends Story {
           ],
         },
       },
-    },    
+    },
+    
+    plate: {
+      rule: AVO.ANIMATION_RULE_BASIC,
+      tileWidth: 64,
+      tileHeight: 64,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        idle: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+        red: {
+          loop: true,
+          steps: [
+            { col: 0, row: 1, duration: 1 }
+          ],
+        },
+        red_glow: {
+          loop: true,
+          steps: [
+            { col: 1, row: 1, duration: STEPS_PER_SECOND },
+            { col: 2, row: 1, duration: STEPS_PER_SECOND },
+            { col: 3, row: 1, duration: STEPS_PER_SECOND },
+            { col: 2, row: 1, duration: STEPS_PER_SECOND },
+            { col: 1, row: 1, duration: STEPS_PER_SECOND },
+          ],
+        },
+      },
+    },
   };
   
   //Process Animations; expand steps to many frames per steps.
@@ -141,11 +176,32 @@ export class Nonita60 extends Story {
     this.prepareRoom();
     
     let newActor;
+    
     newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
     newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
     newActor.rotation = AVO.ROTATION_NORTH;
     newActor.playAnimation("idle");
     avo.actors.push(newActor);
+    
+    let newZone;
+    newZone = new Zone("red_plate", 32, 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+    newZone.spritesheet = avo.assets.images.plates;
+    newZone.animationSet = avo.animationSets.plate;
+    newZone.playAnimation("red");
+    avo.zones.push(newZone);
+    avo.refs.red_plate = newZone;
+    
+    
+  }
+  
+  run_action() {
+    const avo = this.avo;
+    
+    if (Physics.checkCollision(avo.refs.player, avo.refs.red_plate)) {
+      avo.refs.red_plate.playAnimation("red_glow");
+    } else {
+      avo.refs.red_plate.playAnimation("red");
+    }
   }
 }
