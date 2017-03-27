@@ -141,7 +141,7 @@
 
 	    //Account for graphical settings
 	    //--------------------------------
-	    this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+	    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
 	    this.context2d.mozImageSmoothingEnabled = false;
 	    this.context2d.msImageSmoothingEnabled = false;
 	    this.context2d.imageSmoothingEnabled = false;
@@ -2293,7 +2293,7 @@
 	      //Images
 	      //--------------------------------
 	      avo.assets.images.actor = new _utility.ImageAsset("assets/nonita-60/actor.png");
-	      avo.assets.images.box = new _utility.ImageAsset("assets/nonita-60/box.png");
+	      avo.assets.images.boxes = new _utility.ImageAsset("assets/nonita-60/boxes.png");
 	      //--------------------------------
 
 	      //Animations
@@ -2327,7 +2327,7 @@
 	          actions: {
 	            idle: {
 	              loop: true,
-	              steps: [{ col: 0, row: 0, duration: 1 }]
+	              steps: [{ col: 1, row: 0, duration: 1 }]
 	            }
 	          }
 	        }
@@ -2412,7 +2412,7 @@
 
 	      var newActor = void 0;
 	      newActor = new _entities.Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
-	      newActor.spritesheet = avo.assets.images.box;
+	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.rotation = AVO.ROTATION_NORTH;
 	      newActor.playAnimation("idle");

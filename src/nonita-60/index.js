@@ -31,7 +31,7 @@ export class Nonita60 extends Story {
     //Images
     //--------------------------------
     avo.assets.images.actor = new ImageAsset("assets/nonita-60/actor.png");
-    avo.assets.images.box = new ImageAsset("assets/nonita-60/box.png");
+    avo.assets.images.boxes = new ImageAsset("assets/nonita-60/boxes.png");
     //--------------------------------
     
     //Animations
@@ -77,7 +77,7 @@ export class Nonita60 extends Story {
         idle: {
           loop: true,
           steps: [
-            { col: 0, row: 0, duration: 1 }
+            { col: 1, row: 0, duration: 1 }
           ],
         },
       },
@@ -142,7 +142,7 @@ export class Nonita60 extends Story {
     
     let newActor;
     newActor = new Actor("box", avo.canvasWidth * 0.25, avo.canvasHeight * 0.5, 32, AVO.SHAPE_SQUARE);
-    newActor.spritesheet = avo.assets.images.box;
+    newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
     newActor.rotation = AVO.ROTATION_NORTH;
     newActor.playAnimation("idle");

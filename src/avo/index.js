@@ -45,7 +45,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Account for graphical settings
     //--------------------------------
-    this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
     this.context2d.mozImageSmoothingEnabled = false;
     this.context2d.msImageSmoothingEnabled = false;
     this.context2d.imageSmoothingEnabled = false;
