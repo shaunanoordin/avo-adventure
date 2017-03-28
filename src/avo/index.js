@@ -2,23 +2,26 @@
 AvO Adventure Game Engine
 =========================
 
-(Shaun A. Noordin || shaunanoordin.com || 20160517)
+(Shaun A. Noordin || shaunanoordin.com || 20170322)
 ********************************************************************************
  */
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
-import { Utility } from "./utility.js";
+import { Story } from "./story.js";
 import { Physics } from "../avo/physics.js";
+import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
+
+const HTML_CANVAS_CSS_SCALE = 2;
 
 /*  Primary AvO Game Engine
  */
 //==============================================================================
 export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
-  constructor(startScript) {
+  constructor(story) {
     //Initialise properties
     //--------------------------------
-    this.appConfig = {
+    this.config = {
       framesPerSecond: AVO.FRAMES_PER_SECOND,
       debugMode: false,
       topDownView: true,  //Top-down view sorts Actors on paint().
@@ -40,25 +43,35 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.animationSets = {};
     //--------------------------------
     
+    //Account for graphical settings
+    //--------------------------------
+    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+    this.context2d.mozImageSmoothingEnabled = false;
+    this.context2d.msImageSmoothingEnabled = false;
+    this.context2d.imageSmoothingEnabled = false;
+    //--------------------------------
+    
     //Initialise Game Objects
     //--------------------------------
+    this.story = (story) ? story : new Story();
+    this.story.avo = this;
     this.assets = {
       images: {}
     };
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
-    this.scripts = {
-      preRun: null,
-      postRun: null,
-      customRunStart: null,
-      customRunAction: null,
-      customRunComic: null,
-      customRunEnd: null,
-      prePaint: null,
-      postPaint: null,
-    };
+    //this.scripts = {
+    //  preRun: null,
+    //  postRun: null,
+    //  customRunStart: null,
+    //  customRunAction: null,
+    //  customRunComic: null,
+    //  customRunEnd: null,
+    //  prePaint: null,
+    //  postPaint: null,
+    //};
     this.actors = [];
-    this.areasOfEffect = [];
+    this.zones = [];
     this.refs = {};
     this.store = {};
     //this.ui = {};
@@ -110,24 +123,25 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Start!
     //--------------------------------
-    this.changeState(AVO.STATE_START, startScript);
-    this.runCycle = setInterval(this.run.bind(this), 1000 / this.appConfig.framesPerSecond);
+    this.changeState(AVO.STATE_START, this.story.init);
+    this.runCycle = setInterval(this.run.bind(this), 1000 / this.config.framesPerSecond);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
-  changeState(state, script = null) {
+  changeState(state, storyScript = null) {
     this.state = state;
-    if (script && typeof script === "function") {
-      script.apply(this);
+    if (storyScript && typeof storyScript === "function") {
+      storyScript();
     }
   }
   
   run() {
-    if (this.scripts.preRun) this.scripts.preRun.apply(this);
+    //if (this.scripts.preRun) this.scripts.preRun.apply(this);
+    this.story.preRun(this);
     
-    if (!this.appConfig.skipCoreRun) {
+    if (!this.config.skipCoreRun) {
       switch (this.state) {
         case AVO.STATE_START:
           this.run_start();
@@ -144,7 +158,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
     }
     
-    if (this.scripts.postRun) this.scripts.postRun.apply(this);
+    //if (this.scripts.postRun) this.scripts.postRun.apply(this);
+    this.story.postRun();
     
     this.paint();
   }
@@ -160,17 +175,23 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     if (this.assetsLoaded < this.assetsTotal) return;
     
-    if (this.scripts.customRunStart) this.scripts.customRunStart.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_start();
+    //--------------------------------
   }
   
   run_end() {
-    if (this.scripts.customRunEnd) this.scripts.customRunEnd.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_end();
+    //--------------------------------
   }
     
   run_action() {
-    //Run Global Scripts
+    //Run Story script
     //--------------------------------
-    if (this.scripts.customRunAction) this.scripts.customRunAction.apply(this);
+    this.story.run_action();
     //--------------------------------
     
     //Actors determine intent
@@ -188,7 +209,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
           const angle = Math.atan2(distY, distX);
           player.intent = {
-            name: AVO.ACTION.MOVE,
+            name: AVO.ACTION.MOVING,
             angle: angle,
           };
 
@@ -214,27 +235,51 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
       
       //Keyboard input
-      if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state !== AVO.INPUT_ACTIVE) {
+      let xDir = 0, yDir = 0;
+      if (this.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE) yDir--;
+      if (this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) yDir++;
+      if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE) xDir--;
+      if (this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) xDir++;
+      
+      if (xDir > 0 && yDir === 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
-          angle: AVO.ROTATION_NORTH,
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_EAST,
         };
-      } else if (this.keys[AVO.KEY_CODES.UP].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE) {
+      } else if (xDir > 0 && yDir > 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_SOUTHEAST,
+        };
+      } else if (xDir === 0 && yDir > 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_SOUTH,
         };
-      }
-      
-      if (this.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state !== AVO.INPUT_ACTIVE) {
+      } else if (xDir < 0 && yDir > 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_SOUTHWEST,
+        };
+      } else if (xDir < 0 && yDir === 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVING,
           angle: AVO.ROTATION_WEST,
         };
-      } else if (this.keys[AVO.KEY_CODES.LEFT].state !== AVO.INPUT_ACTIVE && this.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE) {
+      } else if (xDir < 0 && yDir < 0) {
         player.intent = {
-          name: AVO.ACTION.MOVE,
-          angle: AVO.ROTATION_EAST,
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_NORTHWEST,
+        };
+      } else if (xDir === 0 && yDir < 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_NORTH,
+        };
+      } else if (xDir > 0 && yDir < 0) {
+        player.intent = {
+          name: AVO.ACTION.MOVING,
+          angle: AVO.ROTATION_NORTHEAST,
         };
       }
       
@@ -246,12 +291,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     //--------------------------------
     
-    //AoEs apply Effects
+    //Zones apply Effects
     //--------------------------------
-    for (let aoe of this.areasOfEffect) {
+    for (let zone of this.zones) {
       for (let actor of this.actors) {
-        if (Physics.checkCollision(aoe, actor)) {
-          for (let effect of aoe.effects) {
+        if (Physics.checkCollision(zone, actor)) {
+          for (let effect of zone.effects) {
             actor.effects.push(effect.copy());
           }
         }
@@ -274,7 +319,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
       
       //If the actor is not busy, transform the intent into an action.
-      if (actor.state !== AVO.ACTOR_BUSY) {
+      if (actor.state !== AVO.ACTOR_ACTING && actor.state !== AVO.ACTOR_REACTING) {
         if (actor.intent) {
           actor.action = actor.intent;
         } else {
@@ -289,7 +334,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         } else if (StandardActions[actor.action.name]) {  //Run a standard Action.
           StandardActions[actor.action.name].apply(this, [actor]);
         }
-        
       }
     }
     //--------------------------------
@@ -299,14 +343,14 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.physics();
     //--------------------------------
     
-    //Cleanup AoEs
+    //Cleanup Zones
     //--------------------------------
-    for (let i = this.areasOfEffect.length - 1; i >= 0; i--) {
-      var aoe = this.areasOfEffect[i];
-      if (!aoe.hasInfiniteDuration()) {
-        aoe.duration--;
-        if (aoe.duration <= 0) {
-          this.areasOfEffect.splice(i, 1);
+    for (let i = this.zones.length - 1; i >= 0; i--) {
+      var zone = this.zones[i];
+      if (!zone.hasInfiniteDuration()) {
+        zone.duration--;
+        if (zone.duration <= 0) {
+          this.zones.splice(i, 1);
         }
       }
     }
@@ -344,7 +388,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   run_comic() {
-    if (this.scripts.customRunComic) this.scripts.customRunComic.apply(this);
+    //Run Story script
+    //--------------------------------
+    this.story.run_comic();
+    //--------------------------------
     
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
@@ -523,9 +570,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Clear
     this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    //if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    this.story.prePaint();
     
-    if (!this.appConfig.skipCorePaint) {
+    if (!this.config.skipCorePaint) {
       switch (this.state) {
         case AVO.STATE_START:
           this.paint_start();
@@ -542,7 +590,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
     }
     
-    if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+    //if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+    this.story.postPaint();
   }
   
   paint_start() {
@@ -575,7 +624,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_end() {
     this.context2d.beginPath();
     this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-    this.context2d.fillStyle = "#3cc";
+    this.context2d.fillStyle = "#666";
     this.context2d.fill();
     this.context2d.closePath();    
   }
@@ -583,7 +632,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_action() {
     //Arrange sprites by vertical order.
     //--------------------------------
-    if (this.appConfig.topDownView) {
+    if (this.config.topDownView) {
       this.actors.sort((a, b) => {
         return a.bottom - b.bottom;
       });
@@ -592,27 +641,38 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //DEBUG: Paint hitboxes
     //--------------------------------
-    if (this.appConfig.debugMode) {
+    if (this.config.debugMode) {
       this.context2d.lineWidth = 1;
+      let coords;
       
       //Areas of Effects
-      for (let aoe of this.areasOfEffect) {
+      for (let zone of this.zones) {
         let durationPercentage = 1;
-        if (!aoe.hasInfiniteDuration() && aoe.startDuration > 0) {
-          durationPercentage = Math.max(0, aoe.duration / aoe.startDuration);
+        if (!zone.hasInfiniteDuration() && zone.startDuration > 0) {
+          durationPercentage = Math.max(0, zone.duration / zone.startDuration);
         }
         this.context2d.strokeStyle = "rgba(204,51,51,"+durationPercentage+")";
         
-        switch (aoe.shape) {
+        switch (zone.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(aoe.x, aoe.y, aoe.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(aoe.x - aoe.size / 2, aoe.y - aoe.size / 2, aoe.size, aoe.size);
+            this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+          case AVO.SHAPE_POLYGON:
+            this.context2d.beginPath();
+            coords = zone.vertices;
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            for (let i = 0; i < coords.length; i++) {
+              this.context2d.lineTo(coords[i].x, coords[i].y);
+            }            
             this.context2d.stroke();
             this.context2d.closePath();
             break;
@@ -640,6 +700,16 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
             this.context2d.stroke();
             this.context2d.closePath();
             break;
+          case AVO.SHAPE_POLYGON:
+            this.context2d.beginPath();
+            coords = actor.vertices;
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            for (let i = 0; i < coords.length; i++) {
+              this.context2d.lineTo(coords[i].x, coords[i].y);
+            }            
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
         }
       }
     }
@@ -649,26 +719,32 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //TODO: IMPROVE
     //TODO: Layering
     //--------------------------------
-    //AoEs
-    for (let aoe of this.areasOfEffect) {
-      this.paintSprite(aoe);
-      aoe.nextAnimationFrame();
-    }
-    
-    //Actors
-    for (let actor of this.actors) {
-      this.paintSprite(actor);
-      actor.nextAnimationFrame();
+    for (let z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z ++) {
+      //Zones
+      for (let zone of this.zones) {
+        if (zone.z === z) {
+          this.paintSprite(zone);
+          zone.nextAnimationFrame();
+        }
+      }
+      
+      //Actors
+      for (let actor of this.actors) {
+        if (actor.z === z) {
+          this.paintSprite(actor);
+          actor.nextAnimationFrame();
+        }
+      }
     }
     //--------------------------------
     
     //DEBUG: Paint touch/mouse input
     //--------------------------------
-    if (this.appConfig.debugMode) {      
+    if (this.config.debugMode) {      
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
       this.context2d.lineWidth = 1;
       this.context2d.beginPath();
-      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2, 0, 2 * Math.PI);
+      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
       this.context2d.stroke();
       this.context2d.closePath();
     }
@@ -724,8 +800,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
     const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
-    const tgtW = srcW;
-    const tgtH = srcH;
+    const tgtW = Math.floor(srcW);
+    const tgtH = Math.floor(srcH);
     
     this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
   }

@@ -19,7 +19,12 @@ export const STATE_END = 3;
 
 export const ACTOR_IDLE = 0;  //Actor states
 export const ACTOR_MOVING = 1;
-export const ACTOR_BUSY = 2;
+export const ACTOR_ACTING = 2;
+export const ACTOR_REACTING = 3;
+
+export const MIN_Z_INDEX = 0;
+export const DEFAULT_Z_INDEX = 1;
+export const MAX_Z_INDEX = 2;
 
 export const REF = {  //Standard References
   PLAYER: "player",
@@ -27,7 +32,7 @@ export const REF = {  //Standard References
 
 export const ACTION = {  //Standard Actions
   IDLE: "idle",
-  MOVE: "move",
+  MOVING: "moving",
   PRIMARY: "primary",
 };
 
@@ -41,6 +46,7 @@ export const ANIMATION_RULE_DIRECTIONAL = "directional";
 export const SHAPE_NONE = 0;  //No shape = no collision
 export const SHAPE_SQUARE = 1;
 export const SHAPE_CIRCLE = 2;
+export const SHAPE_POLYGON = 3;
 
 export const ROTATION_EAST = 0;
 export const ROTATION_SOUTH = Math.PI * 0.5;
