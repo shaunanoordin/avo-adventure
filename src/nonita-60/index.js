@@ -9,7 +9,7 @@ Nonita 60
 import * as AVO from  "../avo/constants.js";
 import { Story } from "../avo/story.js";
 import { Actor, Zone } from "../avo/entities.js";
-import { ImageAsset } from "../avo/utility.js";
+import { Utility, ImageAsset } from "../avo/utility.js";
 import { Physics } from "../avo/physics.js";
 
 export class Nonita60 extends Story {
@@ -35,6 +35,7 @@ export class Nonita60 extends Story {
     avo.assets.images.actor = new ImageAsset("assets/nonita-60/actor.png");
     avo.assets.images.boxes = new ImageAsset("assets/nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/nonita-60/plates.png");
+    avo.assets.images.walls = new ImageAsset("assets/nonita-60/walls.png");
     //--------------------------------
     
     //Animations
@@ -197,6 +198,28 @@ export class Nonita60 extends Story {
         },
       },
     },
+    
+    wall: {
+      rule: AVO.ANIMATION_RULE_BASIC,
+      tileWidth: 512,
+      tileHeight: 128,
+      tileOffsetX: 0,
+      tileOffsetY: 0,
+      actions: {
+        long_wall: {
+          loop: true,
+          steps: [
+            { col: 0, row: 0, duration: 1 }
+          ],
+        },
+        short_wall: {
+          loop: true,
+          steps: [
+            { col: 0, row: 1, duration: 1 }
+          ],
+        },
+      },
+    },
   };
   
   //Process Animations; expand steps to many frames per steps.
@@ -307,32 +330,32 @@ export class Nonita60 extends Story {
     
     //TEST
     //----------------------------------------------------------------
-    newActor = new Actor("wish_wall", 8 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+    newActor = new Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
     avo.actors.push(newActor);
     avo.refs[newActor.name] = newActor;
-    newActor.shapePolygonPath = [-256, -32, 256, -32, 256, 32, -256, 32];
+    newActor.shapePolygonPath = [-256, -64, 256, -64, 256, 64, -256, 64];
     newActor.movable = false;
-    newActor.spritesheet = avo.assets.images.boxes;
-    newActor.animationSet = avo.animationSets.box;
-    newActor.playAnimation("idle");
+    newActor.spritesheet = avo.assets.images.walls;
+    newActor.animationSet = avo.animationSets.wall;
+    newActor.playAnimation("long_wall");
     
-    newActor = new Actor("wall_left", 4 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+    newActor = new Actor("wall_left", 4 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
     avo.actors.push(newActor);
     avo.refs[newActor.name] = newActor;
-    newActor.shapePolygonPath = [-128, -48, 128, -48, 128, 48, -128, 48];
+    newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
     newActor.movable = false;
-    newActor.spritesheet = avo.assets.images.boxes;
-    newActor.animationSet = avo.animationSets.box;
-    newActor.playAnimation("idle");
+    newActor.spritesheet = avo.assets.images.walls;
+    newActor.animationSet = avo.animationSets.wall;
+    newActor.playAnimation("short_wall");
     
-    newActor = new Actor("wall_right", 12 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+    newActor = new Actor("wall_right", 12 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
     avo.actors.push(newActor);
     avo.refs[newActor.name] = newActor;
-    newActor.shapePolygonPath = [-128, -48, 128, -48, 128, 48, -128, 48];
+    newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
     newActor.movable = false;
-    newActor.spritesheet = avo.assets.images.boxes;
-    newActor.animationSet = avo.animationSets.box;
-    newActor.playAnimation("idle");
+    newActor.spritesheet = avo.assets.images.walls;
+    newActor.animationSet = avo.animationSets.wall;
+    newActor.playAnimation("short_wall");
     //----------------------------------------------------------------
   }
   
@@ -354,9 +377,17 @@ export class Nonita60 extends Story {
     }
     
     const MOVE_DISTANCE = 96;
+    const BASELINE_Y = 0.5 * 32;
     if (matches === colours.length) {
-      if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) avo.refs["wall_right"].x += 1;
-      if (avo.refs["wall_left"].x > -MOVE_DISTANCE) avo.refs["wall_left"].x -= 1;
+      if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) {
+        avo.refs["wall_right"].x += 1;
+        avo.refs["wall_right"].y = BASELINE_Y + Utility.randomInt(0, 1);
+      }
+      
+      if (avo.refs["wall_left"].x > -MOVE_DISTANCE) {
+        avo.refs["wall_left"].x -= 1;
+        avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
+      }
     }
   }
 }
