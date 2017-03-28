@@ -857,7 +857,7 @@
 	    value: function paint_end() {
 	      this.context2d.beginPath();
 	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-	      this.context2d.fillStyle = "#3cc";
+	      this.context2d.fillStyle = "#666";
 	      this.context2d.fill();
 	      this.context2d.closePath();
 	    }
@@ -2322,6 +2322,8 @@
 	    _this.init = _this.init.bind(_this);
 	    _this.run_start = _this.run_start.bind(_this);
 	    _this.run_action = _this.run_action.bind(_this);
+	    _this.prePaint = _this.prePaint.bind(_this);
+
 	    _this.prepareRoom = _this.prepareRoom.bind(_this);
 	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
 	    return _this;
@@ -2334,7 +2336,7 @@
 
 	      //Config
 	      //--------------------------------
-	      avo.config.debugMode = true;
+	      avo.config.debugMode = false;
 	      //--------------------------------
 
 	      //Images
@@ -2511,9 +2513,16 @@
 	    value: function run_start() {
 	      var avo = this.avo;
 
-	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
-	        avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
-	      }
+	      //if (avo.pointer.state === AVO.INPUT_ACTIVE || 
+	      //    avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
+	      //    avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
+	      //    avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
+	      //    avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
+	      //    avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
+	      //    avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	      //  avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+	      //}
+	      avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
 	    }
 	  }, {
 	    key: "prepareRoom",
@@ -2678,6 +2687,18 @@
 	          avo.refs["wall_left"].x -= 1;
 	          avo.refs["wall_left"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
 	        }
+	      }
+	    }
+	  }, {
+	    key: "prePaint",
+	    value: function prePaint() {
+	      var avo = this.avo;
+	      if (avo.state === AVO.STATE_ACTION) {
+	        avo.context2d.beginPath();
+	        avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
+	        avo.context2d.fillStyle = "#ac8";
+	        avo.context2d.fill();
+	        avo.context2d.closePath();
 	      }
 	    }
 	  }]);

@@ -624,7 +624,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_end() {
     this.context2d.beginPath();
     this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-    this.context2d.fillStyle = "#3cc";
+    this.context2d.fillStyle = "#666";
     this.context2d.fill();
     this.context2d.closePath();    
   }

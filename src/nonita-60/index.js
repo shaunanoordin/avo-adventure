@@ -18,6 +18,8 @@ export class Nonita60 extends Story {
     this.init = this.init.bind(this);
     this.run_start = this.run_start.bind(this);
     this.run_action = this.run_action.bind(this);
+    this.prePaint = this.prePaint.bind(this);
+    
     this.prepareRoom = this.prepareRoom.bind(this);
     this.enterRoom1 = this.enterRoom1.bind(this);
   }
@@ -27,7 +29,7 @@ export class Nonita60 extends Story {
     
     //Config
     //--------------------------------
-    avo.config.debugMode = true;
+    avo.config.debugMode = false;
     //--------------------------------
     
     //Images
@@ -240,15 +242,16 @@ export class Nonita60 extends Story {
   run_start() {
     const avo = this.avo;
     
-    if (avo.pointer.state === AVO.INPUT_ACTIVE || 
-        avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
-        avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
-        avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
-        avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
-        avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
-        avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
-      avo.changeState(AVO.STATE_ACTION, this.enterRoom1 );
-    }
+    //if (avo.pointer.state === AVO.INPUT_ACTIVE || 
+    //    avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
+    //    avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
+    //    avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
+    //    avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
+    //    avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
+    //    avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+    //  avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+    //}
+    avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
   }
   
   prepareRoom() {
@@ -388,6 +391,17 @@ export class Nonita60 extends Story {
         avo.refs["wall_left"].x -= 1;
         avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
       }
+    }
+  }
+  
+  prePaint() {
+    const avo = this.avo;
+    if (avo.state === AVO.STATE_ACTION) {
+      avo.context2d.beginPath();
+      avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
+      avo.context2d.fillStyle = "#ac8";
+      avo.context2d.fill();
+      avo.context2d.closePath();
     }
   }
 }
