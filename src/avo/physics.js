@@ -25,17 +25,23 @@ export const Physics = {
       return this.checkCollision_circleCircle(objA, objB);
     }
     
-    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+    else if (
+        (objA.shape === AVO.SHAPE_SQUARE || objA.shape === AVO.SHAPE_POLYGON) &&
+        (objB.shape === AVO.SHAPE_SQUARE || objB.shape === AVO.SHAPE_POLYGON)) {
       return this.checkCollision_polygonPolygon(objA, objB);
     }
     
-    else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+    else if (
+        objA.shape === AVO.SHAPE_CIRCLE &&
+        (objB.shape === AVO.SHAPE_SQUARE || objB.shape === AVO.SHAPE_POLYGON)) {
       if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
       
       return this.checkCollision_circlePolygon(objA, objB);
     }
     
-    else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+    else if (
+        (objA.shape === AVO.SHAPE_SQUARE || objA.shape === AVO.SHAPE_POLYGON) &&
+        objB.shape === AVO.SHAPE_CIRCLE) {
       if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
       
       let correction = this.checkCollision_circlePolygon(objB, objA);

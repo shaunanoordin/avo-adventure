@@ -643,6 +643,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //--------------------------------
     if (this.config.debugMode) {
       this.context2d.lineWidth = 1;
+      let coords;
       
       //Areas of Effects
       for (let zone of this.zones) {
@@ -662,6 +663,16 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
             this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
+          case AVO.SHAPE_POLYGON:
+            this.context2d.beginPath();
+            coords = zone.vertices;
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            for (let i = 0; i < coords.length; i++) {
+              this.context2d.lineTo(coords[i].x, coords[i].y);
+            }            
             this.context2d.stroke();
             this.context2d.closePath();
             break;
@@ -689,6 +700,16 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
             this.context2d.stroke();
             this.context2d.closePath();
             break;
+          case AVO.SHAPE_POLYGON:
+            this.context2d.beginPath();
+            coords = actor.vertices;
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            for (let i = 0; i < coords.length; i++) {
+              this.context2d.lineTo(coords[i].x, coords[i].y);
+            }            
+            this.context2d.stroke();
+            this.context2d.closePath();
+            break;
         }
       }
     }
@@ -698,16 +719,22 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //TODO: IMPROVE
     //TODO: Layering
     //--------------------------------
-    //Zones
-    for (let zone of this.zones) {
-      this.paintSprite(zone);
-      zone.nextAnimationFrame();
-    }
-    
-    //Actors
-    for (let actor of this.actors) {
-      this.paintSprite(actor);
-      actor.nextAnimationFrame();
+    for (let z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z ++) {
+      //Zones
+      for (let zone of this.zones) {
+        if (zone.z === z) {
+          this.paintSprite(zone);
+          zone.nextAnimationFrame();
+        }
+      }
+      
+      //Actors
+      for (let actor of this.actors) {
+        if (actor.z === z) {
+          this.paintSprite(actor);
+          actor.nextAnimationFrame();
+        }
+      }
     }
     //--------------------------------
     

@@ -18,8 +18,10 @@ class Entity {
     this.name = name;
     this.x = x;
     this.y = y;
+    this.z = AVO.DEFAULT_Z_INDEX;
     this.size = size;
     this.shape = shape;
+    this.shapePolygonPath = null;  //Only applicable if shape === AVO.SHAPE_POLYGON
     this.solid = (shape !== AVO.SHAPE_NONE);
     this.movable = true;
     this.rotation = AVO.ROTATION_SOUTH;  //Rotation in radians; clockwise positive.
@@ -77,6 +79,11 @@ class Entity {
       CIRCLE_TO_POLYGON_APPROXIMATOR.map((approximator) => {
         v.push({ x: this.x + this.radius * approximator.cosAngle, y: this.y + this.radius * approximator.sinAngle });
       });
+    } else if (this.shape === AVO.SHAPE_POLYGON) {
+      if (!this.shapePolygonPath) return [];
+      for (let i = 0; i < this.shapePolygonPath.length; i += 2) {
+        v.push({ x: this.x + this.shapePolygonPath[i], y: this.y + this.shapePolygonPath[i+1] });
+      }
     }
     return v;
   }

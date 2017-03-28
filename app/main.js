@@ -877,6 +877,7 @@
 	      //--------------------------------
 	      if (this.config.debugMode) {
 	        this.context2d.lineWidth = 1;
+	        var coords = void 0;
 
 	        //Areas of Effects
 	        var _iteratorNormalCompletion7 = true;
@@ -903,6 +904,16 @@
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
 	                this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+	                this.context2d.stroke();
+	                this.context2d.closePath();
+	                break;
+	              case AVO.SHAPE_POLYGON:
+	                this.context2d.beginPath();
+	                coords = zone.vertices;
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                for (var i = 0; i < coords.length; i++) {
+	                  this.context2d.lineTo(coords[i].x, coords[i].y);
+	                }
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
@@ -952,6 +963,16 @@
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
+	              case AVO.SHAPE_POLYGON:
+	                this.context2d.beginPath();
+	                coords = actor.vertices;
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                for (var _i3 = 0; _i3 < coords.length; _i3++) {
+	                  this.context2d.lineTo(coords[_i3].x, coords[_i3].y);
+	                }
+	                this.context2d.stroke();
+	                this.context2d.closePath();
+	                break;
 	            }
 	          }
 	        } catch (err) {
@@ -975,65 +996,70 @@
 	      //TODO: IMPROVE
 	      //TODO: Layering
 	      //--------------------------------
-	      //Zones
-	      var _iteratorNormalCompletion9 = true;
-	      var _didIteratorError9 = false;
-	      var _iteratorError9 = undefined;
+	      for (var z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z++) {
+	        //Zones
+	        var _iteratorNormalCompletion9 = true;
+	        var _didIteratorError9 = false;
+	        var _iteratorError9 = undefined;
 
-	      try {
-	        for (var _iterator9 = this.zones[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-	          var _zone2 = _step9.value;
+	        try {
+	          for (var _iterator9 = this.zones[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+	            var _zone2 = _step9.value;
 
-	          this.paintSprite(_zone2);
-	          _zone2.nextAnimationFrame();
+	            if (_zone2.z === z) {
+	              this.paintSprite(_zone2);
+	              _zone2.nextAnimationFrame();
+	            }
+	          }
+
+	          //Actors
+	        } catch (err) {
+	          _didIteratorError9 = true;
+	          _iteratorError9 = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion9 && _iterator9.return) {
+	              _iterator9.return();
+	            }
+	          } finally {
+	            if (_didIteratorError9) {
+	              throw _iteratorError9;
+	            }
+	          }
 	        }
 
-	        //Actors
-	      } catch (err) {
-	        _didIteratorError9 = true;
-	        _iteratorError9 = err;
-	      } finally {
+	        var _iteratorNormalCompletion10 = true;
+	        var _didIteratorError10 = false;
+	        var _iteratorError10 = undefined;
+
 	        try {
-	          if (!_iteratorNormalCompletion9 && _iterator9.return) {
-	            _iterator9.return();
+	          for (var _iterator10 = this.actors[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+	            var _actor3 = _step10.value;
+
+	            if (_actor3.z === z) {
+	              this.paintSprite(_actor3);
+	              _actor3.nextAnimationFrame();
+	            }
 	          }
+	        } catch (err) {
+	          _didIteratorError10 = true;
+	          _iteratorError10 = err;
 	        } finally {
-	          if (_didIteratorError9) {
-	            throw _iteratorError9;
+	          try {
+	            if (!_iteratorNormalCompletion10 && _iterator10.return) {
+	              _iterator10.return();
+	            }
+	          } finally {
+	            if (_didIteratorError10) {
+	              throw _iteratorError10;
+	            }
 	          }
 	        }
 	      }
+	      //--------------------------------
 
-	      var _iteratorNormalCompletion10 = true;
-	      var _didIteratorError10 = false;
-	      var _iteratorError10 = undefined;
-
-	      try {
-	        for (var _iterator10 = this.actors[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-	          var _actor3 = _step10.value;
-
-	          this.paintSprite(_actor3);
-	          _actor3.nextAnimationFrame();
-	        }
-	        //--------------------------------
-
-	        //DEBUG: Paint touch/mouse input
-	        //--------------------------------
-	      } catch (err) {
-	        _didIteratorError10 = true;
-	        _iteratorError10 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion10 && _iterator10.return) {
-	            _iterator10.return();
-	          }
-	        } finally {
-	          if (_didIteratorError10) {
-	            throw _iteratorError10;
-	          }
-	        }
-	      }
-
+	      //DEBUG: Paint touch/mouse input
+	      //--------------------------------
 	      if (this.config.debugMode) {
 	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
 	        this.context2d.lineWidth = 1;
@@ -1235,6 +1261,10 @@
 	var ACTOR_ACTING = exports.ACTOR_ACTING = 2;
 	var ACTOR_REACTING = exports.ACTOR_REACTING = 3;
 
+	var MIN_Z_INDEX = exports.MIN_Z_INDEX = 0;
+	var DEFAULT_Z_INDEX = exports.DEFAULT_Z_INDEX = 1;
+	var MAX_Z_INDEX = exports.MAX_Z_INDEX = 2;
+
 	var REF = exports.REF = { //Standard References
 	  PLAYER: "player"
 	};
@@ -1255,6 +1285,7 @@
 	var SHAPE_NONE = exports.SHAPE_NONE = 0; //No shape = no collision
 	var SHAPE_SQUARE = exports.SHAPE_SQUARE = 1;
 	var SHAPE_CIRCLE = exports.SHAPE_CIRCLE = 2;
+	var SHAPE_POLYGON = exports.SHAPE_POLYGON = 3;
 
 	var ROTATION_EAST = exports.ROTATION_EAST = 0;
 	var ROTATION_SOUTH = exports.ROTATION_SOUTH = Math.PI * 0.5;
@@ -1545,13 +1576,13 @@
 
 	    if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_CIRCLE) {
 	      return this.checkCollision_circleCircle(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_SQUARE) {
+	    } else if ((objA.shape === AVO.SHAPE_SQUARE || objA.shape === AVO.SHAPE_POLYGON) && (objB.shape === AVO.SHAPE_SQUARE || objB.shape === AVO.SHAPE_POLYGON)) {
 	      return this.checkCollision_polygonPolygon(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_CIRCLE && objB.shape === AVO.SHAPE_SQUARE) {
+	    } else if (objA.shape === AVO.SHAPE_CIRCLE && (objB.shape === AVO.SHAPE_SQUARE || objB.shape === AVO.SHAPE_POLYGON)) {
 	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
 
 	      return this.checkCollision_circlePolygon(objA, objB);
-	    } else if (objA.shape === AVO.SHAPE_SQUARE && objB.shape === AVO.SHAPE_CIRCLE) {
+	    } else if ((objA.shape === AVO.SHAPE_SQUARE || objA.shape === AVO.SHAPE_POLYGON) && objB.shape === AVO.SHAPE_CIRCLE) {
 	      if (USE_CIRCLE_APPROXIMATION) return this.checkCollision_polygonPolygon(objA, objB);
 
 	      var correction = this.checkCollision_circlePolygon(objB, objA);
@@ -1955,8 +1986,10 @@
 	    this.name = name;
 	    this.x = x;
 	    this.y = y;
+	    this.z = AVO.DEFAULT_Z_INDEX;
 	    this.size = size;
 	    this.shape = shape;
+	    this.shapePolygonPath = null; //Only applicable if shape === AVO.SHAPE_POLYGON
 	    this.solid = shape !== AVO.SHAPE_NONE;
 	    this.movable = true;
 	    this.rotation = AVO.ROTATION_SOUTH; //Rotation in radians; clockwise positive.
@@ -2084,6 +2117,11 @@
 	        CIRCLE_TO_POLYGON_APPROXIMATOR.map(function (approximator) {
 	          v.push({ x: _this.x + _this.radius * approximator.cosAngle, y: _this.y + _this.radius * approximator.sinAngle });
 	        });
+	      } else if (this.shape === AVO.SHAPE_POLYGON) {
+	        if (!this.shapePolygonPath) return [];
+	        for (var i = 0; i < this.shapePolygonPath.length; i += 2) {
+	          v.push({ x: this.x + this.shapePolygonPath[i], y: this.y + this.shapePolygonPath[i + 1] });
+	        }
 	      }
 	      return v;
 	    }
@@ -2296,7 +2334,7 @@
 
 	      //Config
 	      //--------------------------------
-	      avo.config.debugMode = false;
+	      avo.config.debugMode = true;
 	      //--------------------------------
 
 	      //Images
@@ -2491,6 +2529,8 @@
 	      var newActor = void 0,
 	          newZone = void 0;
 
+	      //Colour plates
+	      //----------------------------------------------------------------
 	      newZone = new _entities.Zone("red_plate", 3 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	      avo.zones.push(newZone);
 	      avo.refs[newZone.name] = newZone;
@@ -2511,7 +2551,10 @@
 	      newZone.spritesheet = avo.assets.images.plates;
 	      newZone.animationSet = avo.animationSets.plate;
 	      newZone.playAnimation("blue");
+	      //----------------------------------------------------------------
 
+	      //Colour boxes
+	      //----------------------------------------------------------------
 	      newActor = new _entities.Actor("red_box", 8 * 32, 4 * 32, 32, AVO.SHAPE_SQUARE);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
@@ -2532,6 +2575,19 @@
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.playAnimation("blue");
+	      //----------------------------------------------------------------
+
+	      //TEST
+	      //----------------------------------------------------------------
+	      newActor = new _entities.Actor("wish_wall", 8 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.shapePolygonPath = [0, -32, 32, 32, -32, 32];
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("idle");
+
+	      //----------------------------------------------------------------
 	    }
 	  }, {
 	    key: "run_action",

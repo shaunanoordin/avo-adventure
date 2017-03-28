@@ -27,7 +27,7 @@ export class Nonita60 extends Story {
     
     //Config
     //--------------------------------
-    avo.config.debugMode = false;
+    avo.config.debugMode = true;
     //--------------------------------
     
     //Images
@@ -257,6 +257,8 @@ export class Nonita60 extends Story {
     
     let newActor, newZone;
     
+    //Colour plates
+    //----------------------------------------------------------------
     newZone = new Zone("red_plate", 3 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
     avo.zones.push(newZone);
     avo.refs[newZone.name] = newZone;
@@ -277,7 +279,10 @@ export class Nonita60 extends Story {
     newZone.spritesheet = avo.assets.images.plates;
     newZone.animationSet = avo.animationSets.plate;
     newZone.playAnimation("blue");
+    //----------------------------------------------------------------
     
+    //Colour boxes
+    //----------------------------------------------------------------
     newActor = new Actor("red_box", 8 * 32, 4 * 32, 32, AVO.SHAPE_SQUARE);
     avo.actors.push(newActor);
     avo.refs[newActor.name] = newActor;
@@ -298,6 +303,19 @@ export class Nonita60 extends Story {
     newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
     newActor.playAnimation("blue");
+    //----------------------------------------------------------------
+    
+    //TEST
+    //----------------------------------------------------------------
+    newActor = new Actor("wish_wall", 8 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+    avo.actors.push(newActor);
+    avo.refs[newActor.name] = newActor;
+    newActor.shapePolygonPath = [0, -32, 32, 32, -32, 32];
+    newActor.spritesheet = avo.assets.images.boxes;
+    newActor.animationSet = avo.animationSets.box;
+    newActor.playAnimation("idle");
+    
+    //----------------------------------------------------------------
   }
   
   run_action() {
