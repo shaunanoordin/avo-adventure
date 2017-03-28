@@ -2531,21 +2531,21 @@
 
 	      //Colour plates
 	      //----------------------------------------------------------------
-	      newZone = new _entities.Zone("red_plate", 3 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      newZone = new _entities.Zone("red_plate", 3 * 32, 8 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	      avo.zones.push(newZone);
 	      avo.refs[newZone.name] = newZone;
 	      newZone.spritesheet = avo.assets.images.plates;
 	      newZone.animationSet = avo.animationSets.plate;
 	      newZone.playAnimation("red");
 
-	      newZone = new _entities.Zone("yellow_plate", 8 * 32, 4 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      newZone = new _entities.Zone("yellow_plate", 8 * 32, 5 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	      avo.zones.push(newZone);
 	      avo.refs[newZone.name] = newZone;
 	      newZone.spritesheet = avo.assets.images.plates;
 	      newZone.animationSet = avo.animationSets.plate;
 	      newZone.playAnimation("yellow");
 
-	      newZone = new _entities.Zone("blue_plate", 13 * 32, 7 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
+	      newZone = new _entities.Zone("blue_plate", 13 * 32, 8 * 32, 64, AVO.SHAPE_SQUARE, AVO.DURATION_INFINITE, []);
 	      avo.zones.push(newZone);
 	      avo.refs[newZone.name] = newZone;
 	      newZone.spritesheet = avo.assets.images.plates;
@@ -2555,21 +2555,21 @@
 
 	      //Colour boxes
 	      //----------------------------------------------------------------
-	      newActor = new _entities.Actor("red_box", 8 * 32, 4 * 32, 32, AVO.SHAPE_SQUARE);
+	      newActor = new _entities.Actor("red_box", 8 * 32, 5 * 32, 32, AVO.SHAPE_SQUARE);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.playAnimation("red");
 
-	      newActor = new _entities.Actor("yellow_box", 13 * 32, 7 * 32 - 8, 32, AVO.SHAPE_SQUARE);
+	      newActor = new _entities.Actor("yellow_box", 13 * 32, 8 * 32 - 8, 32, AVO.SHAPE_SQUARE);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.playAnimation("yellow");
 
-	      newActor = new _entities.Actor("blue_box", 3 * 32, 7 * 32, 32, AVO.SHAPE_SQUARE);
+	      newActor = new _entities.Actor("blue_box", 3 * 32, 8 * 32, 32, AVO.SHAPE_SQUARE);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
@@ -2582,11 +2582,29 @@
 	      newActor = new _entities.Actor("wish_wall", 8 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
-	      newActor.shapePolygonPath = [0, -32, 32, 32, -32, 32];
+	      newActor.shapePolygonPath = [-256, -32, 256, -32, 256, 32, -256, 32];
+	      newActor.movable = false;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
 	      newActor.playAnimation("idle");
 
+	      newActor = new _entities.Actor("wall_left", 4 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.shapePolygonPath = [-128, -48, 128, -48, 128, 48, -128, 48];
+	      newActor.movable = false;
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("idle");
+
+	      newActor = new _entities.Actor("wall_right", 12 * 32, 1 * 32, 0, AVO.SHAPE_POLYGON);
+	      avo.actors.push(newActor);
+	      avo.refs[newActor.name] = newActor;
+	      newActor.shapePolygonPath = [-128, -48, 128, -48, 128, 48, -128, 48];
+	      newActor.movable = false;
+	      newActor.spritesheet = avo.assets.images.boxes;
+	      newActor.animationSet = avo.animationSets.box;
+	      newActor.playAnimation("idle");
 	      //----------------------------------------------------------------
 	    }
 	  }, {
@@ -2627,6 +2645,12 @@
 	            throw _iteratorError2;
 	          }
 	        }
+	      }
+
+	      var MOVE_DISTANCE = 96;
+	      if (matches === colours.length) {
+	        if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) avo.refs["wall_right"].x += 1;
+	        if (avo.refs["wall_left"].x > -MOVE_DISTANCE) avo.refs["wall_left"].x -= 1;
 	      }
 	    }
 	  }]);
