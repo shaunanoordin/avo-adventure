@@ -260,7 +260,7 @@ export class Nonita60 extends Story {
     //Reset
     let player = avo.refs[AVO.REF.PLAYER];
     avo.actors = [];
-    avo.areasOfEffect = [];
+    avo.zones = [];
     avo.refs = {};
     
     //Create the player character if she doesn't yet exist.
