@@ -353,7 +353,7 @@ export class ExampleAdventure extends Story {
     newActor.playAnimation("blue");
     //----------------------------------------------------------------
     
-    //TEST
+    //Message (birthday wish) Wall
     //----------------------------------------------------------------
     newActor = new Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
     avo.actors.push(newActor);
