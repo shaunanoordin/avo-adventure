@@ -7,13 +7,13 @@ AvO Adventure Game
  */
 
 import { AvO } from "./avo/index.js";
-import { Nonita60 } from "./nonita-60/index.js";
+import { ExampleAdventure } from "./example-adventure/index.js";
  
 /*  Initialisations
  */
 //==============================================================================
 var app;
 window.onload = function() {
-  window.app = new AvO(new Nonita60());
+  window.app = new AvO(new ExampleAdventure());
 };
 //==============================================================================

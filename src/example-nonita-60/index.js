@@ -41,202 +41,202 @@ export class Nonita60 extends Story {
     //--------------------------------
     
     //Animations
-  //--------------------------------
-  const STEPS_PER_SECOND = AVO.FRAMES_PER_SECOND / 10;
-  avo.animationSets = {
-    actor: {
-      rule: AVO.ANIMATION_RULE_DIRECTIONAL,
-      tileWidth: 64,
-      tileHeight: 64,
-      tileOffsetX: 0,
-      tileOffsetY: -24,  //-16,
-      actions: {
-        idle: {
-          loop: true,
-          steps: [
-            { row: 0, duration: 1 }
-          ],
-        },
-        moving: {
-          loop: true,
-          steps: [
-            { row: 1, duration: STEPS_PER_SECOND },
-            { row: 2, duration: STEPS_PER_SECOND },
-            { row: 3, duration: STEPS_PER_SECOND },
-            { row: 4, duration: STEPS_PER_SECOND },
-            { row: 5, duration: STEPS_PER_SECOND },
-            { row: 4, duration: STEPS_PER_SECOND },
-            { row: 3, duration: STEPS_PER_SECOND },
-            { row: 2, duration: STEPS_PER_SECOND },
-          ],
-        },
-      },
-    },
-    
-    box: {
-      rule: AVO.ANIMATION_RULE_BASIC,
-      tileWidth: 32,
-      tileHeight: 64,
-      tileOffsetX: 0,
-      tileOffsetY: -16,
-      actions: {
-        idle: {
-          loop: true,
-          steps: [
-            { col: 1, row: 0, duration: 1 }
-          ],
-        },
-        
-        red: {
-          loop: true,
-          steps: [
-            { col: 0, row: 1, duration: 1 }
-          ],
-        },
-        red_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 1, duration: STEPS_PER_SECOND },
-            { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 1, duration: STEPS_PER_SECOND },
-          ],
-        },
-        
-        blue: {
-          loop: true,
-          steps: [
-            { col: 0, row: 2, duration: 1 }
-          ],
-        },
-        blue_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 2, duration: STEPS_PER_SECOND },
-            { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 2, duration: STEPS_PER_SECOND },
-          ],
-        },
-        
-        yellow: {
-          loop: true,
-          steps: [
-            { col: 0, row: 3, duration: 1 }
-          ],
-        },
-        yellow_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 3, duration: STEPS_PER_SECOND },
-            { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 3, duration: STEPS_PER_SECOND },
-          ],
+    //--------------------------------
+    const STEPS_PER_SECOND = AVO.FRAMES_PER_SECOND / 10;
+    avo.animationSets = {
+      actor: {
+        rule: AVO.ANIMATION_RULE_DIRECTIONAL,
+        tileWidth: 64,
+        tileHeight: 64,
+        tileOffsetX: 0,
+        tileOffsetY: -24,  //-16,
+        actions: {
+          idle: {
+            loop: true,
+            steps: [
+              { row: 0, duration: 1 }
+            ],
+          },
+          moving: {
+            loop: true,
+            steps: [
+              { row: 1, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+              { row: 3, duration: STEPS_PER_SECOND },
+              { row: 4, duration: STEPS_PER_SECOND },
+              { row: 5, duration: STEPS_PER_SECOND },
+              { row: 4, duration: STEPS_PER_SECOND },
+              { row: 3, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND },
+            ],
+          },
         },
       },
-    },
-    
-    plate: {
-      rule: AVO.ANIMATION_RULE_BASIC,
-      tileWidth: 64,
-      tileHeight: 64,
-      tileOffsetX: 0,
-      tileOffsetY: 0,
-      actions: {
-        idle: {
-          loop: true,
-          steps: [
-            { col: 0, row: 0, duration: 1 }
-          ],
-        },
-        
-        red: {
-          loop: true,
-          steps: [
-            { col: 0, row: 1, duration: 1 }
-          ],
-        },
-        red_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 1, duration: STEPS_PER_SECOND },
-            { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 1, duration: STEPS_PER_SECOND },
-          ],
-        },
-        
-        blue: {
-          loop: true,
-          steps: [
-            { col: 0, row: 2, duration: 1 }
-          ],
-        },
-        blue_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 2, duration: STEPS_PER_SECOND },
-            { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 2, duration: STEPS_PER_SECOND },
-          ],
-        },
-        
-        yellow: {
-          loop: true,
-          steps: [
-            { col: 0, row: 3, duration: 1 }
-          ],
-        },
-        yellow_glow: {
-          loop: true,
-          steps: [
-            { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
-            { col: 2, row: 3, duration: STEPS_PER_SECOND },
-            { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
-            { col: 2, row: 3, duration: STEPS_PER_SECOND },
-          ],
-        },
-      },
-    },
-    
-    wall: {
-      rule: AVO.ANIMATION_RULE_BASIC,
-      tileWidth: 512,
-      tileHeight: 128,
-      tileOffsetX: 0,
-      tileOffsetY: 0,
-      actions: {
-        long_wall: {
-          loop: true,
-          steps: [
-            { col: 0, row: 0, duration: 1 }
-          ],
-        },
-        short_wall: {
-          loop: true,
-          steps: [
-            { col: 0, row: 1, duration: 1 }
-          ],
+
+      box: {
+        rule: AVO.ANIMATION_RULE_BASIC,
+        tileWidth: 32,
+        tileHeight: 64,
+        tileOffsetX: 0,
+        tileOffsetY: -16,
+        actions: {
+          idle: {
+            loop: true,
+            steps: [
+              { col: 1, row: 0, duration: 1 }
+            ],
+          },
+
+          red: {
+            loop: true,
+            steps: [
+              { col: 0, row: 1, duration: 1 }
+            ],
+          },
+          red_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 1, duration: STEPS_PER_SECOND },
+              { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 1, duration: STEPS_PER_SECOND },
+            ],
+          },
+
+          blue: {
+            loop: true,
+            steps: [
+              { col: 0, row: 2, duration: 1 }
+            ],
+          },
+          blue_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 2, duration: STEPS_PER_SECOND },
+              { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 2, duration: STEPS_PER_SECOND },
+            ],
+          },
+
+          yellow: {
+            loop: true,
+            steps: [
+              { col: 0, row: 3, duration: 1 }
+            ],
+          },
+          yellow_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 3, duration: STEPS_PER_SECOND },
+              { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 3, duration: STEPS_PER_SECOND },
+            ],
+          },
         },
       },
-    },
-  };
-  
-  //Process Animations; expand steps to many frames per steps.
-  for (let animationTitle in avo.animationSets) {
-    let animationSet = avo.animationSets[animationTitle];
-    for (let animationName in animationSet.actions) {
-      let animationAction = animationSet.actions[animationName];
-      let newSteps = [];
-      for (let step of animationAction.steps) {
-        for (let i = 0; i < step.duration; i++) { newSteps.push(step); }
+
+      plate: {
+        rule: AVO.ANIMATION_RULE_BASIC,
+        tileWidth: 64,
+        tileHeight: 64,
+        tileOffsetX: 0,
+        tileOffsetY: 0,
+        actions: {
+          idle: {
+            loop: true,
+            steps: [
+              { col: 0, row: 0, duration: 1 }
+            ],
+          },
+
+          red: {
+            loop: true,
+            steps: [
+              { col: 0, row: 1, duration: 1 }
+            ],
+          },
+          red_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 1, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 1, duration: STEPS_PER_SECOND },
+              { col: 3, row: 1, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 1, duration: STEPS_PER_SECOND },
+            ],
+          },
+
+          blue: {
+            loop: true,
+            steps: [
+              { col: 0, row: 2, duration: 1 }
+            ],
+          },
+          blue_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 2, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 2, duration: STEPS_PER_SECOND },
+              { col: 3, row: 2, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 2, duration: STEPS_PER_SECOND },
+            ],
+          },
+
+          yellow: {
+            loop: true,
+            steps: [
+              { col: 0, row: 3, duration: 1 }
+            ],
+          },
+          yellow_glow: {
+            loop: true,
+            steps: [
+              { col: 1, row: 3, duration: STEPS_PER_SECOND * 10 },
+              { col: 2, row: 3, duration: STEPS_PER_SECOND },
+              { col: 3, row: 3, duration: STEPS_PER_SECOND * 5 },
+              { col: 2, row: 3, duration: STEPS_PER_SECOND },
+            ],
+          },
+        },
+      },
+
+      wall: {
+        rule: AVO.ANIMATION_RULE_BASIC,
+        tileWidth: 512,
+        tileHeight: 128,
+        tileOffsetX: 0,
+        tileOffsetY: 0,
+        actions: {
+          long_wall: {
+            loop: true,
+            steps: [
+              { col: 0, row: 0, duration: 1 }
+            ],
+          },
+          short_wall: {
+            loop: true,
+            steps: [
+              { col: 0, row: 1, duration: 1 }
+            ],
+          },
+        },
+      },
+    };
+
+    //Process Animations; expand steps to many frames per steps.
+    for (let animationTitle in avo.animationSets) {
+      let animationSet = avo.animationSets[animationTitle];
+      for (let animationName in animationSet.actions) {
+        let animationAction = animationSet.actions[animationName];
+        let newSteps = [];
+        for (let step of animationAction.steps) {
+          for (let i = 0; i < step.duration; i++) { newSteps.push(step); }
+        }
+        animationAction.steps = newSteps;
       }
-      animationAction.steps = newSteps;
     }
-  }
-  //--------------------------------
+    //--------------------------------
   }
   
   run_start() {
