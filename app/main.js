@@ -2348,12 +2348,12 @@
 
 	      //Images
 	      //--------------------------------
-	      //avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor.png");
-	      //avo.assets.images.boxes = new ImageAsset("assets/example-adventure/boxes.png");
-	      //avo.assets.images.plates = new ImageAsset("assets/example-adventure/plates.png");
-	      //avo.assets.images.walls = new ImageAsset("assets/example-adventure/walls.png");
+	      avo.assets.images.actor = new _utility.ImageAsset("assets/example-nonita-60/actor.png");
+	      avo.assets.images.boxes = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
+	      avo.assets.images.plates = new _utility.ImageAsset("assets/example-nonita-60/plates.png");
+	      avo.assets.images.walls = new _utility.ImageAsset("assets/example-nonita-60/walls.png");
 
-	      //this.assets.images.comicPanelA = new ImageAsset("assets/example-adventure/comic-panel-A.png");
+	      avo.assets.images.comicPanel1A = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
 	      //--------------------------------
 
 	      //Animations
@@ -2529,10 +2529,8 @@
 	  }, {
 	    key: "playComic1",
 	    value: function playComic1() {
-	      this.avo.comicStrip = new _comicStrip.ComicStrip("comic_1", [//this.assets.images.comicPanelA,
-	        //this.assets.images.comicPanelB,
-	        //this.assets.images.comicPanelC,
-	      ], this.finishComic1);
+	      var avo = this.avo;
+	      avo.comicStrip = new _comicStrip.ComicStrip("comic_1", [avo.assets.images.comicPanel1A], this.finishComic1);
 	    }
 	  }, {
 	    key: "finishComic1",
