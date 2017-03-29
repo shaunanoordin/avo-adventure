@@ -63,7 +63,7 @@
 
 	var app;
 	window.onload = function () {
-	  window.app = new _index.AvO(new _index2.Nonita60());
+	  window.app = new _index.AvO(new _index2.ExampleAdventure());
 	};
 	//==============================================================================
 
@@ -227,7 +227,7 @@
 	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
-	      var storyScript = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+	      var storyScript = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
 	      this.state = state;
 	      if (storyScript && typeof storyScript === "function") {
@@ -848,7 +848,7 @@
 	        this.context2d.fillStyle = "#fff";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#000";
-	        this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2);
+	        this.context2d.fillText("Adventure on!", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      }
 	    }
@@ -1126,8 +1126,8 @@
 	  }, {
 	    key: "paintComicPanel",
 	    value: function paintComicPanel() {
-	      var panel = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
-	      var offsetY = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
+	      var panel = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	      var offsetY = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
 	      if (!panel || !panel.loaded) return;
 
@@ -1975,11 +1975,11 @@
 	//==============================================================================
 	var Entity = function () {
 	  function Entity() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
 
 	    _classCallCheck(this, Entity);
 
@@ -2003,8 +2003,8 @@
 	  _createClass(Entity, [{
 	    key: "playAnimation",
 	    value: function playAnimation() {
-	      var animationName = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	      var restart = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	      var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      var restart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
 	      if (!this.animationSet || !this.animationSet.actions[animationName]) return;
 
@@ -2145,11 +2145,11 @@
 	  _inherits(Actor, _Entity);
 
 	  function Actor() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_NONE : arguments[4];
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_NONE;
 
 	    _classCallCheck(this, Actor);
 
@@ -2178,13 +2178,13 @@
 	  _inherits(Zone, _Entity2);
 
 	  function Zone() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var x = arguments.length <= 1 || arguments[1] === undefined ? 0 : arguments[1];
-	    var y = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-	    var size = arguments.length <= 3 || arguments[3] === undefined ? 32 : arguments[3];
-	    var shape = arguments.length <= 4 || arguments[4] === undefined ? AVO.SHAPE_CIRCLE : arguments[4];
-	    var duration = arguments.length <= 5 || arguments[5] === undefined ? 1 : arguments[5];
-	    var effects = arguments.length <= 6 || arguments[6] === undefined ? [] : arguments[6];
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+	    var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+	    var size = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 32;
+	    var shape = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : AVO.SHAPE_CIRCLE;
+	    var duration = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
+	    var effects = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : [];
 
 	    _classCallCheck(this, Zone);
 
@@ -2242,10 +2242,10 @@
 	//==============================================================================
 	var Effect = exports.Effect = function () {
 	  function Effect() {
-	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
-	    var data = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-	    var duration = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
-	    var stackingRule = arguments.length <= 3 || arguments[3] === undefined ? AVO.STACKING_RULE_ADD : arguments[3];
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    var duration = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+	    var stackingRule = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : AVO.STACKING_RULE_ADD;
 
 	    _classCallCheck(this, Effect);
 
@@ -2281,7 +2281,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Nonita60 = undefined;
+	exports.ExampleAdventure = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -2290,6 +2290,8 @@
 	var AVO = _interopRequireWildcard(_constants);
 
 	var _story = __webpack_require__(3);
+
+	var _comicStrip = __webpack_require__(10);
 
 	var _entities = __webpack_require__(7);
 
@@ -2304,32 +2306,37 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /*
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               Nonita 60
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               =========
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               Example Adventure
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               =================
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               (Shaun A. Noordin || shaunanoordin.com || 20170322)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               While AvO is the adventure game engine, this is a specific implementation of an
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               adventure game idea.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               (Shaun A. Noordin || shaunanoordin.com || 20170329)
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ********************************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
 
-	var Nonita60 = exports.Nonita60 = function (_Story) {
-	  _inherits(Nonita60, _Story);
+	var ExampleAdventure = exports.ExampleAdventure = function (_Story) {
+	  _inherits(ExampleAdventure, _Story);
 
-	  function Nonita60() {
-	    _classCallCheck(this, Nonita60);
+	  function ExampleAdventure() {
+	    _classCallCheck(this, ExampleAdventure);
 
-	    var _this = _possibleConstructorReturn(this, (Nonita60.__proto__ || Object.getPrototypeOf(Nonita60)).call(this));
+	    var _this = _possibleConstructorReturn(this, (ExampleAdventure.__proto__ || Object.getPrototypeOf(ExampleAdventure)).call(this));
 
 	    _this.init = _this.init.bind(_this);
 	    _this.run_start = _this.run_start.bind(_this);
 	    _this.run_action = _this.run_action.bind(_this);
 	    _this.prePaint = _this.prePaint.bind(_this);
 
+	    _this.playComic1 = _this.playComic1.bind(_this);
+	    _this.finishComic1 = _this.finishComic1.bind(_this);
 	    _this.prepareRoom = _this.prepareRoom.bind(_this);
 	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
 	    return _this;
 	  }
 
-	  _createClass(Nonita60, [{
+	  _createClass(ExampleAdventure, [{
 	    key: "init",
 	    value: function init() {
 	      var avo = this.avo;
@@ -2341,10 +2348,12 @@
 
 	      //Images
 	      //--------------------------------
-	      avo.assets.images.actor = new _utility.ImageAsset("assets/nonita-60/actor.png");
-	      avo.assets.images.boxes = new _utility.ImageAsset("assets/nonita-60/boxes.png");
-	      avo.assets.images.plates = new _utility.ImageAsset("assets/nonita-60/plates.png");
-	      avo.assets.images.walls = new _utility.ImageAsset("assets/nonita-60/walls.png");
+	      //avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor.png");
+	      //avo.assets.images.boxes = new ImageAsset("assets/example-adventure/boxes.png");
+	      //avo.assets.images.plates = new ImageAsset("assets/example-adventure/plates.png");
+	      //avo.assets.images.walls = new ImageAsset("assets/example-adventure/walls.png");
+
+	      //this.assets.images.comicPanelA = new ImageAsset("assets/example-adventure/comic-panel-A.png");
 	      //--------------------------------
 
 	      //Animations
@@ -2513,16 +2522,22 @@
 	    value: function run_start() {
 	      var avo = this.avo;
 
-	      //if (avo.pointer.state === AVO.INPUT_ACTIVE || 
-	      //    avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
-	      //  avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
-	      //}
-	      avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	        avo.changeState(AVO.STATE_COMIC, this.playComic1);
+	      }
+	    }
+	  }, {
+	    key: "playComic1",
+	    value: function playComic1() {
+	      this.avo.comicStrip = new _comicStrip.ComicStrip("comic_1", [//this.assets.images.comicPanelA,
+	        //this.assets.images.comicPanelB,
+	        //this.assets.images.comicPanelC,
+	      ], this.finishComic1);
+	    }
+	  }, {
+	    key: "finishComic1",
+	    value: function finishComic1() {
+	      this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
 	    }
 	  }, {
 	    key: "prepareRoom",
@@ -2532,7 +2547,7 @@
 	      //Reset
 	      var player = avo.refs[AVO.REF.PLAYER];
 	      avo.actors = [];
-	      avo.areasOfEffect = [];
+	      avo.zones = [];
 	      avo.refs = {};
 
 	      //Create the player character if she doesn't yet exist.
@@ -2605,7 +2620,7 @@
 	      newActor.playAnimation("blue");
 	      //----------------------------------------------------------------
 
-	      //TEST
+	      //Message (birthday wish) Wall
 	      //----------------------------------------------------------------
 	      newActor = new _entities.Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
@@ -2703,8 +2718,90 @@
 	    }
 	  }]);
 
-	  return Nonita60;
+	  return ExampleAdventure;
 	}(_story.Story);
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.ComicStrip = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Comic Strip
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ===============
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
+
+	/*  4-Koma Comic Strip Class
+	 */
+	//==============================================================================
+	var ComicStrip = exports.ComicStrip = function () {
+	  function ComicStrip() {
+	    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	    var panels = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+	    var onFinish = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+	    _classCallCheck(this, ComicStrip);
+
+	    this.name = name;
+	    this.panels = panels;
+	    this.onFinish = onFinish;
+
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.background = "#333";
+
+	    this.start();
+	  }
+
+	  _createClass(ComicStrip, [{
+	    key: "start",
+	    value: function start() {
+	      this.currentPanel = 0;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
+	      this.counter = 0;
+	    }
+	  }, {
+	    key: "getCurrentPanel",
+	    value: function getCurrentPanel() {
+	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel];
+	      }
+	    }
+	  }, {
+	    key: "getPreviousPanel",
+	    value: function getPreviousPanel() {
+	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel - 1];
+	      }
+	    }
+	  }]);
+
+	  return ComicStrip;
+	}();
+	//==============================================================================
 
 /***/ }
 /******/ ]);

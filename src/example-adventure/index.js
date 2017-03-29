@@ -272,7 +272,7 @@ export class ExampleAdventure extends Story {
     );
   }
   
-  function finishComic1() {
+  finishComic1() {
     this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
   }
   
