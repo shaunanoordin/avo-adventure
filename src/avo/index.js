@@ -66,6 +66,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //this.ui = {};
     this.comicStrip = null;
     this.actions = {};
+    
+    this.camera = {
+      x: 0,
+      y: 0,
+      targetActor: null,  //If not null, automatically focus on the target actor.
+    };
     //--------------------------------
     
     //Prepare Input
@@ -144,6 +150,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         case AVO.STATE_COMIC:
           this.run_comic();
           break;
+      }
+      
+      if (this.camera.targetActor) {
+        this.camera.x = Math.floor(this.canvasWidth / 2 - this.camera.targetActor.x);
+        this.camera.y = Math.floor(this.canvasHeight / 2 - this.camera.targetActor.y);
       }
     }
     
@@ -634,7 +645,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.lineWidth = 1;
       let coords;
       
-      //Areas of Effects
+      //Zones
       for (let zone of this.zones) {
         let durationPercentage = 1;
         if (!zone.hasInfiniteDuration() && zone.startDuration > 0) {
@@ -645,22 +656,22 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         switch (zone.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(zone.x + this.camera.x, zone.y + this.camera.y, zone.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+            this.context2d.rect(zone.x + this.camera.x - zone.size / 2, zone.y + this.camera.y - zone.size / 2, zone.size, zone.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_POLYGON:
             this.context2d.beginPath();
             coords = zone.vertices;
-            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
             for (let i = 0; i < coords.length; i++) {
-              this.context2d.lineTo(coords[i].x, coords[i].y);
+              this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
             }            
             this.context2d.stroke();
             this.context2d.closePath();
@@ -674,27 +685,32 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         switch (actor.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(actor.x + this.camera.x, actor.y + this.camera.y, actor.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             this.context2d.beginPath();
-            this.context2d.moveTo(actor.x, actor.y);
-            this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+            this.context2d.moveTo(actor.x + this.camera.x, actor.y + this.camera.y);
+            this.context2d.lineTo(
+              actor.x + this.camera.x + Math.cos(actor.rotation) * actor.size,
+              actor.y + this.camera.y + Math.sin(actor.rotation) * actor.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+            this.context2d.rect(
+              actor.x + this.camera.x - actor.size / 2,
+              actor.y + this.camera.y - actor.size / 2,
+              actor.size, actor.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_POLYGON:
             this.context2d.beginPath();
             coords = actor.vertices;
-            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
             for (let i = 0; i < coords.length; i++) {
-              this.context2d.lineTo(coords[i].x, coords[i].y);
+              this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
             }            
             this.context2d.stroke();
             this.context2d.closePath();
@@ -705,8 +721,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //--------------------------------
     
     //Paint sprites
-    //TODO: IMPROVE
-    //TODO: Layering
     //--------------------------------
     for (let z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z ++) {
       //Zones
@@ -792,8 +806,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
     }
     
-    const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
-    const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+    const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX + this.camera.x);
+    const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY + this.camera.y);
     const tgtW = Math.floor(srcW);
     const tgtH = Math.floor(srcH);
     
@@ -804,18 +818,21 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
     
     let coords;
-    this.context2d.fillStyle = "rgba(0,0,0,0.5)";
+    this.context2d.fillStyle = AVO.SHADOW_COLOUR;
     
     switch (obj.shape) {
       case AVO.SHAPE_CIRCLE:
         this.context2d.beginPath();
-        this.context2d.arc(obj.x, obj.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+        this.context2d.arc(obj.x + this.camera.x, obj.y + this.camera.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
         this.context2d.fill();
         this.context2d.closePath();
         break;
       case AVO.SHAPE_SQUARE:
         this.context2d.beginPath();
-        this.context2d.rect(obj.x - obj.size / 2  * obj.shadowSize, obj.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+        this.context2d.rect(
+          obj.x + this.camera.x - obj.size / 2  * obj.shadowSize,
+          obj.y + this.camera.y - obj.size / 2 * obj.shadowSize,
+          obj.size * obj.shadowSize, obj.size * obj.shadowSize);
         this.context2d.fill();
         this.context2d.closePath();
         break;
@@ -823,9 +840,9 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         //NOTE: Polygon doesn't account for shadowSize yet.
         this.context2d.beginPath();
         coords = obj.vertices;
-        if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+        if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
         for (let i = 0; i < coords.length; i++) {
-          this.context2d.lineTo(coords[i].x, coords[i].y);
+          this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
         }            
         this.context2d.fill();
         this.context2d.closePath();

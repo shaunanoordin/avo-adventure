@@ -76,6 +76,8 @@ export const DEFAULT_COMIC_STRIP_TRANSITION_TIME = 20;
 export const STACKING_RULE_ADD = 0;
 export const STACKING_RULE_REPLACE = 1;
 
+export const SHADOW_COLOUR = "rgba(0,0,0,0.5)";
+
 export const KEY_CODES = {
   LEFT: 37,
   UP: 38,

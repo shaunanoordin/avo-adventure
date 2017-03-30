@@ -162,6 +162,11 @@
 	    //this.ui = {};
 	    this.comicStrip = null;
 	    this.actions = {};
+
+	    this.camera = {
+	      x: 0,
+	      y: 0,
+	      targetActor: null };
 	    //--------------------------------
 
 	    //Prepare Input
@@ -243,6 +248,11 @@
 	          case AVO.STATE_COMIC:
 	            this.run_comic();
 	            break;
+	        }
+
+	        if (this.camera.targetActor) {
+	          this.camera.x = Math.floor(this.canvasWidth / 2 - this.camera.targetActor.x);
+	          this.camera.y = Math.floor(this.canvasHeight / 2 - this.camera.targetActor.y);
 	        }
 	      }
 
@@ -868,7 +878,7 @@
 	        this.context2d.lineWidth = 1;
 	        var coords = void 0;
 
-	        //Areas of Effects
+	        //Zones
 	        var _iteratorNormalCompletion7 = true;
 	        var _didIteratorError7 = false;
 	        var _iteratorError7 = undefined;
@@ -886,22 +896,22 @@
 	            switch (zone.shape) {
 	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
-	                this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
+	                this.context2d.arc(zone.x + this.camera.x, zone.y + this.camera.y, zone.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
-	                this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+	                this.context2d.rect(zone.x + this.camera.x - zone.size / 2, zone.y + this.camera.y - zone.size / 2, zone.size, zone.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
 	                this.context2d.beginPath();
 	                coords = zone.vertices;
-	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
 	                for (var i = 0; i < coords.length; i++) {
-	                  this.context2d.lineTo(coords[i].x, coords[i].y);
+	                  this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
 	                }
 	                this.context2d.stroke();
 	                this.context2d.closePath();
@@ -937,27 +947,27 @@
 	            switch (actor.shape) {
 	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
-	                this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+	                this.context2d.arc(actor.x + this.camera.x, actor.y + this.camera.y, actor.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                this.context2d.beginPath();
-	                this.context2d.moveTo(actor.x, actor.y);
-	                this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+	                this.context2d.moveTo(actor.x + this.camera.x, actor.y + this.camera.y);
+	                this.context2d.lineTo(actor.x + this.camera.x + Math.cos(actor.rotation) * actor.size, actor.y + this.camera.y + Math.sin(actor.rotation) * actor.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
-	                this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+	                this.context2d.rect(actor.x + this.camera.x - actor.size / 2, actor.y + this.camera.y - actor.size / 2, actor.size, actor.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
 	                this.context2d.beginPath();
 	                coords = actor.vertices;
-	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
 	                for (var _i3 = 0; _i3 < coords.length; _i3++) {
-	                  this.context2d.lineTo(coords[_i3].x, coords[_i3].y);
+	                  this.context2d.lineTo(coords[_i3].x + this.camera.x, coords[_i3].y + this.camera.y);
 	                }
 	                this.context2d.stroke();
 	                this.context2d.closePath();
@@ -982,8 +992,6 @@
 	      //--------------------------------
 
 	      //Paint sprites
-	      //TODO: IMPROVE
-	      //TODO: Layering
 	      //--------------------------------
 	      for (var z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z++) {
 	        //Zones
@@ -1132,8 +1140,8 @@
 	        srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
 	      }
 
-	      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
-	      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+	      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX + this.camera.x);
+	      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY + this.camera.y);
 	      var tgtW = Math.floor(srcW);
 	      var tgtH = Math.floor(srcH);
 
@@ -1145,18 +1153,18 @@
 	      if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
 
 	      var coords = void 0;
-	      this.context2d.fillStyle = "rgba(0,0,0,0.5)";
+	      this.context2d.fillStyle = AVO.SHADOW_COLOUR;
 
 	      switch (obj.shape) {
 	        case AVO.SHAPE_CIRCLE:
 	          this.context2d.beginPath();
-	          this.context2d.arc(obj.x, obj.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+	          this.context2d.arc(obj.x + this.camera.x, obj.y + this.camera.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
 	          this.context2d.fill();
 	          this.context2d.closePath();
 	          break;
 	        case AVO.SHAPE_SQUARE:
 	          this.context2d.beginPath();
-	          this.context2d.rect(obj.x - obj.size / 2 * obj.shadowSize, obj.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+	          this.context2d.rect(obj.x + this.camera.x - obj.size / 2 * obj.shadowSize, obj.y + this.camera.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
 	          this.context2d.fill();
 	          this.context2d.closePath();
 	          break;
@@ -1164,9 +1172,9 @@
 	          //NOTE: Polygon doesn't account for shadowSize yet.
 	          this.context2d.beginPath();
 	          coords = obj.vertices;
-	          if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	          if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
 	          for (var i = 0; i < coords.length; i++) {
-	            this.context2d.lineTo(coords[i].x, coords[i].y);
+	            this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
 	          }
 	          this.context2d.fill();
 	          this.context2d.closePath();
@@ -1371,6 +1379,8 @@
 
 	var STACKING_RULE_ADD = exports.STACKING_RULE_ADD = 0;
 	var STACKING_RULE_REPLACE = exports.STACKING_RULE_REPLACE = 1;
+
+	var SHADOW_COLOUR = exports.SHADOW_COLOUR = "rgba(0,0,0,0.5)";
 
 	var KEY_CODES = exports.KEY_CODES = {
 	  LEFT: 37,
@@ -2613,6 +2623,8 @@
 	        avo.refs[AVO.REF.PLAYER] = player;
 	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
 	      }
+
+	      avo.camera.targetActor = avo.refs[AVO.REF.PLAYER];
 	    }
 	  }, {
 	    key: "enterRoom1",

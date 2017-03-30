@@ -298,6 +298,8 @@ export class ExampleAdventure extends Story {
       avo.refs[AVO.REF.PLAYER] = player;
       avo.actors.push(avo.refs[AVO.REF.PLAYER]);
     }
+    
+    avo.camera.targetActor = avo.refs[AVO.REF.PLAYER];
   }
   
   enterRoom1() {
