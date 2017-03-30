@@ -12,7 +12,7 @@ import { Physics } from "../avo/physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
-const HTML_CANVAS_CSS_SCALE = 2;
+//const HTML_CANVAS_CSS_SCALE = 2;
 
 /*  Primary AvO Game Engine
  */
@@ -27,6 +27,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       topDownView: true,  //Top-down view sorts Actors on paint().
       skipStandardRun: false,  //Skips the standard run() code, including physics.
       skipStandardPaint: false,  //Skips the standard paint() code.
+      autoFitCanvas: true,
     };
     this.runCycle = null;
     this.html = {
@@ -35,9 +36,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     };
     this.context2d = this.html.canvas.getContext("2d");
     this.boundingBox = null;  //To be defined by this.updateSize().
-    this.sizeRatioX = 1;
-    this.sizeRatioY = 1;
-    this.canvasWidth = this.html.canvas.width;
+    //this.sizeRatioX = 1;
+    //this.sizeRatioY = 1;
+    this.canvasSizeRatio = 1;
+    this.canvasWidth = this.html.canvas.width;  //The intended width/height of the canvas.
     this.canvasHeight = this.html.canvas.height;
     this.state = null;
     this.animationSets = {};
@@ -45,7 +47,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Account for graphical settings
     //--------------------------------
-    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
+    //if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
     this.context2d.mozImageSmoothingEnabled = false;
     this.context2d.msImageSmoothingEnabled = false;
     this.context2d.imageSmoothingEnabled = false;
@@ -206,7 +208,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         const distY = this.pointer.now.y - this.pointer.start.y;
         const dist = Math.sqrt(distX * distX + distY * distY);
 
-        if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+        if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
           const angle = Math.atan2(distY, distX);
           player.intent = {
             name: AVO.ACTION.MOVING,
@@ -215,11 +217,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
-          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2) {
             this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
-              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
             this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
-              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
           }
         }
       } else if (this.pointer.state === AVO.INPUT_ENDED) {
@@ -227,7 +229,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         const distY = this.pointer.now.y - this.pointer.start.y;
         const dist = Math.sqrt(distX * distX + distY * distY);
 
-        if (dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+        if (dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
           player.intent = {
             name: AVO.ACTION.PRIMARY,
           };
@@ -744,7 +746,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
       this.context2d.lineWidth = 1;
       this.context2d.beginPath();
-      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
+      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 * this.canvasSizeRatio, 0, 2 * Math.PI);
       this.context2d.stroke();
       this.context2d.closePath();
     }
@@ -860,8 +862,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
     }
-    let inputX = (clientX - this.boundingBox.left) * this.sizeRatioX;
-    let inputY = (clientY - this.boundingBox.top) * this.sizeRatioY;
+    let inputX = (clientX - this.boundingBox.left) * this.canvasSizeRatio;
+    let inputY = (clientY - this.boundingBox.top) * this.canvasSizeRatio;
     return { x: inputX, y: inputY };
   }
   
@@ -885,12 +887,29 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   //----------------------------------------------------------------
   
   updateSize() {
+    if (this.config.autoFitCanvas) {
+      const bestFit = Math.min(
+        this.html.app.offsetWidth / this.canvasWidth,
+        this.html.app.offsetHeight / this.canvasHeight
+      );
+      
+      this.html.canvas.style =
+        "width: " + Math.round(bestFit * this.canvasWidth) + "px; " +
+        "height: " + Math.round(bestFit * this.canvasHeight) + "px; ";
+    }
+    
     let boundingBox = (this.html.canvas.getBoundingClientRect)
       ? this.html.canvas.getBoundingClientRect()
       : { left: 0, top: 0 };
     this.boundingBox = boundingBox;
-    this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
-    this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+    //this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+    //this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+    this.canvasSizeRatio = Math.min(
+      this.canvasWidth / this.boundingBox.width,
+      this.canvasHeight / this.boundingBox.height
+    );
+    
+    //console.log(this.sizeRatioX, this.sizeRatioY)
   }
 }
 

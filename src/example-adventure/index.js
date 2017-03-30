@@ -35,7 +35,7 @@ export class ExampleAdventure extends Story {
     
     //Config
     //--------------------------------
-    avo.config.debugMode = false;
+    avo.config.debugMode = true;
     //--------------------------------
     
     //Images
