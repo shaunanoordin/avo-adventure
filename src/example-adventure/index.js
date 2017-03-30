@@ -424,12 +424,12 @@ export class ExampleAdventure extends Story {
   
   prePaint() {
     const avo = this.avo;
-    if (avo.state === AVO.STATE_ACTION) {
-      avo.context2d.beginPath();
-      avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
-      avo.context2d.fillStyle = "#ac8";
-      avo.context2d.fill();
-      avo.context2d.closePath();
-    }
+    //if (avo.state === AVO.STATE_ACTION) {
+    //  avo.context2d.beginPath();
+    //  avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
+    //  avo.context2d.fillStyle = "#ac8";
+    //  avo.context2d.fill();
+    //  avo.context2d.closePath();
+    //}
   }
 }

@@ -22,6 +22,5 @@ body {
 #app #canvas {
   display: block;
   margin: 0 auto;
-  background: #fff;
   touch-action: none;
 }

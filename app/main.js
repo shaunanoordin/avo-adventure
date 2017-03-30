@@ -121,7 +121,8 @@
 	      topDownView: true, //Top-down view sorts Actors on paint().
 	      skipStandardRun: false, //Skips the standard run() code, including physics.
 	      skipStandardPaint: false, //Skips the standard paint() code.
-	      autoFitCanvas: true
+	      autoFitCanvas: true,
+	      backgroundColour: "#333"
 	    };
 	    this.runCycle = null;
 	    this.html = {
@@ -231,7 +232,7 @@
 	  }, {
 	    key: "run",
 	    value: function run() {
-	      //if (this.scripts.preRun) this.scripts.preRun.apply(this);
+	      //Run Story script
 	      this.story.preRun(this);
 
 	      if (!this.config.skipCoreRun) {
@@ -256,7 +257,7 @@
 	        }
 	      }
 
-	      //if (this.scripts.postRun) this.scripts.postRun.apply(this);
+	      //Run Story script
 	      this.story.postRun();
 
 	      this.paint();
@@ -275,25 +276,19 @@
 	      if (this.assetsLoaded < this.assetsTotal) return;
 
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_start();
-	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_end",
 	    value: function run_end() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_end();
-	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_action",
 	    value: function run_action() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_action();
-	      //--------------------------------
 
 	      //Actors determine intent
 	      //--------------------------------
@@ -621,9 +616,7 @@
 	    key: "run_comic",
 	    value: function run_comic() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_comic();
-	      //--------------------------------
 
 	      if (!this.comicStrip) return;
 	      var comic = this.comicStrip;
@@ -800,7 +793,16 @@
 	      //Clear
 	      this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-	      //if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+	      //Base colour
+	      if (this.config.backgroundColour) {
+	        this.context2d.beginPath();
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
+	        this.context2d.fillStyle = this.config.backgroundColour;
+	        this.context2d.fill();
+	        this.context2d.closePath();
+	      }
+
+	      //Run Story script
 	      this.story.prePaint();
 
 	      if (!this.config.skipCorePaint) {
@@ -820,7 +822,7 @@
 	        }
 	      }
 
-	      //if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+	      //Run Story script
 	      this.story.postPaint();
 	    }
 	  }, {
@@ -853,13 +855,7 @@
 	    }
 	  }, {
 	    key: "paint_end",
-	    value: function paint_end() {
-	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-	      this.context2d.fillStyle = "#666";
-	      this.context2d.fill();
-	      this.context2d.closePath();
-	    }
+	    value: function paint_end() {}
 	  }, {
 	    key: "paint_action",
 	    value: function paint_action() {
@@ -907,6 +903,7 @@
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
+	                //NOTE: Polygon doesn't account for shadowSize yet.
 	                this.context2d.beginPath();
 	                coords = zone.vertices;
 	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
@@ -963,6 +960,7 @@
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
+	                //NOTE: Polygon doesn't account for shadowSize yet.
 	                this.context2d.beginPath();
 	                coords = actor.vertices;
 	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
@@ -2774,13 +2772,13 @@
 	    key: "prePaint",
 	    value: function prePaint() {
 	      var avo = this.avo;
-	      if (avo.state === AVO.STATE_ACTION) {
-	        avo.context2d.beginPath();
-	        avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
-	        avo.context2d.fillStyle = "#ac8";
-	        avo.context2d.fill();
-	        avo.context2d.closePath();
-	      }
+	      //if (avo.state === AVO.STATE_ACTION) {
+	      //  avo.context2d.beginPath();
+	      //  avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
+	      //  avo.context2d.fillStyle = "#ac8";
+	      //  avo.context2d.fill();
+	      //  avo.context2d.closePath();
+	      //}
 	    }
 	  }]);
 
