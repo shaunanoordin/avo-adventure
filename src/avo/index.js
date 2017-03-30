@@ -12,8 +12,6 @@ import { Physics } from "../avo/physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
-//const HTML_CANVAS_CSS_SCALE = 2;
-
 /*  Primary AvO Game Engine
  */
 //==============================================================================
@@ -47,7 +45,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Account for graphical settings
     //--------------------------------
-    //if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
     this.context2d.mozImageSmoothingEnabled = false;
     this.context2d.msImageSmoothingEnabled = false;
     this.context2d.imageSmoothingEnabled = false;
@@ -62,16 +59,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     };
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
-    //this.scripts = {
-    //  preRun: null,
-    //  postRun: null,
-    //  customRunStart: null,
-    //  customRunAction: null,
-    //  customRunComic: null,
-    //  customRunEnd: null,
-    //  prePaint: null,
-    //  postPaint: null,
-    //};
     this.actors = [];
     this.zones = [];
     this.refs = {};
@@ -733,6 +720,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       //Actors
       for (let actor of this.actors) {
         if (actor.z === z) {
+          this.paintShadow(actor);
+        }
+      }
+      for (let actor of this.actors) {
+        if (actor.z === z) {
           this.paintSprite(actor);
           actor.nextAnimationFrame();
         }
@@ -782,7 +774,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   paintSprite(obj) {
-    if (!obj.spritesheet || !obj.spritesheet.loaded ||
+    if (!obj || !obj.spritesheet || !obj.spritesheet.loaded ||
         !obj.animationSet || !obj.animationSet.actions[obj.animationName])
       return;
     
@@ -806,6 +798,39 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     const tgtH = Math.floor(srcH);
     
     this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+  }
+  
+  paintShadow(obj) {
+    if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
+    
+    let coords;
+    this.context2d.fillStyle = "rgba(0,0,0,0.5)";
+    
+    switch (obj.shape) {
+      case AVO.SHAPE_CIRCLE:
+        this.context2d.beginPath();
+        this.context2d.arc(obj.x, obj.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+      case AVO.SHAPE_SQUARE:
+        this.context2d.beginPath();
+        this.context2d.rect(obj.x - obj.size / 2  * obj.shadowSize, obj.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+      case AVO.SHAPE_POLYGON:
+        //NOTE: Polygon doesn't account for shadowSize yet.
+        this.context2d.beginPath();
+        coords = obj.vertices;
+        if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+        for (let i = 0; i < coords.length; i++) {
+          this.context2d.lineTo(coords[i].x, coords[i].y);
+        }            
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+    }
   }
   
   paintComicPanel(panel = null, offsetY = 0) {
@@ -908,8 +933,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.canvasWidth / this.boundingBox.width,
       this.canvasHeight / this.boundingBox.height
     );
-    
-    //console.log(this.sizeRatioX, this.sizeRatioY)
   }
 }
 

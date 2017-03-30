@@ -337,6 +337,7 @@ export class ExampleAdventure extends Story {
     avo.refs[newActor.name] = newActor;
     newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
+    newActor.shadowSize = 1.2;
     newActor.playAnimation("red");
     
     newActor = new Actor("yellow_box", 13 * 32, 8 * 32 - 8, 32, AVO.SHAPE_SQUARE);
@@ -344,6 +345,7 @@ export class ExampleAdventure extends Story {
     avo.refs[newActor.name] = newActor;
     newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
+    newActor.shadowSize = 1.2;
     newActor.playAnimation("yellow");
     
     newActor = new Actor("blue_box", 3 * 32, 8 * 32, 32, AVO.SHAPE_SQUARE);
@@ -351,6 +353,7 @@ export class ExampleAdventure extends Story {
     avo.refs[newActor.name] = newActor;
     newActor.spritesheet = avo.assets.images.boxes;
     newActor.animationSet = avo.animationSets.box;
+    newActor.shadowSize = 1.2;
     newActor.playAnimation("blue");
     //----------------------------------------------------------------
     

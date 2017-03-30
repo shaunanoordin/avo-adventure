@@ -30,6 +30,7 @@ class Entity {
     this.animationStep = 0;
     this.animationSet = null;
     this.animationName = "";
+    this.shadowSize = 0;  //Size of shadow relative to actual size; 0 means the sprite has no shadow.
   }
   
   get left() { return this.x - this.size / 2; }
@@ -128,6 +129,8 @@ const CIRCLE_TO_POLYGON_APPROXIMATOR =
 export class Actor extends Entity {
   constructor(name = "", x = 0, y = 0, size = 32, shape = AVO.SHAPE_NONE) {
     super(name, x, y, size, shape);
+    
+    this.shadowSize = (shape !== AVO.SHAPE_NONE) ? 1 : 0;
     
     this.state = AVO.ACTOR_IDLE;
     this.intent = null;

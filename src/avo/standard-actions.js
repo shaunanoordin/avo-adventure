@@ -31,7 +31,6 @@ StandardActions[AVO.ACTION.MOVING] = function (actor) {
 StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
   //TODO This is just a placeholder
   //................
-  /*console.log('X');
   const PUSH_POWER = 12;
   const ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
   let distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
@@ -45,6 +44,6 @@ StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
     ]
   );
   this.zones.push(newZone);
-  actor.playAnimation(AVO.ACTION.PRIMARY);*/
+  actor.playAnimation(AVO.ACTION.PRIMARY);
   //................
 };

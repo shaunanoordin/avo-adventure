@@ -105,8 +105,6 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	//const HTML_CANVAS_CSS_SCALE = 2;
-
 	/*  Primary AvO Game Engine
 	 */
 	//==============================================================================
@@ -143,7 +141,6 @@
 
 	    //Account for graphical settings
 	    //--------------------------------
-	    //if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
 	    this.context2d.mozImageSmoothingEnabled = false;
 	    this.context2d.msImageSmoothingEnabled = false;
 	    this.context2d.imageSmoothingEnabled = false;
@@ -158,16 +155,6 @@
 	    };
 	    this.assetsLoaded = 0;
 	    this.assetsTotal = 0;
-	    //this.scripts = {
-	    //  preRun: null,
-	    //  postRun: null,
-	    //  customRunStart: null,
-	    //  customRunAction: null,
-	    //  customRunComic: null,
-	    //  customRunEnd: null,
-	    //  prePaint: null,
-	    //  postPaint: null,
-	    //};
 	    this.actors = [];
 	    this.zones = [];
 	    this.refs = {};
@@ -1039,8 +1026,7 @@
 	            var _actor3 = _step10.value;
 
 	            if (_actor3.z === z) {
-	              this.paintSprite(_actor3);
-	              _actor3.nextAnimationFrame();
+	              this.paintShadow(_actor3);
 	            }
 	          }
 	        } catch (err) {
@@ -1054,6 +1040,34 @@
 	          } finally {
 	            if (_didIteratorError10) {
 	              throw _iteratorError10;
+	            }
+	          }
+	        }
+
+	        var _iteratorNormalCompletion11 = true;
+	        var _didIteratorError11 = false;
+	        var _iteratorError11 = undefined;
+
+	        try {
+	          for (var _iterator11 = this.actors[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+	            var _actor4 = _step11.value;
+
+	            if (_actor4.z === z) {
+	              this.paintSprite(_actor4);
+	              _actor4.nextAnimationFrame();
+	            }
+	          }
+	        } catch (err) {
+	          _didIteratorError11 = true;
+	          _iteratorError11 = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+	              _iterator11.return();
+	            }
+	          } finally {
+	            if (_didIteratorError11) {
+	              throw _iteratorError11;
 	            }
 	          }
 	        }
@@ -1102,7 +1116,7 @@
 	  }, {
 	    key: "paintSprite",
 	    value: function paintSprite(obj) {
-	      if (!obj.spritesheet || !obj.spritesheet.loaded || !obj.animationSet || !obj.animationSet.actions[obj.animationName]) return;
+	      if (!obj || !obj.spritesheet || !obj.spritesheet.loaded || !obj.animationSet || !obj.animationSet.actions[obj.animationName]) return;
 
 	      var animationSet = obj.animationSet;
 
@@ -1124,6 +1138,40 @@
 	      var tgtH = Math.floor(srcH);
 
 	      this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+	    }
+	  }, {
+	    key: "paintShadow",
+	    value: function paintShadow(obj) {
+	      if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
+
+	      var coords = void 0;
+	      this.context2d.fillStyle = "rgba(0,0,0,0.5)";
+
+	      switch (obj.shape) {
+	        case AVO.SHAPE_CIRCLE:
+	          this.context2d.beginPath();
+	          this.context2d.arc(obj.x, obj.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	        case AVO.SHAPE_SQUARE:
+	          this.context2d.beginPath();
+	          this.context2d.rect(obj.x - obj.size / 2 * obj.shadowSize, obj.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	        case AVO.SHAPE_POLYGON:
+	          //NOTE: Polygon doesn't account for shadowSize yet.
+	          this.context2d.beginPath();
+	          coords = obj.vertices;
+	          if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	          for (var i = 0; i < coords.length; i++) {
+	            this.context2d.lineTo(coords[i].x, coords[i].y);
+	          }
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	      }
 	    }
 	  }, {
 	    key: "paintComicPanel",
@@ -1229,8 +1277,6 @@
 	      //this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
 	      //this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
 	      this.canvasSizeRatio = Math.min(this.canvasWidth / this.boundingBox.width, this.canvasHeight / this.boundingBox.height);
-
-	      //console.log(this.sizeRatioX, this.sizeRatioY)
 	    }
 	  }]);
 
@@ -1926,21 +1972,14 @@
 	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
 	  //TODO This is just a placeholder
 	  //................
-	  /*console.log('X');
-	  const PUSH_POWER = 12;
-	  const ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  let distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
-	  let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	  let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  let newZone = new Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5,
-	    [
-	      new Effect("push",
-	        { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
-	        2, AVO.STACKING_RULE_ADD)
-	    ]
-	  );
+	  var PUSH_POWER = 12;
+	  var ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
+	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
 	  this.zones.push(newZone);
-	  actor.playAnimation(AVO.ACTION.PRIMARY);*/
+	  actor.playAnimation(AVO.ACTION.PRIMARY);
 	  //................
 	};
 
@@ -2009,6 +2048,7 @@
 	    this.animationStep = 0;
 	    this.animationSet = null;
 	    this.animationName = "";
+	    this.shadowSize = 0; //Size of shadow relative to actual size; 0 means the sprite has no shadow.
 	  }
 
 	  _createClass(Entity, [{
@@ -2165,6 +2205,8 @@
 	    _classCallCheck(this, Actor);
 
 	    var _this2 = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
+
+	    _this2.shadowSize = shape !== AVO.SHAPE_NONE ? 1 : 0;
 
 	    _this2.state = AVO.ACTOR_IDLE;
 	    _this2.intent = null;
@@ -2612,6 +2654,7 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("red");
 
 	      newActor = new _entities.Actor("yellow_box", 13 * 32, 8 * 32 - 8, 32, AVO.SHAPE_SQUARE);
@@ -2619,6 +2662,7 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("yellow");
 
 	      newActor = new _entities.Actor("blue_box", 3 * 32, 8 * 32, 32, AVO.SHAPE_SQUARE);
@@ -2626,6 +2670,7 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("blue");
 	      //----------------------------------------------------------------
 
