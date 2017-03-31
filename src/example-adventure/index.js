@@ -40,7 +40,7 @@ export class ExampleAdventure extends Story {
     
     //Images
     //--------------------------------
-    avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor-female.png");
+    avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor-female-safe.png");
     avo.assets.images.boxes = new ImageAsset("assets/example-nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/example-nonita-60/plates.png");
     avo.assets.images.walls = new ImageAsset("assets/example-nonita-60/walls.png");
@@ -292,7 +292,7 @@ export class ExampleAdventure extends Story {
       avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
       avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
       avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-      avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
+      avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_SOUTH;
       avo.actors.push(avo.refs[AVO.REF.PLAYER]);
     } else {
       avo.refs[AVO.REF.PLAYER] = player;
