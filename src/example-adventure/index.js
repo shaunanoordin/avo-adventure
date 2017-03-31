@@ -40,12 +40,12 @@ export class ExampleAdventure extends Story {
     
     //Images
     //--------------------------------
-    avo.assets.images.actor = new ImageAsset("assets/example-nonita-60/actor.png");
+    avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor-female.png");
     avo.assets.images.boxes = new ImageAsset("assets/example-nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/example-nonita-60/plates.png");
     avo.assets.images.walls = new ImageAsset("assets/example-nonita-60/walls.png");
     
-    avo.assets.images.comicPanel1A = new ImageAsset("assets/example-nonita-60/boxes.png");
+    avo.assets.images.comicPanel1A = new ImageAsset("assets/example-adventure/comic-panel-1a.png");
     //--------------------------------
     
     //Animations
