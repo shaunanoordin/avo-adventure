@@ -26,9 +26,9 @@ export const MIN_Z_INDEX = 0;
 export const DEFAULT_Z_INDEX = 1;
 export const MAX_Z_INDEX = 2;
 
-export const REF = {  //Standard References
-  PLAYER: "player",
-};
+//export const REF = {  //Standard References
+//  PLAYER: "player",  //DEPRECATED. Use AvO.playerActor instead.
+//};
 
 export const ACTION = {  //Standard Actions
   IDLE: "idle",

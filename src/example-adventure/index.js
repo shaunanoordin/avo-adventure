@@ -16,6 +16,8 @@ import { Actor, Zone } from "../avo/entities.js";
 import { Utility, ImageAsset } from "../avo/utility.js";
 import { Physics } from "../avo/physics.js";
 
+import { FirstRoom } from "./rooms.js";
+
 export class ExampleAdventure extends Story {
   constructor() {
     super();
@@ -27,7 +29,7 @@ export class ExampleAdventure extends Story {
     this.playComic1 = this.playComic1.bind(this);
     this.finishComic1 = this.finishComic1.bind(this);
     this.prepareRoom = this.prepareRoom.bind(this);
-    this.enterRoom1 = this.enterRoom1.bind(this);
+    this.enterFirstRoom = this.enterFirstRoom.bind(this);
   }
   
   init() {
@@ -44,6 +46,7 @@ export class ExampleAdventure extends Story {
     avo.assets.images.boxes = new ImageAsset("assets/example-nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/example-nonita-60/plates.png");
     avo.assets.images.walls = new ImageAsset("assets/example-nonita-60/walls.png");
+    avo.assets.images.floor = new ImageAsset("assets/example-adventure/floor.png");
     
     avo.assets.images.comicPanel1A = new ImageAsset("assets/example-adventure/comic-panel-1a.png");
     //--------------------------------
@@ -245,13 +248,20 @@ export class ExampleAdventure extends Story {
       }
     }
     //--------------------------------
+    
+    //Rooms
+    //--------------------------------
+    this.rooms = {
+      first: new FirstRoom(avo.assets.images.floor),
+    };
+    //--------------------------------
   }
   
   run_start() {
     const avo = this.avo;
     
     //DEBUG INSTANT START
-    if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+    if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
     
     if (avo.pointer.state === AVO.INPUT_ACTIVE || 
         avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
@@ -277,37 +287,39 @@ export class ExampleAdventure extends Story {
   }
   
   finishComic1() {
-    this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+    this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
   }
   
   prepareRoom() {
     const avo = this.avo;
     
     //Reset
-    let player = avo.refs[AVO.REF.PLAYER];
+    let player = avo.playerActor;
     avo.actors = [];
     avo.zones = [];
     avo.refs = {};
     
     //Create the player character if she doesn't yet exist.
     if (!player) {
-      avo.refs[AVO.REF.PLAYER] = new Actor(AVO.REF.PLAYER, 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
-      avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
-      avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
-      avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-      avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_SOUTH;
-      avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+      avo.playerActor = new Actor("PLAYER", 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
+      avo.playerActor.spritesheet = avo.assets.images.actor;
+      avo.playerActor.animationSet = avo.animationSets.actor;
+      avo.playerActor.attributes[AVO.ATTR.SPEED] = 4;
+      avo.playerActor.rotation = AVO.ROTATION_SOUTH;
+      avo.actors.push(avo.playerActor);
     } else {
-      avo.refs[AVO.REF.PLAYER] = player;
-      avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+      avo.playerActor = player;
+      avo.actors.push(avo.playerActor);
     }
     
-    avo.camera.targetActor = avo.refs[AVO.REF.PLAYER];
+    avo.camera.targetActor = avo.playerActor;
   }
   
-  enterRoom1() {
+  enterFirstRoom() {
     const avo = this.avo;    
     this.prepareRoom();
+    
+    avo.room = this.rooms.first;
     
     let newActor, newZone;
     

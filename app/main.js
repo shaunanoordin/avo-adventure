@@ -157,9 +157,11 @@
 	    this.assetsLoaded = 0;
 	    this.assetsTotal = 0;
 	    this.actors = [];
+	    this.playerActor = null;
 	    this.zones = [];
 	    this.refs = {};
 	    this.store = {};
+	    this.room = null; //Current room.
 	    //this.ui = {};
 	    this.comicStrip = null;
 	    this.actions = {};
@@ -292,8 +294,8 @@
 
 	      //Actors determine intent
 	      //--------------------------------
-	      if (this.refs[AVO.REF.PLAYER]) {
-	        var player = this.refs[AVO.REF.PLAYER];
+	      if (this.playerActor) {
+	        var player = this.playerActor;
 	        player.intent = { name: AVO.ACTION.IDLE };
 
 	        //Mouse/touch input
@@ -868,6 +870,23 @@
 	      }
 	      //--------------------------------
 
+	      //Paint room floor
+	      //--------------------------------
+	      var room = this.room;
+	      if (room && room.spritesheet && room.spritesheet.loaded) {
+	        for (var y = 0; y < room.height; y++) {
+	          for (var x = 0; x < room.width; x++) {
+	            var tile = room.floorTiles[y * room.width + x] ? console.log(room.floorTiles[y * room.width + x]) //room.tileTypes[room.floorTiles[y * room.width + x]]
+	            : null;
+	            //if (!tile) continue;
+
+	            //TODO TODO TODO
+	            //PAINT THE TILES
+	          }
+	        }
+	      }
+	      //--------------------------------
+
 	      //DEBUG: Paint hitboxes
 	      //--------------------------------
 	      if (this.config.debugMode) {
@@ -1328,9 +1347,9 @@
 	var DEFAULT_Z_INDEX = exports.DEFAULT_Z_INDEX = 1;
 	var MAX_Z_INDEX = exports.MAX_Z_INDEX = 2;
 
-	var REF = exports.REF = { //Standard References
-	  PLAYER: "player"
-	};
+	//export const REF = {  //Standard References
+	//  PLAYER: "player",  //DEPRECATED. Use AvO.playerActor instead.
+	//};
 
 	var ACTION = exports.ACTION = { //Standard Actions
 	  IDLE: "idle",
@@ -2364,6 +2383,8 @@
 
 	var _physics = __webpack_require__(4);
 
+	var _rooms = __webpack_require__(11);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2397,7 +2418,7 @@
 	    _this.playComic1 = _this.playComic1.bind(_this);
 	    _this.finishComic1 = _this.finishComic1.bind(_this);
 	    _this.prepareRoom = _this.prepareRoom.bind(_this);
-	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
+	    _this.enterFirstRoom = _this.enterFirstRoom.bind(_this);
 	    return _this;
 	  }
 
@@ -2417,6 +2438,7 @@
 	      avo.assets.images.boxes = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
 	      avo.assets.images.plates = new _utility.ImageAsset("assets/example-nonita-60/plates.png");
 	      avo.assets.images.walls = new _utility.ImageAsset("assets/example-nonita-60/walls.png");
+	      avo.assets.images.floor = new _utility.ImageAsset("assets/example-adventure/floor.png");
 
 	      avo.assets.images.comicPanel1A = new _utility.ImageAsset("assets/example-adventure/comic-panel-1a.png");
 	      //--------------------------------
@@ -2581,6 +2603,13 @@
 	        }
 	      }
 	      //--------------------------------
+
+	      //Rooms
+	      //--------------------------------
+	      this.rooms = {
+	        first: new _rooms.FirstRoom(avo.assets.images.floor)
+	      };
+	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_start",
@@ -2588,7 +2617,7 @@
 	      var avo = this.avo;
 
 	      //DEBUG INSTANT START
-	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
 
 	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	        avo.changeState(AVO.STATE_COMIC, this.playComic1);
@@ -2603,7 +2632,7 @@
 	  }, {
 	    key: "finishComic1",
 	    value: function finishComic1() {
-	      this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+	      this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
 	    }
 	  }, {
 	    key: "prepareRoom",
@@ -2611,31 +2640,33 @@
 	      var avo = this.avo;
 
 	      //Reset
-	      var player = avo.refs[AVO.REF.PLAYER];
+	      var player = avo.playerActor;
 	      avo.actors = [];
 	      avo.zones = [];
 	      avo.refs = {};
 
 	      //Create the player character if she doesn't yet exist.
 	      if (!player) {
-	        avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
-	        avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
-	        avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
-	        avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-	        avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_SOUTH;
-	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	        avo.playerActor = new _entities.Actor("PLAYER", 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
+	        avo.playerActor.spritesheet = avo.assets.images.actor;
+	        avo.playerActor.animationSet = avo.animationSets.actor;
+	        avo.playerActor.attributes[AVO.ATTR.SPEED] = 4;
+	        avo.playerActor.rotation = AVO.ROTATION_SOUTH;
+	        avo.actors.push(avo.playerActor);
 	      } else {
-	        avo.refs[AVO.REF.PLAYER] = player;
-	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	        avo.playerActor = player;
+	        avo.actors.push(avo.playerActor);
 	      }
 
-	      avo.camera.targetActor = avo.refs[AVO.REF.PLAYER];
+	      avo.camera.targetActor = avo.playerActor;
 	    }
 	  }, {
-	    key: "enterRoom1",
-	    value: function enterRoom1() {
+	    key: "enterFirstRoom",
+	    value: function enterFirstRoom() {
 	      var avo = this.avo;
 	      this.prepareRoom();
+
+	      avo.room = this.rooms.first;
 
 	      var newActor = void 0,
 	          newZone = void 0;
@@ -2861,6 +2892,92 @@
 	  return ComicStrip;
 	}();
 	//==============================================================================
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.FirstRoom = undefined;
+
+	var _room = __webpack_require__(12);
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var FirstRoom = exports.FirstRoom = function (_Room) {
+	  _inherits(FirstRoom, _Room);
+
+	  function FirstRoom(spritesheet) {
+	    _classCallCheck(this, FirstRoom);
+
+	    var _this = _possibleConstructorReturn(this, (FirstRoom.__proto__ || Object.getPrototypeOf(FirstRoom)).call(this));
+
+	    _this.width = 5;
+	    _this.height = 5;
+	    _this.tileWidth = 64;
+	    _this.tileHeight = 64;
+
+	    _this.spritesheet = spritesheet;
+	    _this.floorTiles = [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0];
+	    _this.ceilingTiles = [];
+	    _this.tileTypes = [new _room.RoomTile('ZERO', 0, 0), new _room.RoomTile('ONE', 0, 0)];
+	    return _this;
+	  }
+
+	  return FirstRoom;
+	}(_room.Room);
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*  
+	Room
+	====
+
+	(Shaun A. Noordin || shaunanoordin.com || 20170331)
+	********************************************************************************
+	 */
+
+	var Room = exports.Room = function Room() {
+	  _classCallCheck(this, Room);
+
+	  this.width = 1;
+	  this.height = 1;
+	  this.tileWidth = 64;
+	  this.tileHeight = 64;
+
+	  this.spritesheet = null;
+	  this.floorTiles = [];
+	  this.ceilingTiles = [];
+	  this.tileTypes = [];
+	};
+
+	var RoomTile = exports.RoomTile = function RoomTile(name, spriteCol, spriteRow) {
+	  _classCallCheck(this, RoomTile);
+
+	  this.name = name;
+	  this.sprite = {
+	    col: spriteCol,
+	    row: spriteRow
+	  };
+	};
 
 /***/ }
 /******/ ]);

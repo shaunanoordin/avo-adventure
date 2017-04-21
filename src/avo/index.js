@@ -61,9 +61,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
     this.actors = [];
+    this.playerActor = null;
     this.zones = [];
     this.refs = {};
     this.store = {};
+    this.room = null;  //Current room.
     //this.ui = {};
     this.comicStrip = null;
     this.actions = {};
@@ -191,8 +193,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Actors determine intent
     //--------------------------------
-    if (this.refs[AVO.REF.PLAYER]) {
-      const player = this.refs[AVO.REF.PLAYER];
+    if (this.playerActor) {
+      const player = this.playerActor;
       player.intent = { name: AVO.ACTION.IDLE };
       
       //Mouse/touch input
@@ -632,6 +634,24 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.actors.sort((a, b) => {
         return a.bottom - b.bottom;
       });
+    }
+    //--------------------------------
+    
+    //Paint room floor
+    //--------------------------------
+    const room = this.room;
+    if (room && room.spritesheet && room.spritesheet.loaded) {
+      for (let y = 0; y < room.height; y++) {
+        for (let x = 0; x < room.width; x++) {
+          const tile = (room.floorTiles[y * room.width + x])
+            ? console.log(room.floorTiles[y * room.width + x])  //room.tileTypes[room.floorTiles[y * room.width + x]]
+            : null;
+          //if (!tile) continue;
+          
+          //TODO TODO TODO
+          //PAINT THE TILES
+        }
+      }
     }
     //--------------------------------
     

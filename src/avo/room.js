@@ -8,28 +8,24 @@ Room
 
 export class Room {
   constructor() {
-    this.width = 5;
-    this.height = 5;
+    this.width = 1;
+    this.height = 1;
     this.tileWidth = 64;
     this.tileHeight = 64;
     
     this.spritesheet = null;
-    this.floorTiles = [
-      0, 1, 1, 1, 0,
-      1, 0, 0, 0, 1,
-      1, 0, 1, 0, 1,
-      1, 0, 0, 0, 1,
-      0, 1, 1, 1, 0,
-    ];
+    this.floorTiles = [];
     this.ceilingTiles = [];
-    this.tileTypes = [
-      new RoomTile()
-    ];
+    this.tileTypes = [];
   }
 }
 
 export class RoomTile {
-  constructor () {
-    
+  constructor (name, spriteCol, spriteRow) {
+    this.name = name;
+    this.sprite = {
+      col: spriteCol,
+      row: spriteRow,
+    };
   }
 }
