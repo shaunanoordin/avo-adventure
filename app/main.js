@@ -2028,7 +2028,8 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	/*  Entity Class
-	    A general abstract object within the game.
+	    A general object within the game. This is an abstract - see the subclasses
+	    for practical implementations.
 	 */
 	//==============================================================================
 	var Entity = function () {
@@ -2057,6 +2058,9 @@
 	    this.animationSet = null;
 	    this.animationName = "";
 	    this.shadowSize = 0; //Size of shadow relative to actual size; 0 means the sprite has no shadow.
+
+	    //TODO
+	    //The "Animation Set" needs to be abstracted into a proper class.
 	  }
 
 	  _createClass(Entity, [{
@@ -2192,7 +2196,6 @@
 	var CIRCLE_TO_POLYGON_APPROXIMATOR = [AVO.ROTATION_EAST, AVO.ROTATION_SOUTHEAST, AVO.ROTATION_SOUTH, AVO.ROTATION_SOUTHWEST, AVO.ROTATION_WEST, AVO.ROTATION_NORTHWEST, AVO.ROTATION_NORTH, AVO.ROTATION_NORTHEAST].map(function (angle) {
 	  return { cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) };
 	});
-
 	//==============================================================================
 
 	/*  Actor Class
@@ -2230,7 +2233,8 @@
 	//==============================================================================
 
 	/*  Zone Class
-	    An area that applies Effects to Actors that touch it.
+	    An area that applies Effects to Actors that touch it. For example, a bomb
+	    explosion, or a dragon's breath, or the "swing" of a sword.
 	 */
 	//==============================================================================
 
@@ -2583,6 +2587,9 @@
 	    value: function run_start() {
 	      var avo = this.avo;
 
+	      //DEBUG INSTANT START
+	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+
 	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	        avo.changeState(AVO.STATE_COMIC, this.playComic1);
 	      }
@@ -2767,18 +2774,6 @@
 	          avo.refs["wall_left"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
 	        }
 	      }
-	    }
-	  }, {
-	    key: "prePaint",
-	    value: function prePaint() {
-	      var avo = this.avo;
-	      //if (avo.state === AVO.STATE_ACTION) {
-	      //  avo.context2d.beginPath();
-	      //  avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
-	      //  avo.context2d.fillStyle = "#ac8";
-	      //  avo.context2d.fill();
-	      //  avo.context2d.closePath();
-	      //}
 	    }
 	  }]);
 

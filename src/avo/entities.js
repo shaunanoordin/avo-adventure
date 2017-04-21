@@ -10,7 +10,8 @@ import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Utility } from "./utility.js";
 
 /*  Entity Class
-    A general abstract object within the game.
+    A general object within the game. This is an abstract - see the subclasses
+    for practical implementations.
  */
 //==============================================================================
 class Entity {
@@ -31,6 +32,9 @@ class Entity {
     this.animationSet = null;
     this.animationName = "";
     this.shadowSize = 0;  //Size of shadow relative to actual size; 0 means the sprite has no shadow.
+    
+    //TODO
+    //The "Animation Set" needs to be abstracted into a proper class.
   }
   
   get left() { return this.x - this.size / 2; }
@@ -119,7 +123,6 @@ const CIRCLE_TO_POLYGON_APPROXIMATOR =
   .map((angle) => {
     return ({ cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) });
   });
-
 //==============================================================================
 
 /*  Actor Class
@@ -143,7 +146,8 @@ export class Actor extends Entity {
 //==============================================================================
 
 /*  Zone Class
-    An area that applies Effects to Actors that touch it.
+    An area that applies Effects to Actors that touch it. For example, a bomb
+    explosion, or a dragon's breath, or the "swing" of a sword.
  */
 //==============================================================================
 export class Zone extends Entity {

@@ -250,6 +250,9 @@ export class ExampleAdventure extends Story {
   run_start() {
     const avo = this.avo;
     
+    //DEBUG INSTANT START
+    if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+    
     if (avo.pointer.state === AVO.INPUT_ACTIVE || 
         avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
         avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
@@ -420,16 +423,5 @@ export class ExampleAdventure extends Story {
         avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
       }
     }
-  }
-  
-  prePaint() {
-    const avo = this.avo;
-    //if (avo.state === AVO.STATE_ACTION) {
-    //  avo.context2d.beginPath();
-    //  avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
-    //  avo.context2d.fillStyle = "#ac8";
-    //  avo.context2d.fill();
-    //  avo.context2d.closePath();
-    //}
   }
 }
