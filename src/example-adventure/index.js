@@ -46,7 +46,7 @@ export class ExampleAdventure extends Story {
     avo.assets.images.boxes = new ImageAsset("assets/example-nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/example-nonita-60/plates.png");
     avo.assets.images.walls = new ImageAsset("assets/example-nonita-60/walls.png");
-    avo.assets.images.floor = new ImageAsset("assets/example-adventure/floor.png");
+    avo.assets.images.roomTiles = new ImageAsset("assets/example-adventure/room-tiles.png");
     
     avo.assets.images.comicPanel1A = new ImageAsset("assets/example-adventure/comic-panel-1a.png");
     //--------------------------------
@@ -252,7 +252,7 @@ export class ExampleAdventure extends Story {
     //Rooms
     //--------------------------------
     this.rooms = {
-      first: new FirstRoom(avo.assets.images.floor),
+      first: new FirstRoom(avo.assets.images.roomTiles),
     };
     //--------------------------------
   }
@@ -374,6 +374,7 @@ export class ExampleAdventure extends Story {
     newActor.playAnimation("blue");
     //----------------------------------------------------------------
     
+    /*
     //Message (birthday wish) Wall
     //----------------------------------------------------------------
     newActor = new Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
@@ -403,6 +404,7 @@ export class ExampleAdventure extends Story {
     newActor.animationSet = avo.animationSets.wall;
     newActor.playAnimation("short_wall");
     //----------------------------------------------------------------
+    */
   }
   
   run_action() {
@@ -422,6 +424,7 @@ export class ExampleAdventure extends Story {
       }  
     }
     
+    /*
     const MOVE_DISTANCE = 96;
     const BASELINE_Y = 0.5 * 32;
     if (matches === colours.length) {
@@ -435,5 +438,6 @@ export class ExampleAdventure extends Story {
         avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
       }
     }
+    */
   }
 }

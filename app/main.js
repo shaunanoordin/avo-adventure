@@ -873,35 +873,25 @@
 	      //Paint room floor
 	      //--------------------------------
 	      var room = this.room;
-	      if (!this.debugOnce) {
-	        if (room && room.spritesheet && room.spritesheet.loaded) {
-	          for (var y = 0; y < room.height; y++) {
-	            for (var x = 0; x < room.width; x++) {
-	              var tile = room.floorTiles[y * room.width + x] !== undefined ? room.tileTypes[room.floorTiles[y * room.width + x]] //room.tileTypes[room.floorTiles[y * room.width + x]]
-	              : null;
+	      if (room && room.spritesheet && room.spritesheet.loaded) {
+	        for (var y = 0; y < room.height; y++) {
+	          for (var x = 0; x < room.width; x++) {
+	            var tile = room.floorTiles[y * room.width + x] !== undefined ? room.tileTypes[room.floorTiles[y * room.width + x]] : null;
 
-	              if (!tile) continue;
+	            if (!tile) continue;
 
-	              var srcW = room.tileWidth;
-	              var srcH = room.tileHeight;
-	              var srcX = tile.sprite.col * srcW;
-	              var srcY = tile.sprite.row * srcH;
-	              var tgtX = Math.floor(x * srcW + this.camera.x);
-	              var tgtY = Math.floor(y * srcH + this.camera.y);
-	              var tgtW = Math.floor(srcW);
-	              var tgtH = Math.floor(srcH);
+	            var srcW = room.tileWidth;
+	            var srcH = room.tileHeight;
+	            var srcX = tile.sprite.col * srcW;
+	            var srcY = tile.sprite.row * srcH;
+	            var tgtX = Math.floor(x * srcW + this.camera.x);
+	            var tgtY = Math.floor(y * srcH + this.camera.y);
+	            var tgtW = Math.floor(srcW);
+	            var tgtH = Math.floor(srcH);
 
-	              this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
-
-	              //console.log(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
-
-	              //TODO TODO TODO
-	              //PAINT THE TILES
-	            }
+	            this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
 	          }
 	        }
-
-	        this.debugOnce = false;
 	      }
 	      //--------------------------------
 
@@ -1112,6 +1102,30 @@
 	            if (_didIteratorError11) {
 	              throw _iteratorError11;
 	            }
+	          }
+	        }
+	      }
+	      //--------------------------------
+
+	      //Paint room floor
+	      //--------------------------------
+	      if (room && room.spritesheet && room.spritesheet.loaded) {
+	        for (var _y = 0; _y < room.height; _y++) {
+	          for (var _x2 = 0; _x2 < room.width; _x2++) {
+	            var _tile = room.ceilingTiles[_y * room.width + _x2] !== undefined ? room.tileTypes[room.ceilingTiles[_y * room.width + _x2]] : null;
+
+	            if (!_tile) continue;
+
+	            var _srcW = room.tileWidth;
+	            var _srcH = room.tileHeight;
+	            var _srcX = _tile.sprite.col * _srcW;
+	            var _srcY = _tile.sprite.row * _srcH;
+	            var _tgtX = Math.floor(_x2 * _srcW + this.camera.x);
+	            var _tgtY = Math.floor(_y * _srcH + this.camera.y);
+	            var _tgtW = Math.floor(_srcW);
+	            var _tgtH = Math.floor(_srcH);
+
+	            this.context2d.drawImage(room.spritesheet.img, _srcX, _srcY, _srcW, _srcH, _tgtX, _tgtY, _tgtW, _tgtH);
 	          }
 	        }
 	      }
@@ -2456,7 +2470,7 @@
 	      avo.assets.images.boxes = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
 	      avo.assets.images.plates = new _utility.ImageAsset("assets/example-nonita-60/plates.png");
 	      avo.assets.images.walls = new _utility.ImageAsset("assets/example-nonita-60/walls.png");
-	      avo.assets.images.floor = new _utility.ImageAsset("assets/example-adventure/floor.png");
+	      avo.assets.images.roomTiles = new _utility.ImageAsset("assets/example-adventure/room-tiles.png");
 
 	      avo.assets.images.comicPanel1A = new _utility.ImageAsset("assets/example-adventure/comic-panel-1a.png");
 	      //--------------------------------
@@ -2625,7 +2639,7 @@
 	      //Rooms
 	      //--------------------------------
 	      this.rooms = {
-	        first: new _rooms.FirstRoom(avo.assets.images.floor)
+	        first: new _rooms.FirstRoom(avo.assets.images.roomTiles)
 	      };
 	      //--------------------------------
 	    }
@@ -2740,9 +2754,10 @@
 	      newActor.playAnimation("blue");
 	      //----------------------------------------------------------------
 
+	      /*
 	      //Message (birthday wish) Wall
 	      //----------------------------------------------------------------
-	      newActor = new _entities.Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
+	      newActor = new Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-256, -64, 256, -64, 256, 64, -256, 64];
@@ -2750,8 +2765,8 @@
 	      newActor.spritesheet = avo.assets.images.walls;
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("long_wall");
-
-	      newActor = new _entities.Actor("wall_left", 4 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
+	      
+	      newActor = new Actor("wall_left", 4 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
@@ -2759,8 +2774,8 @@
 	      newActor.spritesheet = avo.assets.images.walls;
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("short_wall");
-
-	      newActor = new _entities.Actor("wall_right", 12 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
+	      
+	      newActor = new Actor("wall_right", 12 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
@@ -2769,6 +2784,7 @@
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("short_wall");
 	      //----------------------------------------------------------------
+	      */
 	    }
 	  }, {
 	    key: "run_action",
@@ -2795,6 +2811,22 @@
 	            avo.refs[col + "_plate"].playAnimation(col);
 	          }
 	        }
+
+	        /*
+	        const MOVE_DISTANCE = 96;
+	        const BASELINE_Y = 0.5 * 32;
+	        if (matches === colours.length) {
+	          if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) {
+	            avo.refs["wall_right"].x += 1;
+	            avo.refs["wall_right"].y = BASELINE_Y + Utility.randomInt(0, 1);
+	          }
+	          
+	          if (avo.refs["wall_left"].x > -MOVE_DISTANCE) {
+	            avo.refs["wall_left"].x -= 1;
+	            avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
+	          }
+	        }
+	        */
 	      } catch (err) {
 	        _didIteratorError2 = true;
 	        _iteratorError2 = err;
@@ -2807,20 +2839,6 @@
 	          if (_didIteratorError2) {
 	            throw _iteratorError2;
 	          }
-	        }
-	      }
-
-	      var MOVE_DISTANCE = 96;
-	      var BASELINE_Y = 0.5 * 32;
-	      if (matches === colours.length) {
-	        if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) {
-	          avo.refs["wall_right"].x += 1;
-	          avo.refs["wall_right"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
-	        }
-
-	        if (avo.refs["wall_left"].x > -MOVE_DISTANCE) {
-	          avo.refs["wall_left"].x -= 1;
-	          avo.refs["wall_left"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
 	        }
 	      }
 	    }
@@ -2938,15 +2956,15 @@
 
 	    var _this = _possibleConstructorReturn(this, (FirstRoom.__proto__ || Object.getPrototypeOf(FirstRoom)).call(this));
 
-	    _this.width = 5;
-	    _this.height = 5;
+	    _this.width = 10;
+	    _this.height = 8;
 	    _this.tileWidth = 64;
 	    _this.tileHeight = 64;
 
 	    _this.spritesheet = spritesheet;
-	    _this.floorTiles = [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0];
-	    _this.ceilingTiles = [];
-	    _this.tileTypes = [new _room.RoomTile('ZERO', 0, 0), new _room.RoomTile('ONE', 0, 1)];
+	    _this.floorTiles = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+	    _this.ceilingTiles = [3, 0, 0, 0, 0, 0, 0, 3, 0, 3, 3, 0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 0, 3, 3, 3, 3, 0, 3, 0, 0, 0, 0, 3, 0, 3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	    _this.tileTypes = [new _room.RoomTile('NOTHING', 0, 0), new _room.RoomTile('PLAIN_FLOOR', 1, 0), new _room.RoomTile('WALL', 0, 1), new _room.RoomTile('CEILING', 1, 1)];
 	    return _this;
 	  }
 
