@@ -431,8 +431,45 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   //----------------------------------------------------------------
   
   physics() {
+    //Check Actor collisions...
     for (let a = 0; a < this.actors.length; a++) {
       let actorA = this.actors[a];
+      
+      //...with the terrain.
+      if (this.room) {
+        const room = this.room;
+        const actorLeftCol = Math.floor(actorA.left / room.tileWidth);
+        const actorMidCol = Math.floor(actorA.x / room.tileWidth);
+        const actorRightCol = Math.floor(actorA.right / room.tileWidth);
+        const actorTopRow = Math.floor(actorA.top / room.tileHeight);
+        const actorMidRow = Math.floor(actorA.y / room.tileHeight);
+        const actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+        
+        //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+        
+        const leftCollision = (actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol])
+          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid
+          : false;
+        
+        const rightCollision = (actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol])
+          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid
+          : false;
+          
+        const topCollision = (actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol])
+          ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid
+          : false;
+        
+        const bottomCollision = (actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol])
+          ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid
+          : false;
+        
+        if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
+        if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
+        if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
+        if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;       
+      }
+      
+      //...with other Actors.
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
         let collisionCorrection = Physics.checkCollision(actorA, actorB);

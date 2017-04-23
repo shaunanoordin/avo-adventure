@@ -43,6 +43,12 @@ class Entity {
   get bottom() { return this.y + this.size / 2; }
   get radius() { return this.size / 2; }
   
+  set left(val) { this.x = val + this.size / 2; }
+  set right(val) { this.x = val - this.size / 2; }
+  set top(val) { this.y = val + this.size / 2; }
+  set bottom(val) { this.y = val - this.size / 2; }
+  set radius(val) { this.size = val * 2; }
+  
   get rotation() { return this._rotation; }
   set rotation(val) {
     this._rotation = val;

@@ -658,8 +658,37 @@
 	  }, {
 	    key: "physics",
 	    value: function physics() {
+	      //Check Actor collisions...
 	      for (var a = 0; a < this.actors.length; a++) {
 	        var actorA = this.actors[a];
+
+	        //...with the terrain.
+	        if (this.room) {
+	          var room = this.room;
+	          var actorLeftCol = Math.floor(actorA.left / room.tileWidth);
+	          var actorMidCol = Math.floor(actorA.x / room.tileWidth);
+	          var actorRightCol = Math.floor(actorA.right / room.tileWidth);
+	          var actorTopRow = Math.floor(actorA.top / room.tileHeight);
+	          var actorMidRow = Math.floor(actorA.y / room.tileHeight);
+	          var actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+
+	          //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+
+	          var leftCollision = actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid : false;
+
+	          var rightCollision = actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid : false;
+
+	          var topCollision = actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid : false;
+
+	          var bottomCollision = actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid : false;
+
+	          if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
+	          if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
+	          if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
+	          if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;
+	        }
+
+	        //...with other Actors.
 	        for (var b = a + 1; b < this.actors.length; b++) {
 	          var actorB = this.actors[b];
 	          var collisionCorrection = _physics.Physics.checkCollision(actorA, actorB);
@@ -2149,26 +2178,41 @@
 	    key: "left",
 	    get: function get() {
 	      return this.x - this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.x = val + this.size / 2;
 	    }
 	  }, {
 	    key: "right",
 	    get: function get() {
 	      return this.x + this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.x = val - this.size / 2;
 	    }
 	  }, {
 	    key: "top",
 	    get: function get() {
 	      return this.y - this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.y = val + this.size / 2;
 	    }
 	  }, {
 	    key: "bottom",
 	    get: function get() {
 	      return this.y + this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.y = val - this.size / 2;
 	    }
 	  }, {
 	    key: "radius",
 	    get: function get() {
 	      return this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.size = val * 2;
 	    }
 	  }, {
 	    key: "rotation",
@@ -2964,7 +3008,7 @@
 	    _this.spritesheet = spritesheet;
 	    _this.floorTiles = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
 	    _this.ceilingTiles = [3, 0, 0, 0, 0, 0, 0, 3, 0, 3, 3, 0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 0, 3, 3, 3, 3, 0, 3, 0, 0, 0, 0, 3, 0, 3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-	    _this.tileTypes = [new _room.RoomTile('NOTHING', 0, 0), new _room.RoomTile('PLAIN_FLOOR', 1, 0), new _room.RoomTile('WALL', 0, 1), new _room.RoomTile('CEILING', 1, 1)];
+	    _this.tileTypes = [new _room.RoomTile('NOTHING', 0, 0, false), new _room.RoomTile('PLAIN_FLOOR', 1, 0, false), new _room.RoomTile('WALL', 0, 1, true), new _room.RoomTile('CEILING', 1, 1, false)];
 	    return _this;
 	  }
 
@@ -3005,7 +3049,7 @@
 	  this.tileTypes = [];
 	};
 
-	var RoomTile = exports.RoomTile = function RoomTile(name, spriteCol, spriteRow) {
+	var RoomTile = exports.RoomTile = function RoomTile(name, spriteCol, spriteRow, solid) {
 	  _classCallCheck(this, RoomTile);
 
 	  this.name = name;
@@ -3013,6 +3057,7 @@
 	    col: spriteCol,
 	    row: spriteRow
 	  };
+	  this.solid = solid;
 	};
 
 /***/ }

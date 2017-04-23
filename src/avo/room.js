@@ -21,11 +21,12 @@ export class Room {
 }
 
 export class RoomTile {
-  constructor (name, spriteCol, spriteRow) {
+  constructor (name, spriteCol, spriteRow, solid) {
     this.name = name;
     this.sprite = {
       col: spriteCol,
       row: spriteRow,
     };
+    this.solid = solid;
   }
 }

@@ -31,10 +31,10 @@ export class FirstRoom extends Room {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
     this.tileTypes = [
-      new RoomTile('NOTHING', 0, 0),
-      new RoomTile('PLAIN_FLOOR', 1, 0),
-      new RoomTile('WALL', 0, 1),
-      new RoomTile('CEILING', 1, 1),
+      new RoomTile('NOTHING', 0, 0, false),
+      new RoomTile('PLAIN_FLOOR', 1, 0, false),
+      new RoomTile('WALL', 0, 1, true),
+      new RoomTile('CEILING', 1, 1, false),
     ];
   }
 }
