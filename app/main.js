@@ -873,17 +873,35 @@
 	      //Paint room floor
 	      //--------------------------------
 	      var room = this.room;
-	      if (room && room.spritesheet && room.spritesheet.loaded) {
-	        for (var y = 0; y < room.height; y++) {
-	          for (var x = 0; x < room.width; x++) {
-	            var tile = room.floorTiles[y * room.width + x] ? console.log(room.floorTiles[y * room.width + x]) //room.tileTypes[room.floorTiles[y * room.width + x]]
-	            : null;
-	            //if (!tile) continue;
+	      if (!this.debugOnce) {
+	        if (room && room.spritesheet && room.spritesheet.loaded) {
+	          for (var y = 0; y < room.height; y++) {
+	            for (var x = 0; x < room.width; x++) {
+	              var tile = room.floorTiles[y * room.width + x] !== undefined ? room.tileTypes[room.floorTiles[y * room.width + x]] //room.tileTypes[room.floorTiles[y * room.width + x]]
+	              : null;
 
-	            //TODO TODO TODO
-	            //PAINT THE TILES
+	              if (!tile) continue;
+
+	              var srcW = room.tileWidth;
+	              var srcH = room.tileHeight;
+	              var srcX = tile.sprite.col * srcW;
+	              var srcY = tile.sprite.row * srcH;
+	              var tgtX = Math.floor(x * srcW + this.camera.x);
+	              var tgtY = Math.floor(y * srcH + this.camera.y);
+	              var tgtW = Math.floor(srcW);
+	              var tgtH = Math.floor(srcH);
+
+	              this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+
+	              //console.log(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+
+	              //TODO TODO TODO
+	              //PAINT THE TILES
+	            }
 	          }
 	        }
+
+	        this.debugOnce = false;
 	      }
 	      //--------------------------------
 
@@ -2928,7 +2946,7 @@
 	    _this.spritesheet = spritesheet;
 	    _this.floorTiles = [0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0];
 	    _this.ceilingTiles = [];
-	    _this.tileTypes = [new _room.RoomTile('ZERO', 0, 0), new _room.RoomTile('ONE', 0, 0)];
+	    _this.tileTypes = [new _room.RoomTile('ZERO', 0, 0), new _room.RoomTile('ONE', 0, 1)];
 	    return _this;
 	  }
 

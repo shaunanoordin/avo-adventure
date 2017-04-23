@@ -640,18 +640,36 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Paint room floor
     //--------------------------------
     const room = this.room;
-    if (room && room.spritesheet && room.spritesheet.loaded) {
-      for (let y = 0; y < room.height; y++) {
-        for (let x = 0; x < room.width; x++) {
-          const tile = (room.floorTiles[y * room.width + x])
-            ? console.log(room.floorTiles[y * room.width + x])  //room.tileTypes[room.floorTiles[y * room.width + x]]
-            : null;
-          //if (!tile) continue;
-          
-          //TODO TODO TODO
-          //PAINT THE TILES
+    if (!this.debugOnce) {
+      if (room && room.spritesheet && room.spritesheet.loaded) {
+        for (let y = 0; y < room.height; y++) {
+          for (let x = 0; x < room.width; x++) {
+            const tile = (room.floorTiles[y * room.width + x] !== undefined)
+              ? room.tileTypes[room.floorTiles[y * room.width + x]]  //room.tileTypes[room.floorTiles[y * room.width + x]]
+              : null;
+            
+            if (!tile) continue;
+            
+            const srcW = room.tileWidth;
+            const srcH = room.tileHeight;    
+            const srcX = tile.sprite.col * srcW;
+            const srcY = tile.sprite.row * srcH;
+            const tgtX = Math.floor(x * srcW + this.camera.x);
+            const tgtY = Math.floor(y * srcH + this.camera.y);
+            const tgtW = Math.floor(srcW);
+            const tgtH = Math.floor(srcH);
+            
+            this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+            
+            //console.log(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+            
+            //TODO TODO TODO
+            //PAINT THE TILES
+          }
         }
       }
+      
+      this.debugOnce = false;
     }
     //--------------------------------
     
