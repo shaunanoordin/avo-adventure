@@ -63,7 +63,7 @@
 
 	var app;
 	window.onload = function () {
-	  window.app = new _index.AvO(new _index2.Nonita60());
+	  window.app = new _index.AvO(new _index2.ExampleAdventure());
 	};
 	//==============================================================================
 
@@ -105,12 +105,9 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var HTML_CANVAS_CSS_SCALE = 2;
-
 	/*  Primary AvO Game Engine
 	 */
 	//==============================================================================
-
 	var AvO = exports.AvO = function () {
 	  //Naming note: small 'v' between capital 'A' and 'O'.
 	  function AvO(story) {
@@ -123,7 +120,10 @@
 	      debugMode: false,
 	      topDownView: true, //Top-down view sorts Actors on paint().
 	      skipStandardRun: false, //Skips the standard run() code, including physics.
-	      skipStandardPaint: false };
+	      skipStandardPaint: false, //Skips the standard paint() code.
+	      autoFitCanvas: true,
+	      backgroundColour: "#333"
+	    };
 	    this.runCycle = null;
 	    this.html = {
 	      app: document.getElementById("app"),
@@ -131,9 +131,10 @@
 	    };
 	    this.context2d = this.html.canvas.getContext("2d");
 	    this.boundingBox = null; //To be defined by this.updateSize().
-	    this.sizeRatioX = 1;
-	    this.sizeRatioY = 1;
-	    this.canvasWidth = this.html.canvas.width;
+	    //this.sizeRatioX = 1;
+	    //this.sizeRatioY = 1;
+	    this.canvasSizeRatio = 1;
+	    this.canvasWidth = this.html.canvas.width; //The intended width/height of the canvas.
 	    this.canvasHeight = this.html.canvas.height;
 	    this.state = null;
 	    this.animationSets = {};
@@ -141,7 +142,6 @@
 
 	    //Account for graphical settings
 	    //--------------------------------
-	    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
 	    this.context2d.mozImageSmoothingEnabled = false;
 	    this.context2d.msImageSmoothingEnabled = false;
 	    this.context2d.imageSmoothingEnabled = false;
@@ -156,23 +156,20 @@
 	    };
 	    this.assetsLoaded = 0;
 	    this.assetsTotal = 0;
-	    //this.scripts = {
-	    //  preRun: null,
-	    //  postRun: null,
-	    //  customRunStart: null,
-	    //  customRunAction: null,
-	    //  customRunComic: null,
-	    //  customRunEnd: null,
-	    //  prePaint: null,
-	    //  postPaint: null,
-	    //};
 	    this.actors = [];
+	    this.playerActor = null;
 	    this.zones = [];
 	    this.refs = {};
 	    this.store = {};
+	    this.room = null; //Current room.
 	    //this.ui = {};
 	    this.comicStrip = null;
 	    this.actions = {};
+
+	    this.camera = {
+	      x: 0,
+	      y: 0,
+	      targetActor: null };
 	    //--------------------------------
 
 	    //Prepare Input
@@ -237,7 +234,7 @@
 	  }, {
 	    key: "run",
 	    value: function run() {
-	      //if (this.scripts.preRun) this.scripts.preRun.apply(this);
+	      //Run Story script
 	      this.story.preRun(this);
 
 	      if (!this.config.skipCoreRun) {
@@ -255,9 +252,14 @@
 	            this.run_comic();
 	            break;
 	        }
+
+	        if (this.camera.targetActor) {
+	          this.camera.x = Math.floor(this.canvasWidth / 2 - this.camera.targetActor.x);
+	          this.camera.y = Math.floor(this.canvasHeight / 2 - this.camera.targetActor.y);
+	        }
 	      }
 
-	      //if (this.scripts.postRun) this.scripts.postRun.apply(this);
+	      //Run Story script
 	      this.story.postRun();
 
 	      this.paint();
@@ -276,30 +278,24 @@
 	      if (this.assetsLoaded < this.assetsTotal) return;
 
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_start();
-	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_end",
 	    value: function run_end() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_end();
-	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_action",
 	    value: function run_action() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_action();
-	      //--------------------------------
 
 	      //Actors determine intent
 	      //--------------------------------
-	      if (this.refs[AVO.REF.PLAYER]) {
-	        var player = this.refs[AVO.REF.PLAYER];
+	      if (this.playerActor) {
+	        var player = this.playerActor;
 	        player.intent = { name: AVO.ACTION.IDLE };
 
 	        //Mouse/touch input
@@ -308,7 +304,7 @@
 	          var distY = this.pointer.now.y - this.pointer.start.y;
 	          var dist = Math.sqrt(distX * distX + distY * distY);
 
-	          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
 	            var angle = Math.atan2(distY, distX);
 	            player.intent = {
 	              name: AVO.ACTION.MOVING,
@@ -317,9 +313,9 @@
 
 	            //UX improvement: reset the base point of the pointer so the player can
 	            //switch directions much more easily.
-	            if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
-	              this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
-	              this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+	            if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2) {
+	              this.pointer.start.x = this.pointer.now.x - Math.cos(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
+	              this.pointer.start.y = this.pointer.now.y - Math.sin(angle) * AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
 	            }
 	          }
 	        } else if (this.pointer.state === AVO.INPUT_ENDED) {
@@ -327,7 +323,7 @@
 	          var _distY = this.pointer.now.y - this.pointer.start.y;
 	          var _dist = Math.sqrt(_distX * _distX + _distY * _distY);
 
-	          if (_dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+	          if (_dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
 	            player.intent = {
 	              name: AVO.ACTION.PRIMARY
 	            };
@@ -622,9 +618,7 @@
 	    key: "run_comic",
 	    value: function run_comic() {
 	      //Run Story script
-	      //--------------------------------
 	      this.story.run_comic();
-	      //--------------------------------
 
 	      if (!this.comicStrip) return;
 	      var comic = this.comicStrip;
@@ -664,8 +658,37 @@
 	  }, {
 	    key: "physics",
 	    value: function physics() {
+	      //Check Actor collisions...
 	      for (var a = 0; a < this.actors.length; a++) {
 	        var actorA = this.actors[a];
+
+	        //...with the terrain.
+	        if (this.room) {
+	          var room = this.room;
+	          var actorLeftCol = Math.floor(actorA.left / room.tileWidth);
+	          var actorMidCol = Math.floor(actorA.x / room.tileWidth);
+	          var actorRightCol = Math.floor(actorA.right / room.tileWidth);
+	          var actorTopRow = Math.floor(actorA.top / room.tileHeight);
+	          var actorMidRow = Math.floor(actorA.y / room.tileHeight);
+	          var actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+
+	          //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+
+	          var leftCollision = actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid : false;
+
+	          var rightCollision = actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid : false;
+
+	          var topCollision = actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid : false;
+
+	          var bottomCollision = actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid : false;
+
+	          if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
+	          if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
+	          if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
+	          if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;
+	        }
+
+	        //...with other Actors.
 	        for (var b = a + 1; b < this.actors.length; b++) {
 	          var actorB = this.actors[b];
 	          var collisionCorrection = _physics.Physics.checkCollision(actorA, actorB);
@@ -801,7 +824,16 @@
 	      //Clear
 	      this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-	      //if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+	      //Base colour
+	      if (this.config.backgroundColour) {
+	        this.context2d.beginPath();
+	        this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
+	        this.context2d.fillStyle = this.config.backgroundColour;
+	        this.context2d.fill();
+	        this.context2d.closePath();
+	      }
+
+	      //Run Story script
 	      this.story.prePaint();
 
 	      if (!this.config.skipCorePaint) {
@@ -821,7 +853,7 @@
 	        }
 	      }
 
-	      //if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+	      //Run Story script
 	      this.story.postPaint();
 	    }
 	  }, {
@@ -848,19 +880,13 @@
 	        this.context2d.fillStyle = "#fff";
 	        this.context2d.fill();
 	        this.context2d.fillStyle = "#000";
-	        this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2);
+	        this.context2d.fillText("Adventure on!", this.canvasWidth / 2, this.canvasHeight / 2);
 	        this.context2d.closePath();
 	      }
 	    }
 	  }, {
 	    key: "paint_end",
-	    value: function paint_end() {
-	      this.context2d.beginPath();
-	      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-	      this.context2d.fillStyle = "#666";
-	      this.context2d.fill();
-	      this.context2d.closePath();
-	    }
+	    value: function paint_end() {}
 	  }, {
 	    key: "paint_action",
 	    value: function paint_action() {
@@ -873,13 +899,38 @@
 	      }
 	      //--------------------------------
 
+	      //Paint room floor
+	      //--------------------------------
+	      var room = this.room;
+	      if (room && room.spritesheet && room.spritesheet.loaded) {
+	        for (var y = 0; y < room.height; y++) {
+	          for (var x = 0; x < room.width; x++) {
+	            var tile = room.floorTiles[y * room.width + x] !== undefined ? room.tileTypes[room.floorTiles[y * room.width + x]] : null;
+
+	            if (!tile) continue;
+
+	            var srcW = room.tileWidth;
+	            var srcH = room.tileHeight;
+	            var srcX = tile.sprite.col * srcW;
+	            var srcY = tile.sprite.row * srcH;
+	            var tgtX = Math.floor(x * srcW + this.camera.x);
+	            var tgtY = Math.floor(y * srcH + this.camera.y);
+	            var tgtW = Math.floor(srcW);
+	            var tgtH = Math.floor(srcH);
+
+	            this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+	          }
+	        }
+	      }
+	      //--------------------------------
+
 	      //DEBUG: Paint hitboxes
 	      //--------------------------------
 	      if (this.config.debugMode) {
 	        this.context2d.lineWidth = 1;
 	        var coords = void 0;
 
-	        //Areas of Effects
+	        //Zones
 	        var _iteratorNormalCompletion7 = true;
 	        var _didIteratorError7 = false;
 	        var _iteratorError7 = undefined;
@@ -897,22 +948,23 @@
 	            switch (zone.shape) {
 	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
-	                this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
+	                this.context2d.arc(zone.x + this.camera.x, zone.y + this.camera.y, zone.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
-	                this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+	                this.context2d.rect(zone.x + this.camera.x - zone.size / 2, zone.y + this.camera.y - zone.size / 2, zone.size, zone.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
+	                //NOTE: Polygon doesn't account for shadowSize yet.
 	                this.context2d.beginPath();
 	                coords = zone.vertices;
-	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
 	                for (var i = 0; i < coords.length; i++) {
-	                  this.context2d.lineTo(coords[i].x, coords[i].y);
+	                  this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
 	                }
 	                this.context2d.stroke();
 	                this.context2d.closePath();
@@ -948,27 +1000,28 @@
 	            switch (actor.shape) {
 	              case AVO.SHAPE_CIRCLE:
 	                this.context2d.beginPath();
-	                this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+	                this.context2d.arc(actor.x + this.camera.x, actor.y + this.camera.y, actor.size / 2, 0, 2 * Math.PI);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                this.context2d.beginPath();
-	                this.context2d.moveTo(actor.x, actor.y);
-	                this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+	                this.context2d.moveTo(actor.x + this.camera.x, actor.y + this.camera.y);
+	                this.context2d.lineTo(actor.x + this.camera.x + Math.cos(actor.rotation) * actor.size, actor.y + this.camera.y + Math.sin(actor.rotation) * actor.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_SQUARE:
 	                this.context2d.beginPath();
-	                this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+	                this.context2d.rect(actor.x + this.camera.x - actor.size / 2, actor.y + this.camera.y - actor.size / 2, actor.size, actor.size);
 	                this.context2d.stroke();
 	                this.context2d.closePath();
 	                break;
 	              case AVO.SHAPE_POLYGON:
+	                //NOTE: Polygon doesn't account for shadowSize yet.
 	                this.context2d.beginPath();
 	                coords = actor.vertices;
-	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x, coords[coords.length - 1].y);
+	                if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
 	                for (var _i3 = 0; _i3 < coords.length; _i3++) {
-	                  this.context2d.lineTo(coords[_i3].x, coords[_i3].y);
+	                  this.context2d.lineTo(coords[_i3].x + this.camera.x, coords[_i3].y + this.camera.y);
 	                }
 	                this.context2d.stroke();
 	                this.context2d.closePath();
@@ -993,8 +1046,6 @@
 	      //--------------------------------
 
 	      //Paint sprites
-	      //TODO: IMPROVE
-	      //TODO: Layering
 	      //--------------------------------
 	      for (var z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z++) {
 	        //Zones
@@ -1037,8 +1088,7 @@
 	            var _actor3 = _step10.value;
 
 	            if (_actor3.z === z) {
-	              this.paintSprite(_actor3);
-	              _actor3.nextAnimationFrame();
+	              this.paintShadow(_actor3);
 	            }
 	          }
 	        } catch (err) {
@@ -1055,6 +1105,58 @@
 	            }
 	          }
 	        }
+
+	        var _iteratorNormalCompletion11 = true;
+	        var _didIteratorError11 = false;
+	        var _iteratorError11 = undefined;
+
+	        try {
+	          for (var _iterator11 = this.actors[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+	            var _actor4 = _step11.value;
+
+	            if (_actor4.z === z) {
+	              this.paintSprite(_actor4);
+	              _actor4.nextAnimationFrame();
+	            }
+	          }
+	        } catch (err) {
+	          _didIteratorError11 = true;
+	          _iteratorError11 = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion11 && _iterator11.return) {
+	              _iterator11.return();
+	            }
+	          } finally {
+	            if (_didIteratorError11) {
+	              throw _iteratorError11;
+	            }
+	          }
+	        }
+	      }
+	      //--------------------------------
+
+	      //Paint room floor
+	      //--------------------------------
+	      if (room && room.spritesheet && room.spritesheet.loaded) {
+	        for (var _y = 0; _y < room.height; _y++) {
+	          for (var _x2 = 0; _x2 < room.width; _x2++) {
+	            var _tile = room.ceilingTiles[_y * room.width + _x2] !== undefined ? room.tileTypes[room.ceilingTiles[_y * room.width + _x2]] : null;
+
+	            if (!_tile) continue;
+
+	            var _srcW = room.tileWidth;
+	            var _srcH = room.tileHeight;
+	            var _srcX = _tile.sprite.col * _srcW;
+	            var _srcY = _tile.sprite.row * _srcH;
+	            var _tgtX = Math.floor(_x2 * _srcW + this.camera.x);
+	            var _tgtY = Math.floor(_y * _srcH + this.camera.y);
+	            var _tgtW = Math.floor(_srcW);
+	            var _tgtH = Math.floor(_srcH);
+
+	            this.context2d.drawImage(room.spritesheet.img, _srcX, _srcY, _srcW, _srcH, _tgtX, _tgtY, _tgtW, _tgtH);
+	          }
+	        }
 	      }
 	      //--------------------------------
 
@@ -1064,7 +1166,7 @@
 	        this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
 	        this.context2d.lineWidth = 1;
 	        this.context2d.beginPath();
-	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
+	        this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 * this.canvasSizeRatio, 0, 2 * Math.PI);
 	        this.context2d.stroke();
 	        this.context2d.closePath();
 	      }
@@ -1100,7 +1202,7 @@
 	  }, {
 	    key: "paintSprite",
 	    value: function paintSprite(obj) {
-	      if (!obj.spritesheet || !obj.spritesheet.loaded || !obj.animationSet || !obj.animationSet.actions[obj.animationName]) return;
+	      if (!obj || !obj.spritesheet || !obj.spritesheet.loaded || !obj.animationSet || !obj.animationSet.actions[obj.animationName]) return;
 
 	      var animationSet = obj.animationSet;
 
@@ -1116,12 +1218,46 @@
 	        srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
 	      }
 
-	      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
-	      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+	      var tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX + this.camera.x);
+	      var tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY + this.camera.y);
 	      var tgtW = Math.floor(srcW);
 	      var tgtH = Math.floor(srcH);
 
 	      this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+	    }
+	  }, {
+	    key: "paintShadow",
+	    value: function paintShadow(obj) {
+	      if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
+
+	      var coords = void 0;
+	      this.context2d.fillStyle = AVO.SHADOW_COLOUR;
+
+	      switch (obj.shape) {
+	        case AVO.SHAPE_CIRCLE:
+	          this.context2d.beginPath();
+	          this.context2d.arc(obj.x + this.camera.x, obj.y + this.camera.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	        case AVO.SHAPE_SQUARE:
+	          this.context2d.beginPath();
+	          this.context2d.rect(obj.x + this.camera.x - obj.size / 2 * obj.shadowSize, obj.y + this.camera.y - obj.size / 2 * obj.shadowSize, obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	        case AVO.SHAPE_POLYGON:
+	          //NOTE: Polygon doesn't account for shadowSize yet.
+	          this.context2d.beginPath();
+	          coords = obj.vertices;
+	          if (coords.length >= 1) this.context2d.moveTo(coords[coords.length - 1].x + this.camera.x, coords[coords.length - 1].y + this.camera.y);
+	          for (var i = 0; i < coords.length; i++) {
+	            this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
+	          }
+	          this.context2d.fill();
+	          this.context2d.closePath();
+	          break;
+	      }
 	    }
 	  }, {
 	    key: "paintComicPanel",
@@ -1186,8 +1322,8 @@
 	        clientX = e.touches[0].clientX;
 	        clientY = e.touches[0].clientY;
 	      }
-	      var inputX = (clientX - this.boundingBox.left) * this.sizeRatioX;
-	      var inputY = (clientY - this.boundingBox.top) * this.sizeRatioY;
+	      var inputX = (clientX - this.boundingBox.left) * this.canvasSizeRatio;
+	      var inputY = (clientY - this.boundingBox.top) * this.canvasSizeRatio;
 	      return { x: inputX, y: inputY };
 	    }
 
@@ -1216,10 +1352,17 @@
 	  }, {
 	    key: "updateSize",
 	    value: function updateSize() {
+	      if (this.config.autoFitCanvas) {
+	        var bestFit = Math.min(this.html.app.offsetWidth / this.canvasWidth, this.html.app.offsetHeight / this.canvasHeight);
+
+	        this.html.canvas.style = "width: " + Math.round(bestFit * this.canvasWidth) + "px; " + "height: " + Math.round(bestFit * this.canvasHeight) + "px; ";
+	      }
+
 	      var boundingBox = this.html.canvas.getBoundingClientRect ? this.html.canvas.getBoundingClientRect() : { left: 0, top: 0 };
 	      this.boundingBox = boundingBox;
-	      this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
-	      this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+	      //this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+	      //this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+	      this.canvasSizeRatio = Math.min(this.canvasWidth / this.boundingBox.width, this.canvasHeight / this.boundingBox.height);
 	    }
 	  }]);
 
@@ -1265,9 +1408,9 @@
 	var DEFAULT_Z_INDEX = exports.DEFAULT_Z_INDEX = 1;
 	var MAX_Z_INDEX = exports.MAX_Z_INDEX = 2;
 
-	var REF = exports.REF = { //Standard References
-	  PLAYER: "player"
-	};
+	//export const REF = {  //Standard References
+	//  PLAYER: "player",  //DEPRECATED. Use AvO.playerActor instead.
+	//};
 
 	var ACTION = exports.ACTION = { //Standard Actions
 	  IDLE: "idle",
@@ -1314,6 +1457,8 @@
 
 	var STACKING_RULE_ADD = exports.STACKING_RULE_ADD = 0;
 	var STACKING_RULE_REPLACE = exports.STACKING_RULE_REPLACE = 1;
+
+	var SHADOW_COLOUR = exports.SHADOW_COLOUR = "rgba(0,0,0,0.5)";
 
 	var KEY_CODES = exports.KEY_CODES = {
 	  LEFT: 37,
@@ -1915,21 +2060,14 @@
 	StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
 	  //TODO This is just a placeholder
 	  //................
-	  /*console.log('X');
-	  const PUSH_POWER = 12;
-	  const ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  let distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
-	  let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	  let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  let newZone = new Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5,
-	    [
-	      new Effect("push",
-	        { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
-	        2, AVO.STACKING_RULE_ADD)
-	    ]
-	  );
+	  var PUSH_POWER = 12;
+	  var ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
+	  var distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
+	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
+	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
 	  this.zones.push(newZone);
-	  actor.playAnimation(AVO.ACTION.PRIMARY);*/
+	  actor.playAnimation(AVO.ACTION.PRIMARY);
 	  //................
 	};
 
@@ -1970,7 +2108,8 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	/*  Entity Class
-	    A general abstract object within the game.
+	    A general object within the game. This is an abstract - see the subclasses
+	    for practical implementations.
 	 */
 	//==============================================================================
 	var Entity = function () {
@@ -1998,6 +2137,10 @@
 	    this.animationStep = 0;
 	    this.animationSet = null;
 	    this.animationName = "";
+	    this.shadowSize = 0; //Size of shadow relative to actual size; 0 means the sprite has no shadow.
+
+	    //TODO
+	    //The "Animation Set" needs to be abstracted into a proper class.
 	  }
 
 	  _createClass(Entity, [{
@@ -2035,26 +2178,41 @@
 	    key: "left",
 	    get: function get() {
 	      return this.x - this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.x = val + this.size / 2;
 	    }
 	  }, {
 	    key: "right",
 	    get: function get() {
 	      return this.x + this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.x = val - this.size / 2;
 	    }
 	  }, {
 	    key: "top",
 	    get: function get() {
 	      return this.y - this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.y = val + this.size / 2;
 	    }
 	  }, {
 	    key: "bottom",
 	    get: function get() {
 	      return this.y + this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.y = val - this.size / 2;
 	    }
 	  }, {
 	    key: "radius",
 	    get: function get() {
 	      return this.size / 2;
+	    },
+	    set: function set(val) {
+	      this.size = val * 2;
 	    }
 	  }, {
 	    key: "rotation",
@@ -2133,7 +2291,6 @@
 	var CIRCLE_TO_POLYGON_APPROXIMATOR = [AVO.ROTATION_EAST, AVO.ROTATION_SOUTHEAST, AVO.ROTATION_SOUTH, AVO.ROTATION_SOUTHWEST, AVO.ROTATION_WEST, AVO.ROTATION_NORTHWEST, AVO.ROTATION_NORTH, AVO.ROTATION_NORTHEAST].map(function (angle) {
 	  return { cosAngle: Math.cos(angle), sinAngle: Math.sin(angle) };
 	});
-
 	//==============================================================================
 
 	/*  Actor Class
@@ -2155,6 +2312,8 @@
 
 	    var _this2 = _possibleConstructorReturn(this, (Actor.__proto__ || Object.getPrototypeOf(Actor)).call(this, name, x, y, size, shape));
 
+	    _this2.shadowSize = shape !== AVO.SHAPE_NONE ? 1 : 0;
+
 	    _this2.state = AVO.ACTOR_IDLE;
 	    _this2.intent = null;
 	    _this2.action = null;
@@ -2169,7 +2328,8 @@
 	//==============================================================================
 
 	/*  Zone Class
-	    An area that applies Effects to Actors that touch it.
+	    An area that applies Effects to Actors that touch it. For example, a bomb
+	    explosion, or a dragon's breath, or the "swing" of a sword.
 	 */
 	//==============================================================================
 
@@ -2281,7 +2441,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Nonita60 = undefined;
+	exports.ExampleAdventure = undefined;
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -2291,11 +2451,15 @@
 
 	var _story = __webpack_require__(3);
 
+	var _comicStrip = __webpack_require__(10);
+
 	var _entities = __webpack_require__(7);
 
 	var _utility = __webpack_require__(5);
 
 	var _physics = __webpack_require__(4);
+
+	var _rooms = __webpack_require__(11);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -2304,47 +2468,55 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /*
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               Nonita 60
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               =========
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               Example Adventure
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               =================
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               (Shaun A. Noordin || shaunanoordin.com || 20170322)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               While AvO is the adventure game engine, this is a specific implementation of an
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               adventure game idea.
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               (Shaun A. Noordin || shaunanoordin.com || 20170329)
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ********************************************************************************
 	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                */
 
-	var Nonita60 = exports.Nonita60 = function (_Story) {
-	  _inherits(Nonita60, _Story);
+	var ExampleAdventure = exports.ExampleAdventure = function (_Story) {
+	  _inherits(ExampleAdventure, _Story);
 
-	  function Nonita60() {
-	    _classCallCheck(this, Nonita60);
+	  function ExampleAdventure() {
+	    _classCallCheck(this, ExampleAdventure);
 
-	    var _this = _possibleConstructorReturn(this, (Nonita60.__proto__ || Object.getPrototypeOf(Nonita60)).call(this));
+	    var _this = _possibleConstructorReturn(this, (ExampleAdventure.__proto__ || Object.getPrototypeOf(ExampleAdventure)).call(this));
 
 	    _this.init = _this.init.bind(_this);
 	    _this.run_start = _this.run_start.bind(_this);
 	    _this.run_action = _this.run_action.bind(_this);
 	    _this.prePaint = _this.prePaint.bind(_this);
 
+	    _this.playComic1 = _this.playComic1.bind(_this);
+	    _this.finishComic1 = _this.finishComic1.bind(_this);
 	    _this.prepareRoom = _this.prepareRoom.bind(_this);
-	    _this.enterRoom1 = _this.enterRoom1.bind(_this);
+	    _this.enterFirstRoom = _this.enterFirstRoom.bind(_this);
 	    return _this;
 	  }
 
-	  _createClass(Nonita60, [{
+	  _createClass(ExampleAdventure, [{
 	    key: "init",
 	    value: function init() {
 	      var avo = this.avo;
 
 	      //Config
 	      //--------------------------------
-	      avo.config.debugMode = false;
+	      avo.config.debugMode = true;
 	      //--------------------------------
 
 	      //Images
 	      //--------------------------------
-	      avo.assets.images.actor = new _utility.ImageAsset("assets/nonita-60/actor.png");
-	      avo.assets.images.boxes = new _utility.ImageAsset("assets/nonita-60/boxes.png");
-	      avo.assets.images.plates = new _utility.ImageAsset("assets/nonita-60/plates.png");
-	      avo.assets.images.walls = new _utility.ImageAsset("assets/nonita-60/walls.png");
+	      avo.assets.images.actor = new _utility.ImageAsset("assets/example-adventure/actor-female-safe.png");
+	      avo.assets.images.boxes = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
+	      avo.assets.images.plates = new _utility.ImageAsset("assets/example-nonita-60/plates.png");
+	      avo.assets.images.walls = new _utility.ImageAsset("assets/example-nonita-60/walls.png");
+	      avo.assets.images.roomTiles = new _utility.ImageAsset("assets/example-adventure/room-tiles.png");
+
+	      avo.assets.images.comicPanel1A = new _utility.ImageAsset("assets/example-adventure/comic-panel-1a.png");
 	      //--------------------------------
 
 	      //Animations
@@ -2507,22 +2679,36 @@
 	        }
 	      }
 	      //--------------------------------
+
+	      //Rooms
+	      //--------------------------------
+	      this.rooms = {
+	        first: new _rooms.FirstRoom(avo.assets.images.roomTiles)
+	      };
+	      //--------------------------------
 	    }
 	  }, {
 	    key: "run_start",
 	    value: function run_start() {
 	      var avo = this.avo;
 
-	      //if (avo.pointer.state === AVO.INPUT_ACTIVE || 
-	      //    avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE ||
-	      //    avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
-	      //  avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
-	      //}
-	      avo.changeState(AVO.STATE_ACTION, this.enterRoom1);
+	      //DEBUG INSTANT START
+	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
+
+	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
+	        avo.changeState(AVO.STATE_COMIC, this.playComic1);
+	      }
+	    }
+	  }, {
+	    key: "playComic1",
+	    value: function playComic1() {
+	      var avo = this.avo;
+	      avo.comicStrip = new _comicStrip.ComicStrip("comic_1", [avo.assets.images.comicPanel1A], this.finishComic1);
+	    }
+	  }, {
+	    key: "finishComic1",
+	    value: function finishComic1() {
+	      this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
 	    }
 	  }, {
 	    key: "prepareRoom",
@@ -2530,29 +2716,33 @@
 	      var avo = this.avo;
 
 	      //Reset
-	      var player = avo.refs[AVO.REF.PLAYER];
+	      var player = avo.playerActor;
 	      avo.actors = [];
-	      avo.areasOfEffect = [];
+	      avo.zones = [];
 	      avo.refs = {};
 
 	      //Create the player character if she doesn't yet exist.
 	      if (!player) {
-	        avo.refs[AVO.REF.PLAYER] = new _entities.Actor(AVO.REF.PLAYER, 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
-	        avo.refs[AVO.REF.PLAYER].spritesheet = avo.assets.images.actor;
-	        avo.refs[AVO.REF.PLAYER].animationSet = avo.animationSets.actor;
-	        avo.refs[AVO.REF.PLAYER].attributes[AVO.ATTR.SPEED] = 4;
-	        avo.refs[AVO.REF.PLAYER].rotation = AVO.ROTATION_NORTH;
-	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	        avo.playerActor = new _entities.Actor("PLAYER", 8 * 32, 8 * 32, 32, AVO.SHAPE_CIRCLE);
+	        avo.playerActor.spritesheet = avo.assets.images.actor;
+	        avo.playerActor.animationSet = avo.animationSets.actor;
+	        avo.playerActor.attributes[AVO.ATTR.SPEED] = 4;
+	        avo.playerActor.rotation = AVO.ROTATION_SOUTH;
+	        avo.actors.push(avo.playerActor);
 	      } else {
-	        avo.refs[AVO.REF.PLAYER] = player;
-	        avo.actors.push(avo.refs[AVO.REF.PLAYER]);
+	        avo.playerActor = player;
+	        avo.actors.push(avo.playerActor);
 	      }
+
+	      avo.camera.targetActor = avo.playerActor;
 	    }
 	  }, {
-	    key: "enterRoom1",
-	    value: function enterRoom1() {
+	    key: "enterFirstRoom",
+	    value: function enterFirstRoom() {
 	      var avo = this.avo;
 	      this.prepareRoom();
+
+	      avo.room = this.rooms.first;
 
 	      var newActor = void 0,
 	          newZone = void 0;
@@ -2588,6 +2778,7 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("red");
 
 	      newActor = new _entities.Actor("yellow_box", 13 * 32, 8 * 32 - 8, 32, AVO.SHAPE_SQUARE);
@@ -2595,6 +2786,7 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("yellow");
 
 	      newActor = new _entities.Actor("blue_box", 3 * 32, 8 * 32, 32, AVO.SHAPE_SQUARE);
@@ -2602,12 +2794,14 @@
 	      avo.refs[newActor.name] = newActor;
 	      newActor.spritesheet = avo.assets.images.boxes;
 	      newActor.animationSet = avo.animationSets.box;
+	      newActor.shadowSize = 1.2;
 	      newActor.playAnimation("blue");
 	      //----------------------------------------------------------------
 
-	      //TEST
+	      /*
+	      //Message (birthday wish) Wall
 	      //----------------------------------------------------------------
-	      newActor = new _entities.Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
+	      newActor = new Actor("wish_wall", 8 * 32, 0 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-256, -64, 256, -64, 256, 64, -256, 64];
@@ -2615,8 +2809,8 @@
 	      newActor.spritesheet = avo.assets.images.walls;
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("long_wall");
-
-	      newActor = new _entities.Actor("wall_left", 4 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
+	      
+	      newActor = new Actor("wall_left", 4 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
@@ -2624,8 +2818,8 @@
 	      newActor.spritesheet = avo.assets.images.walls;
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("short_wall");
-
-	      newActor = new _entities.Actor("wall_right", 12 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
+	      
+	      newActor = new Actor("wall_right", 12 * 32, 0.5 * 32, 0, AVO.SHAPE_POLYGON);
 	      avo.actors.push(newActor);
 	      avo.refs[newActor.name] = newActor;
 	      newActor.shapePolygonPath = [-128, -64, 128, -64, 128, 64, -128, 64];
@@ -2634,6 +2828,7 @@
 	      newActor.animationSet = avo.animationSets.wall;
 	      newActor.playAnimation("short_wall");
 	      //----------------------------------------------------------------
+	      */
 	    }
 	  }, {
 	    key: "run_action",
@@ -2660,6 +2855,22 @@
 	            avo.refs[col + "_plate"].playAnimation(col);
 	          }
 	        }
+
+	        /*
+	        const MOVE_DISTANCE = 96;
+	        const BASELINE_Y = 0.5 * 32;
+	        if (matches === colours.length) {
+	          if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) {
+	            avo.refs["wall_right"].x += 1;
+	            avo.refs["wall_right"].y = BASELINE_Y + Utility.randomInt(0, 1);
+	          }
+	          
+	          if (avo.refs["wall_left"].x > -MOVE_DISTANCE) {
+	            avo.refs["wall_left"].x -= 1;
+	            avo.refs["wall_left"].y = BASELINE_Y + Utility.randomInt(0, 1);
+	          }
+	        }
+	        */
 	      } catch (err) {
 	        _didIteratorError2 = true;
 	        _iteratorError2 = err;
@@ -2674,37 +2885,180 @@
 	          }
 	        }
 	      }
+	    }
+	  }]);
 
-	      var MOVE_DISTANCE = 96;
-	      var BASELINE_Y = 0.5 * 32;
-	      if (matches === colours.length) {
-	        if (avo.refs["wall_right"].x < 512 + MOVE_DISTANCE) {
-	          avo.refs["wall_right"].x += 1;
-	          avo.refs["wall_right"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
-	        }
+	  return ExampleAdventure;
+	}(_story.Story);
 
-	        if (avo.refs["wall_left"].x > -MOVE_DISTANCE) {
-	          avo.refs["wall_left"].x -= 1;
-	          avo.refs["wall_left"].y = BASELINE_Y + _utility.Utility.randomInt(0, 1);
-	        }
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.ComicStrip = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /*  
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     AvO Comic Strip
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ===============
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     (Shaun A. Noordin || shaunanoordin.com || 20161011)
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ********************************************************************************
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+	var _constants = __webpack_require__(2);
+
+	var AVO = _interopRequireWildcard(_constants);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	//Naming note: all caps.
+
+	/*  4-Koma Comic Strip Class
+	 */
+	//==============================================================================
+	var ComicStrip = exports.ComicStrip = function () {
+	  function ComicStrip() {
+	    var name = arguments.length <= 0 || arguments[0] === undefined ? "" : arguments[0];
+	    var panels = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+	    var onFinish = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+	    _classCallCheck(this, ComicStrip);
+
+	    this.name = name;
+	    this.panels = panels;
+	    this.onFinish = onFinish;
+
+	    this.waitTime = AVO.DEFAULT_COMIC_STRIP_WAIT_TIME_BEFORE_INPUT;
+	    this.transitionTime = AVO.DEFAULT_COMIC_STRIP_TRANSITION_TIME;
+	    this.background = "#333";
+
+	    this.start();
+	  }
+
+	  _createClass(ComicStrip, [{
+	    key: "start",
+	    value: function start() {
+	      this.currentPanel = 0;
+	      this.state = AVO.COMIC_STRIP_STATE_TRANSITIONING;
+	      this.counter = 0;
+	    }
+	  }, {
+	    key: "getCurrentPanel",
+	    value: function getCurrentPanel() {
+	      if (this.currentPanel < 0 || this.currentPanel >= this.panels.length) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel];
 	      }
 	    }
 	  }, {
-	    key: "prePaint",
-	    value: function prePaint() {
-	      var avo = this.avo;
-	      if (avo.state === AVO.STATE_ACTION) {
-	        avo.context2d.beginPath();
-	        avo.context2d.rect(0, 0, avo.canvasWidth, avo.canvasHeight);
-	        avo.context2d.fillStyle = "#ac8";
-	        avo.context2d.fill();
-	        avo.context2d.closePath();
+	    key: "getPreviousPanel",
+	    value: function getPreviousPanel() {
+	      if (this.currentPanel < 1 || this.currentPanel >= this.panels.length + 1) {
+	        return null;
+	      } else {
+	        return this.panels[this.currentPanel - 1];
 	      }
 	    }
 	  }]);
 
-	  return Nonita60;
-	}(_story.Story);
+	  return ComicStrip;
+	}();
+	//==============================================================================
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.FirstRoom = undefined;
+
+	var _room = __webpack_require__(12);
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var FirstRoom = exports.FirstRoom = function (_Room) {
+	  _inherits(FirstRoom, _Room);
+
+	  function FirstRoom(spritesheet) {
+	    _classCallCheck(this, FirstRoom);
+
+	    var _this = _possibleConstructorReturn(this, (FirstRoom.__proto__ || Object.getPrototypeOf(FirstRoom)).call(this));
+
+	    _this.width = 10;
+	    _this.height = 8;
+	    _this.tileWidth = 64;
+	    _this.tileHeight = 64;
+
+	    _this.spritesheet = spritesheet;
+	    _this.floorTiles = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+	    _this.ceilingTiles = [3, 0, 0, 0, 0, 0, 0, 3, 0, 3, 3, 0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 0, 0, 0, 0, 3, 3, 3, 3, 0, 3, 0, 0, 0, 0, 3, 0, 3, 3, 0, 3, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	    _this.tileTypes = [new _room.RoomTile('NOTHING', 0, 0, false), new _room.RoomTile('PLAIN_FLOOR', 1, 0, false), new _room.RoomTile('WALL', 0, 1, true), new _room.RoomTile('CEILING', 1, 1, false)];
+	    return _this;
+	  }
+
+	  return FirstRoom;
+	}(_room.Room);
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	/*  
+	Room
+	====
+
+	(Shaun A. Noordin || shaunanoordin.com || 20170331)
+	********************************************************************************
+	 */
+
+	var Room = exports.Room = function Room() {
+	  _classCallCheck(this, Room);
+
+	  this.width = 1;
+	  this.height = 1;
+	  this.tileWidth = 64;
+	  this.tileHeight = 64;
+
+	  this.spritesheet = null;
+	  this.floorTiles = [];
+	  this.ceilingTiles = [];
+	  this.tileTypes = [];
+	};
+
+	var RoomTile = exports.RoomTile = function RoomTile(name, spriteCol, spriteRow, solid) {
+	  _classCallCheck(this, RoomTile);
+
+	  this.name = name;
+	  this.sprite = {
+	    col: spriteCol,
+	    row: spriteRow
+	  };
+	  this.solid = solid;
+	};
 
 /***/ }
 /******/ ]);

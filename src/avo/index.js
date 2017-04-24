@@ -12,8 +12,6 @@ import { Physics } from "../avo/physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
-const HTML_CANVAS_CSS_SCALE = 2;
-
 /*  Primary AvO Game Engine
  */
 //==============================================================================
@@ -27,6 +25,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       topDownView: true,  //Top-down view sorts Actors on paint().
       skipStandardRun: false,  //Skips the standard run() code, including physics.
       skipStandardPaint: false,  //Skips the standard paint() code.
+      autoFitCanvas: true,
+      backgroundColour: "#333",
     };
     this.runCycle = null;
     this.html = {
@@ -35,9 +35,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     };
     this.context2d = this.html.canvas.getContext("2d");
     this.boundingBox = null;  //To be defined by this.updateSize().
-    this.sizeRatioX = 1;
-    this.sizeRatioY = 1;
-    this.canvasWidth = this.html.canvas.width;
+    //this.sizeRatioX = 1;
+    //this.sizeRatioY = 1;
+    this.canvasSizeRatio = 1;
+    this.canvasWidth = this.html.canvas.width;  //The intended width/height of the canvas.
     this.canvasHeight = this.html.canvas.height;
     this.state = null;
     this.animationSets = {};
@@ -45,7 +46,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Account for graphical settings
     //--------------------------------
-    if (HTML_CANVAS_CSS_SCALE !== 1) this.html.canvas.style = "width: " + Math.floor(this.canvasWidth * HTML_CANVAS_CSS_SCALE) + "px";
     this.context2d.mozImageSmoothingEnabled = false;
     this.context2d.msImageSmoothingEnabled = false;
     this.context2d.imageSmoothingEnabled = false;
@@ -60,23 +60,21 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     };
     this.assetsLoaded = 0;
     this.assetsTotal = 0;
-    //this.scripts = {
-    //  preRun: null,
-    //  postRun: null,
-    //  customRunStart: null,
-    //  customRunAction: null,
-    //  customRunComic: null,
-    //  customRunEnd: null,
-    //  prePaint: null,
-    //  postPaint: null,
-    //};
     this.actors = [];
+    this.playerActor = null;
     this.zones = [];
     this.refs = {};
     this.store = {};
+    this.room = null;  //Current room.
     //this.ui = {};
     this.comicStrip = null;
     this.actions = {};
+    
+    this.camera = {
+      x: 0,
+      y: 0,
+      targetActor: null,  //If not null, automatically focus on the target actor.
+    };
     //--------------------------------
     
     //Prepare Input
@@ -138,7 +136,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   run() {
-    //if (this.scripts.preRun) this.scripts.preRun.apply(this);
+    //Run Story script
     this.story.preRun(this);
     
     if (!this.config.skipCoreRun) {
@@ -156,9 +154,14 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           this.run_comic();
           break;
       }
+      
+      if (this.camera.targetActor) {
+        this.camera.x = Math.floor(this.canvasWidth / 2 - this.camera.targetActor.x);
+        this.camera.y = Math.floor(this.canvasHeight / 2 - this.camera.targetActor.y);
+      }
     }
     
-    //if (this.scripts.postRun) this.scripts.postRun.apply(this);
+    //Run Story script
     this.story.postRun();
     
     this.paint();
@@ -176,28 +179,22 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (this.assetsLoaded < this.assetsTotal) return;
     
     //Run Story script
-    //--------------------------------
     this.story.run_start();
-    //--------------------------------
   }
   
   run_end() {
     //Run Story script
-    //--------------------------------
     this.story.run_end();
-    //--------------------------------
   }
     
   run_action() {
     //Run Story script
-    //--------------------------------
     this.story.run_action();
-    //--------------------------------
     
     //Actors determine intent
     //--------------------------------
-    if (this.refs[AVO.REF.PLAYER]) {
-      const player = this.refs[AVO.REF.PLAYER];
+    if (this.playerActor) {
+      const player = this.playerActor;
       player.intent = { name: AVO.ACTION.IDLE };
       
       //Mouse/touch input
@@ -206,7 +203,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         const distY = this.pointer.now.y - this.pointer.start.y;
         const dist = Math.sqrt(distX * distX + distY * distY);
 
-        if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+        if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
           const angle = Math.atan2(distY, distX);
           player.intent = {
             name: AVO.ACTION.MOVING,
@@ -215,11 +212,11 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
 
           //UX improvement: reset the base point of the pointer so the player can
           //switch directions much more easily.
-          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2) {
+          if (dist > AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2) {
             this.pointer.start.x = this.pointer.now.x - Math.cos(angle) *
-              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
             this.pointer.start.y = this.pointer.now.y - Math.sin(angle) *
-              AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY * 2;
+              AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio * 2;
           }
         }
       } else if (this.pointer.state === AVO.INPUT_ENDED) {
@@ -227,7 +224,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         const distY = this.pointer.now.y - this.pointer.start.y;
         const dist = Math.sqrt(distX * distX + distY * distY);
 
-        if (dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.sizeRatioY) {
+        if (dist <= AVO.INPUT_DISTANCE_SENSITIVITY * this.canvasSizeRatio) {
           player.intent = {
             name: AVO.ACTION.PRIMARY,
           };
@@ -389,9 +386,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   
   run_comic() {
     //Run Story script
-    //--------------------------------
     this.story.run_comic();
-    //--------------------------------
     
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
@@ -436,8 +431,45 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   //----------------------------------------------------------------
   
   physics() {
+    //Check Actor collisions...
     for (let a = 0; a < this.actors.length; a++) {
       let actorA = this.actors[a];
+      
+      //...with the terrain.
+      if (this.room) {
+        const room = this.room;
+        const actorLeftCol = Math.floor(actorA.left / room.tileWidth);
+        const actorMidCol = Math.floor(actorA.x / room.tileWidth);
+        const actorRightCol = Math.floor(actorA.right / room.tileWidth);
+        const actorTopRow = Math.floor(actorA.top / room.tileHeight);
+        const actorMidRow = Math.floor(actorA.y / room.tileHeight);
+        const actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+        
+        //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+        
+        const leftCollision = (actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol])
+          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid
+          : false;
+        
+        const rightCollision = (actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol])
+          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid
+          : false;
+          
+        const topCollision = (actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol])
+          ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid
+          : false;
+        
+        const bottomCollision = (actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol])
+          ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid
+          : false;
+        
+        if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
+        if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
+        if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
+        if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;       
+      }
+      
+      //...with other Actors.
       for (let b = a + 1; b < this.actors.length; b++) {
         let actorB = this.actors[b];
         let collisionCorrection = Physics.checkCollision(actorA, actorB);
@@ -570,7 +602,16 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Clear
     this.context2d.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    //if (this.scripts.prePaint) this.scripts.prePaint.apply(this);
+    //Base colour
+    if (this.config.backgroundColour) {
+      this.context2d.beginPath();
+      this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.context2d.fillStyle = this.config.backgroundColour;
+      this.context2d.fill();
+      this.context2d.closePath();
+    }
+    
+    //Run Story script
     this.story.prePaint();
     
     if (!this.config.skipCorePaint) {
@@ -590,7 +631,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       }
     }
     
-    //if (this.scripts.postPaint) this.scripts.postPaint.apply(this);
+    //Run Story script
     this.story.postPaint();
   }
   
@@ -616,18 +657,12 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.fillStyle = "#fff";
       this.context2d.fill();
       this.context2d.fillStyle = "#000";
-      this.context2d.fillText("Ready!", this.canvasWidth / 2, this.canvasHeight / 2); 
+      this.context2d.fillText("Adventure on!", this.canvasWidth / 2, this.canvasHeight / 2); 
       this.context2d.closePath();
     }
-    
   }
-  paint_end() {
-    this.context2d.beginPath();
-    this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
-    this.context2d.fillStyle = "#666";
-    this.context2d.fill();
-    this.context2d.closePath();    
-  }
+  
+  paint_end() {}
   
   paint_action() {
     //Arrange sprites by vertical order.
@@ -639,13 +674,40 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     }
     //--------------------------------
     
+    //Paint room floor
+    //--------------------------------
+    const room = this.room;
+    if (room && room.spritesheet && room.spritesheet.loaded) {
+      for (let y = 0; y < room.height; y++) {
+        for (let x = 0; x < room.width; x++) {
+          const tile = (room.floorTiles[y * room.width + x] !== undefined)
+            ? room.tileTypes[room.floorTiles[y * room.width + x]]
+            : null;
+          
+          if (!tile) continue;
+          
+          const srcW = room.tileWidth;
+          const srcH = room.tileHeight;    
+          const srcX = tile.sprite.col * srcW;
+          const srcY = tile.sprite.row * srcH;
+          const tgtX = Math.floor(x * srcW + this.camera.x);
+          const tgtY = Math.floor(y * srcH + this.camera.y);
+          const tgtW = Math.floor(srcW);
+          const tgtH = Math.floor(srcH);
+          
+          this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+        }
+      }
+    }
+    //--------------------------------
+    
     //DEBUG: Paint hitboxes
     //--------------------------------
     if (this.config.debugMode) {
       this.context2d.lineWidth = 1;
       let coords;
       
-      //Areas of Effects
+      //Zones
       for (let zone of this.zones) {
         let durationPercentage = 1;
         if (!zone.hasInfiniteDuration() && zone.startDuration > 0) {
@@ -656,22 +718,23 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         switch (zone.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(zone.x, zone.y, zone.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(zone.x + this.camera.x, zone.y + this.camera.y, zone.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(zone.x - zone.size / 2, zone.y - zone.size / 2, zone.size, zone.size);
+            this.context2d.rect(zone.x + this.camera.x - zone.size / 2, zone.y + this.camera.y - zone.size / 2, zone.size, zone.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_POLYGON:
+            //NOTE: Polygon doesn't account for shadowSize yet.
             this.context2d.beginPath();
             coords = zone.vertices;
-            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
             for (let i = 0; i < coords.length; i++) {
-              this.context2d.lineTo(coords[i].x, coords[i].y);
+              this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
             }            
             this.context2d.stroke();
             this.context2d.closePath();
@@ -685,27 +748,33 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
         switch (actor.shape) {
           case AVO.SHAPE_CIRCLE:
             this.context2d.beginPath();
-            this.context2d.arc(actor.x, actor.y, actor.size / 2, 0, 2 * Math.PI);
+            this.context2d.arc(actor.x + this.camera.x, actor.y + this.camera.y, actor.size / 2, 0, 2 * Math.PI);
             this.context2d.stroke();
             this.context2d.closePath();
             this.context2d.beginPath();
-            this.context2d.moveTo(actor.x, actor.y);
-            this.context2d.lineTo(actor.x + Math.cos(actor.rotation) * actor.size, actor.y + Math.sin(actor.rotation) * actor.size);
+            this.context2d.moveTo(actor.x + this.camera.x, actor.y + this.camera.y);
+            this.context2d.lineTo(
+              actor.x + this.camera.x + Math.cos(actor.rotation) * actor.size,
+              actor.y + this.camera.y + Math.sin(actor.rotation) * actor.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_SQUARE:
             this.context2d.beginPath();
-            this.context2d.rect(actor.x - actor.size / 2, actor.y - actor.size / 2, actor.size, actor.size);
+            this.context2d.rect(
+              actor.x + this.camera.x - actor.size / 2,
+              actor.y + this.camera.y - actor.size / 2,
+              actor.size, actor.size);
             this.context2d.stroke();
             this.context2d.closePath();
             break;
           case AVO.SHAPE_POLYGON:
+            //NOTE: Polygon doesn't account for shadowSize yet.
             this.context2d.beginPath();
             coords = actor.vertices;
-            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x, coords[coords.length-1].y);
+            if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
             for (let i = 0; i < coords.length; i++) {
-              this.context2d.lineTo(coords[i].x, coords[i].y);
+              this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
             }            
             this.context2d.stroke();
             this.context2d.closePath();
@@ -716,8 +785,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //--------------------------------
     
     //Paint sprites
-    //TODO: IMPROVE
-    //TODO: Layering
     //--------------------------------
     for (let z = AVO.MIN_Z_INDEX; z <= AVO.MAX_Z_INDEX; z ++) {
       //Zones
@@ -731,8 +798,39 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       //Actors
       for (let actor of this.actors) {
         if (actor.z === z) {
+          this.paintShadow(actor);
+        }
+      }
+      for (let actor of this.actors) {
+        if (actor.z === z) {
           this.paintSprite(actor);
           actor.nextAnimationFrame();
+        }
+      }
+    }
+    //--------------------------------
+    
+    //Paint room floor
+    //--------------------------------
+    if (room && room.spritesheet && room.spritesheet.loaded) {
+      for (let y = 0; y < room.height; y++) {
+        for (let x = 0; x < room.width; x++) {
+          const tile = (room.ceilingTiles[y * room.width + x] !== undefined)
+            ? room.tileTypes[room.ceilingTiles[y * room.width + x]]
+            : null;
+          
+          if (!tile) continue;
+          
+          const srcW = room.tileWidth;
+          const srcH = room.tileHeight;    
+          const srcX = tile.sprite.col * srcW;
+          const srcY = tile.sprite.row * srcH;
+          const tgtX = Math.floor(x * srcW + this.camera.x);
+          const tgtY = Math.floor(y * srcH + this.camera.y);
+          const tgtW = Math.floor(srcW);
+          const tgtH = Math.floor(srcH);
+          
+          this.context2d.drawImage(room.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
         }
       }
     }
@@ -744,7 +842,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       this.context2d.strokeStyle = "rgba(128,128,128,0.8)";
       this.context2d.lineWidth = 1;
       this.context2d.beginPath();
-      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 / HTML_CANVAS_CSS_SCALE, 0, 2 * Math.PI);
+      this.context2d.arc(this.pointer.start.x, this.pointer.start.y, AVO.INPUT_DISTANCE_SENSITIVITY * 2 * this.canvasSizeRatio, 0, 2 * Math.PI);
       this.context2d.stroke();
       this.context2d.closePath();
     }
@@ -780,7 +878,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   }
   
   paintSprite(obj) {
-    if (!obj.spritesheet || !obj.spritesheet.loaded ||
+    if (!obj || !obj.spritesheet || !obj.spritesheet.loaded ||
         !obj.animationSet || !obj.animationSet.actions[obj.animationName])
       return;
     
@@ -798,12 +896,48 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       srcY = animationSet.actions[obj.animationName].steps[obj.animationStep].row * srcH;
     }
     
-    const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX);
-    const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY);
+    const tgtX = Math.floor(obj.x - srcW / 2 + animationSet.tileOffsetX + this.camera.x);
+    const tgtY = Math.floor(obj.y - srcH / 2 + animationSet.tileOffsetY + this.camera.y);
     const tgtW = Math.floor(srcW);
     const tgtH = Math.floor(srcH);
     
     this.context2d.drawImage(obj.spritesheet.img, srcX, srcY, srcW, srcH, tgtX, tgtY, tgtW, tgtH);
+  }
+  
+  paintShadow(obj) {
+    if (!obj || !obj.shadowSize || obj.shadowSize <= 0) return;
+    
+    let coords;
+    this.context2d.fillStyle = AVO.SHADOW_COLOUR;
+    
+    switch (obj.shape) {
+      case AVO.SHAPE_CIRCLE:
+        this.context2d.beginPath();
+        this.context2d.arc(obj.x + this.camera.x, obj.y + this.camera.y, obj.size / 2 * obj.shadowSize, 0, 2 * Math.PI);
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+      case AVO.SHAPE_SQUARE:
+        this.context2d.beginPath();
+        this.context2d.rect(
+          obj.x + this.camera.x - obj.size / 2  * obj.shadowSize,
+          obj.y + this.camera.y - obj.size / 2 * obj.shadowSize,
+          obj.size * obj.shadowSize, obj.size * obj.shadowSize);
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+      case AVO.SHAPE_POLYGON:
+        //NOTE: Polygon doesn't account for shadowSize yet.
+        this.context2d.beginPath();
+        coords = obj.vertices;
+        if (coords.length >= 1) this.context2d.moveTo(coords[coords.length-1].x + this.camera.x, coords[coords.length-1].y + this.camera.y);
+        for (let i = 0; i < coords.length; i++) {
+          this.context2d.lineTo(coords[i].x + this.camera.x, coords[i].y + this.camera.y);
+        }            
+        this.context2d.fill();
+        this.context2d.closePath();
+        break;
+    }
   }
   
   paintComicPanel(panel = null, offsetY = 0) {
@@ -860,8 +994,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
     }
-    let inputX = (clientX - this.boundingBox.left) * this.sizeRatioX;
-    let inputY = (clientY - this.boundingBox.top) * this.sizeRatioY;
+    let inputX = (clientX - this.boundingBox.left) * this.canvasSizeRatio;
+    let inputY = (clientY - this.boundingBox.top) * this.canvasSizeRatio;
     return { x: inputX, y: inputY };
   }
   
@@ -885,12 +1019,27 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   //----------------------------------------------------------------
   
   updateSize() {
+    if (this.config.autoFitCanvas) {
+      const bestFit = Math.min(
+        this.html.app.offsetWidth / this.canvasWidth,
+        this.html.app.offsetHeight / this.canvasHeight
+      );
+      
+      this.html.canvas.style =
+        "width: " + Math.round(bestFit * this.canvasWidth) + "px; " +
+        "height: " + Math.round(bestFit * this.canvasHeight) + "px; ";
+    }
+    
     let boundingBox = (this.html.canvas.getBoundingClientRect)
       ? this.html.canvas.getBoundingClientRect()
       : { left: 0, top: 0 };
     this.boundingBox = boundingBox;
-    this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
-    this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+    //this.sizeRatioX = this.canvasWidth / this.boundingBox.width;
+    //this.sizeRatioY = this.canvasHeight / this.boundingBox.height;
+    this.canvasSizeRatio = Math.min(
+      this.canvasWidth / this.boundingBox.width,
+      this.canvasHeight / this.boundingBox.height
+    );
   }
 }
 
