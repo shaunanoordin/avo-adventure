@@ -32,14 +32,14 @@ StandardActions[AVO.ACTION.PRIMARY] = function (actor) {
   //TODO This is just a placeholder
   //................
   const PUSH_POWER = 12;
-  const ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
-  let distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
-  let x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-  let y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
+  const ZONE_SIZE = this.playerActor.size;
+  let distance = this.playerActor.radius + ZONE_SIZE / 2;
+  let x = this.playerActor.x + Math.cos(this.playerActor.rotation) * distance;
+  let y = this.playerActor.y + Math.sin(this.playerActor.rotation) * distance;;
   let newZone = new Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5,
     [
       new Effect("push",
-        { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER },
+        { x: Math.cos(this.playerActor.rotation) * PUSH_POWER, y: Math.sin(this.playerActor.rotation) * PUSH_POWER },
         2, AVO.STACKING_RULE_ADD)
     ]
   );
