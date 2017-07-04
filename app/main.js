@@ -2061,11 +2061,11 @@
 	  //TODO This is just a placeholder
 	  //................
 	  var PUSH_POWER = 12;
-	  var ZONE_SIZE = this.refs[AVO.REF.PLAYER].size;
-	  var distance = this.refs[AVO.REF.PLAYER].radius + ZONE_SIZE / 2;
-	  var x = this.refs[AVO.REF.PLAYER].x + Math.cos(this.refs[AVO.REF.PLAYER].rotation) * distance;
-	  var y = this.refs[AVO.REF.PLAYER].y + Math.sin(this.refs[AVO.REF.PLAYER].rotation) * distance;;
-	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER, y: Math.sin(this.refs[AVO.REF.PLAYER].rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
+	  var ZONE_SIZE = this.playerActor.size;
+	  var distance = this.playerActor.radius + ZONE_SIZE / 2;
+	  var x = this.playerActor.x + Math.cos(this.playerActor.rotation) * distance;
+	  var y = this.playerActor.y + Math.sin(this.playerActor.rotation) * distance;;
+	  var newZone = new _entities.Zone("", x, y, ZONE_SIZE, AVO.SHAPE_CIRCLE, 5, [new _effect.Effect("push", { x: Math.cos(this.playerActor.rotation) * PUSH_POWER, y: Math.sin(this.playerActor.rotation) * PUSH_POWER }, 2, AVO.STACKING_RULE_ADD)]);
 	  this.zones.push(newZone);
 	  actor.playAnimation(AVO.ACTION.PRIMARY);
 	  //................
@@ -2510,7 +2510,7 @@
 
 	      //Images
 	      //--------------------------------
-	      avo.assets.images.actor = new _utility.ImageAsset("assets/example-adventure/actor-female-safe.png");
+	      avo.assets.images.actor = new _utility.ImageAsset("assets/example-adventure/actor-female-2017-07.png");
 	      avo.assets.images.boxes = new _utility.ImageAsset("assets/example-nonita-60/boxes.png");
 	      avo.assets.images.plates = new _utility.ImageAsset("assets/example-nonita-60/plates.png");
 	      avo.assets.images.walls = new _utility.ImageAsset("assets/example-nonita-60/walls.png");
@@ -2536,7 +2536,7 @@
 	            },
 	            moving: {
 	              loop: true,
-	              steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 5, duration: STEPS_PER_SECOND }, { row: 4, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND }]
+	              steps: [{ row: 1, duration: STEPS_PER_SECOND }, { row: 2, duration: STEPS_PER_SECOND * 2 }, { row: 1, duration: STEPS_PER_SECOND }, { row: 3, duration: STEPS_PER_SECOND * 2 }]
 	            }
 	          }
 	        },
