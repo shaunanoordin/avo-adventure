@@ -436,37 +436,36 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       let actorA = this.actors[a];
       
       //...with the terrain.
-      if (this.room) {
-        const room = this.room;
+      //if (this.room) {
+      if (actorA === this.playerActor && this.room) {
+        
+        
+        /*const room = this.room;
         const actorLeftCol = Math.floor(actorA.left / room.tileWidth);
-        const actorMidCol = Math.floor(actorA.x / room.tileWidth);
         const actorRightCol = Math.floor(actorA.right / room.tileWidth);
         const actorTopRow = Math.floor(actorA.top / room.tileHeight);
-        const actorMidRow = Math.floor(actorA.y / room.tileHeight);
         const actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
         
-        //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+        const topLeftTile = room.getFloorTile(actorLeftCol, actorTopRow);
+        const topRightTile = room.getFloorTile(actorRightCol, actorTopRow);
+        const bottomLeftTile = room.getFloorTile(actorLeftCol, actorBottomRow);
+        const bottomRightTile = room.getFloorTile(actorRightCol, actorBottomRow);
+        const topLeftCollision = topLeftTile && topLeftTile.solid;
+        const topRightCollision = topRightTile && topRightTile.solid;
+        const bottomLeftCollision = bottomLeftTile && bottomLeftTile.solid;
+        const bottomRightCollision = bottomRightTile && bottomRightTile.solid;
+        let correctionX = 0;
+        let correctionY = 0;
         
-        const leftCollision = (actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol])
-          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid
-          : false;
+        if (topLeftCollision && !bottomRightCollision) { correctionX++; correctionY++; }
+        if (!topLeftCollision && bottomRightCollision) { correctionX--; correctionY--; }
+        if (topRightCollision && !bottomLeftCollision) { correctionX--; correctionY++; }
+        if (!topRightCollision && bottomLeftCollision) { correctionX++; correctionY--; }
         
-        const rightCollision = (actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol])
-          ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid
-          : false;
-          
-        const topCollision = (actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol])
-          ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid
-          : false;
-        
-        const bottomCollision = (actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol])
-          ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid
-          : false;
-        
-        if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
-        if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
-        if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
-        if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;       
+        if (correctionX < 0) { actorA.right = actorRightCol * room.tileWidth + 1; }
+        else if (correctionX > 0) { actorA.left = (actorLeftCol + 1) * room.tileWidth + 1; }
+        if (correctionY < 0) { actorA.bottom = actorBottomRow * room.tileWidth + 1; }
+        else if (correctionY > 0) { actorA.top = (actorTopRow + 1) * room.tileWidth + 1; }*/
       }
       
       //...with other Actors.

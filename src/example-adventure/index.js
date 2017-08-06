@@ -42,7 +42,7 @@ export class ExampleAdventure extends Story {
     
     //Images
     //--------------------------------
-    avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor-female-safe.png");
+    avo.assets.images.actor = new ImageAsset("assets/example-adventure/actor-female-2017-07.png");
     avo.assets.images.boxes = new ImageAsset("assets/example-nonita-60/boxes.png");
     avo.assets.images.plates = new ImageAsset("assets/example-nonita-60/plates.png");
     avo.assets.images.walls = new ImageAsset("assets/example-nonita-60/walls.png");
@@ -72,13 +72,9 @@ export class ExampleAdventure extends Story {
             loop: true,
             steps: [
               { row: 1, duration: STEPS_PER_SECOND },
-              { row: 2, duration: STEPS_PER_SECOND },
-              { row: 3, duration: STEPS_PER_SECOND },
-              { row: 4, duration: STEPS_PER_SECOND },
-              { row: 5, duration: STEPS_PER_SECOND },
-              { row: 4, duration: STEPS_PER_SECOND },
-              { row: 3, duration: STEPS_PER_SECOND },
-              { row: 2, duration: STEPS_PER_SECOND },
+              { row: 2, duration: STEPS_PER_SECOND * 2 },
+              { row: 1, duration: STEPS_PER_SECOND },
+              { row: 3, duration: STEPS_PER_SECOND * 2 },
             ],
           },
         },
