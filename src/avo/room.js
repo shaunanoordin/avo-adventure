@@ -18,6 +18,17 @@ export class Room {
     this.ceilingTiles = [];
     this.tileTypes = [];
   }
+  
+  getFloorTile(x, y) {
+    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return null;
+    
+    const index = y * this.width + x;
+    if (this.floorTiles[index]) {
+      return this.tileTypes[this.floorTiles[index]];
+    }
+    
+    return null;
+  }
 }
 
 export class RoomTile {

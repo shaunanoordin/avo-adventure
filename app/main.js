@@ -663,30 +663,36 @@
 	        var actorA = this.actors[a];
 
 	        //...with the terrain.
-	        if (this.room) {
-	          var room = this.room;
-	          var actorLeftCol = Math.floor(actorA.left / room.tileWidth);
-	          var actorMidCol = Math.floor(actorA.x / room.tileWidth);
-	          var actorRightCol = Math.floor(actorA.right / room.tileWidth);
-	          var actorTopRow = Math.floor(actorA.top / room.tileHeight);
-	          var actorMidRow = Math.floor(actorA.y / room.tileHeight);
-	          var actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+	        //if (this.room) {
+	        if (actorA === this.playerActor && this.room) {}
 
-	          //if (actorA === this.playerActor) console.log(actorLeftCol, actorRightCol, actorTopRow, actorBottomRow);
+	        /*const room = this.room;
+	        const actorLeftCol = Math.floor(actorA.left / room.tileWidth);
+	        const actorRightCol = Math.floor(actorA.right / room.tileWidth);
+	        const actorTopRow = Math.floor(actorA.top / room.tileHeight);
+	        const actorBottomRow = Math.floor(actorA.bottom / room.tileHeight);
+	        
+	        const topLeftTile = room.getFloorTile(actorLeftCol, actorTopRow);
+	        const topRightTile = room.getFloorTile(actorRightCol, actorTopRow);
+	        const bottomLeftTile = room.getFloorTile(actorLeftCol, actorBottomRow);
+	        const bottomRightTile = room.getFloorTile(actorRightCol, actorBottomRow);
+	        const topLeftCollision = topLeftTile && topLeftTile.solid;
+	        const topRightCollision = topRightTile && topRightTile.solid;
+	        const bottomLeftCollision = bottomLeftTile && bottomLeftTile.solid;
+	        const bottomRightCollision = bottomRightTile && bottomRightTile.solid;
+	        let correctionX = 0;
+	        let correctionY = 0;
+	        
+	        if (topLeftCollision && !bottomRightCollision) { correctionX++; correctionY++; }
+	        if (!topLeftCollision && bottomRightCollision) { correctionX--; correctionY--; }
+	        if (topRightCollision && !bottomLeftCollision) { correctionX--; correctionY++; }
+	        if (!topRightCollision && bottomLeftCollision) { correctionX++; correctionY--; }
+	        
+	        if (correctionX < 0) { actorA.right = actorRightCol * room.tileWidth + 1; }
+	        else if (correctionX > 0) { actorA.left = (actorLeftCol + 1) * room.tileWidth + 1; }
+	        if (correctionY < 0) { actorA.bottom = actorBottomRow * room.tileWidth + 1; }
+	        else if (correctionY > 0) { actorA.top = (actorTopRow + 1) * room.tileWidth + 1; }*/
 
-	          var leftCollision = actorLeftCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorLeftCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorLeftCol]].solid : false;
-
-	          var rightCollision = actorRightCol >= 0 && actorMidRow >= 0 && room.floorTiles[actorMidRow * room.width + actorRightCol] ? room.tileTypes[room.floorTiles[actorMidRow * room.width + actorRightCol]].solid : false;
-
-	          var topCollision = actorMidCol >= 0 && actorTopRow >= 0 && room.floorTiles[actorTopRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorTopRow * room.width + actorMidCol]].solid : false;
-
-	          var bottomCollision = actorMidCol >= 0 && actorBottomRow >= 0 && room.floorTiles[actorBottomRow * room.width + actorMidCol] ? room.tileTypes[room.floorTiles[actorBottomRow * room.width + actorMidCol]].solid : false;
-
-	          if (leftCollision && !rightCollision) actorA.left = (actorLeftCol + 1) * room.tileWidth;
-	          if (!leftCollision && rightCollision) actorA.right = actorRightCol * room.tileWidth;
-	          if (topCollision && !bottomCollision) actorA.top = (actorTopRow + 1) * room.tileHeight;
-	          if (!topCollision && bottomCollision) actorA.bottom = actorBottomRow * room.tileHeight;
-	        }
 
 	        //...with other Actors.
 	        for (var b = a + 1; b < this.actors.length; b++) {
@@ -3025,6 +3031,8 @@
 	  value: true
 	});
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	/*  
@@ -3035,19 +3043,37 @@
 	********************************************************************************
 	 */
 
-	var Room = exports.Room = function Room() {
-	  _classCallCheck(this, Room);
+	var Room = exports.Room = function () {
+	  function Room() {
+	    _classCallCheck(this, Room);
 
-	  this.width = 1;
-	  this.height = 1;
-	  this.tileWidth = 64;
-	  this.tileHeight = 64;
+	    this.width = 1;
+	    this.height = 1;
+	    this.tileWidth = 64;
+	    this.tileHeight = 64;
 
-	  this.spritesheet = null;
-	  this.floorTiles = [];
-	  this.ceilingTiles = [];
-	  this.tileTypes = [];
-	};
+	    this.spritesheet = null;
+	    this.floorTiles = [];
+	    this.ceilingTiles = [];
+	    this.tileTypes = [];
+	  }
+
+	  _createClass(Room, [{
+	    key: "getFloorTile",
+	    value: function getFloorTile(x, y) {
+	      if (x < 0 || y < 0 || x >= this.width || y >= this.height) return null;
+
+	      var index = y * this.width + x;
+	      if (this.floorTiles[index]) {
+	        return this.tileTypes[this.floorTiles[index]];
+	      }
+
+	      return null;
+	    }
+	  }]);
+
+	  return Room;
+	}();
 
 	var RoomTile = exports.RoomTile = function RoomTile(name, spriteCol, spriteRow, solid) {
 	  _classCallCheck(this, RoomTile);
