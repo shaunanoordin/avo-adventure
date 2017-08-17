@@ -32,6 +32,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.html = {
       app: document.getElementById("app"),
       canvas: document.getElementById("canvas"),
+      dialogue: document.getElementById("dialogue"),
     };
     this.context2d = this.html.canvas.getContext("2d");
     this.boundingBox = null;  //To be defined by this.updateSize().
@@ -121,17 +122,28 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Start!
     //--------------------------------
+    //TEST
     this.changeState(AVO.STATE_START, this.story.init);
+    
     this.runCycle = setInterval(this.run.bind(this), 1000 / this.config.framesPerSecond);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
-  changeState(state, storyScript = null) {
+  changeState(state, callbackScript = null) {
     this.state = state;
-    if (storyScript && typeof storyScript === "function") {
-      storyScript();
+    
+    //Show/hide dialogue interface.
+    if (state === AVO.STATE_DIALOGUE) {
+      this.html.dialogue.style = "display: block;";
+    } else {
+      this.html.dialogue.style = "display: none;";
+    }
+    
+    //Run script
+    if (callbackScript && typeof callbackScript === "function") {
+      callbackScript();
     }
   }
   
@@ -622,6 +634,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           this.paint_end();
           break;
         case AVO.STATE_ACTION:
+        case AVO.STATE_DIALOGUE:
           this.paint_action();
           break;
         case AVO.STATE_COMIC:

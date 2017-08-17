@@ -127,7 +127,8 @@
 	    this.runCycle = null;
 	    this.html = {
 	      app: document.getElementById("app"),
-	      canvas: document.getElementById("canvas")
+	      canvas: document.getElementById("canvas"),
+	      dialogue: document.getElementById("dialogue")
 	    };
 	    this.context2d = this.html.canvas.getContext("2d");
 	    this.boundingBox = null; //To be defined by this.updateSize().
@@ -214,7 +215,9 @@
 
 	    //Start!
 	    //--------------------------------
+	    //TEST
 	    this.changeState(AVO.STATE_START, this.story.init);
+
 	    this.runCycle = setInterval(this.run.bind(this), 1000 / this.config.framesPerSecond);
 	    //--------------------------------
 	  }
@@ -224,11 +227,20 @@
 	  _createClass(AvO, [{
 	    key: "changeState",
 	    value: function changeState(state) {
-	      var storyScript = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+	      var callbackScript = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
 	      this.state = state;
-	      if (storyScript && typeof storyScript === "function") {
-	        storyScript();
+
+	      //Show/hide dialogue interface.
+	      if (state === AVO.STATE_DIALOGUE) {
+	        this.html.dialogue.style = "display: block;";
+	      } else {
+	        this.html.dialogue.style = "display: none;";
+	      }
+
+	      //Run script
+	      if (callbackScript && typeof callbackScript === "function") {
+	        callbackScript();
 	      }
 	    }
 	  }, {
@@ -851,6 +863,7 @@
 	            this.paint_end();
 	            break;
 	          case AVO.STATE_ACTION:
+	          case AVO.STATE_DIALOGUE:
 	            this.paint_action();
 	            break;
 	          case AVO.STATE_COMIC:
@@ -1403,7 +1416,8 @@
 	var STATE_START = exports.STATE_START = 0; //AvO App states
 	var STATE_ACTION = exports.STATE_ACTION = 1;
 	var STATE_COMIC = exports.STATE_COMIC = 2;
-	var STATE_END = exports.STATE_END = 3;
+	var STATE_DIALOGUE = exports.STATE_DIALOGUE = 3;
+	var STATE_END = exports.STATE_END = 4;
 
 	var ACTOR_IDLE = exports.ACTOR_IDLE = 0; //Actor states
 	var ACTOR_MOVING = exports.ACTOR_MOVING = 1;
@@ -2699,7 +2713,8 @@
 	      var avo = this.avo;
 
 	      //DEBUG INSTANT START
-	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
+	      //if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
+	      if (avo.config.debugMode) this.avo.changeState(AVO.STATE_DIALOGUE, this.enterFirstRoom);
 
 	      if (avo.pointer.state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.DOWN].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.LEFT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.RIGHT].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.SPACE].state === AVO.INPUT_ACTIVE || avo.keys[AVO.KEY_CODES.ENTER].state === AVO.INPUT_ACTIVE) {
 	        avo.changeState(AVO.STATE_COMIC, this.playComic1);

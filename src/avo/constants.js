@@ -15,7 +15,8 @@ export const MAX_KEYS = 128;
 export const STATE_START = 0;  //AvO App states
 export const STATE_ACTION = 1;
 export const STATE_COMIC = 2;
-export const STATE_END = 3;
+export const STATE_DIALOGUE = 3;
+export const STATE_END = 4;
 
 export const ACTOR_IDLE = 0;  //Actor states
 export const ACTOR_MOVING = 1;
