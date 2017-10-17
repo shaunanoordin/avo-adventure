@@ -403,6 +403,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
     
+    //TODO: Move logic into the ComicStrip class.
+    
     if (comic.state !== AVO.COMIC_STRIP_STATE_TRANSITIONING &&
         comic.currentPanel >= comic.panels.length) {
       comic.onFinish.apply(this);
@@ -864,6 +866,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_comic() {
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
+    
+    //TODO: Move logic into the ComicStrip class.
     
     this.context2d.beginPath();
     this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);
