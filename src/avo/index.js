@@ -8,7 +8,7 @@ AvO Adventure Game Engine
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Story } from "./story.js";
-import { Physics } from "../avo/physics.js";
+import { Physics } from "./physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
@@ -151,7 +151,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.preRun(this);
     
-    if (!this.config.skipCoreRun) {
+    if (!this.config.skipStandardRun) {
       switch (this.state) {
         case AVO.STATE_START:
           this.run_start();
@@ -627,7 +627,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.prePaint();
     
-    if (!this.config.skipCorePaint) {
+    if (!this.config.skipStandardPaint) {
       switch (this.state) {
         case AVO.STATE_START:
           this.paint_start();
