@@ -8,7 +8,7 @@ AvO Adventure Game Engine
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Story } from "./story.js";
-import { Physics } from "../avo/physics.js";
+import { Physics } from "./physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
@@ -32,6 +32,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     this.html = {
       app: document.getElementById("app"),
       canvas: document.getElementById("canvas"),
+      dialogue: document.getElementById("dialogue"),
     };
     this.context2d = this.html.canvas.getContext("2d");
     this.boundingBox = null;  //To be defined by this.updateSize().
@@ -121,17 +122,28 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     
     //Start!
     //--------------------------------
+    //TEST
     this.changeState(AVO.STATE_START, this.story.init);
+    
     this.runCycle = setInterval(this.run.bind(this), 1000 / this.config.framesPerSecond);
     //--------------------------------
   }
   
   //----------------------------------------------------------------
   
-  changeState(state, storyScript = null) {
+  changeState(state, callbackScript = null) {
     this.state = state;
-    if (storyScript && typeof storyScript === "function") {
-      storyScript();
+    
+    //Show/hide dialogue interface.
+    if (state === AVO.STATE_DIALOGUE) {
+      this.html.dialogue.style = "display: block;";
+    } else {
+      this.html.dialogue.style = "display: none;";
+    }
+    
+    //Run script
+    if (callbackScript && typeof callbackScript === "function") {
+      callbackScript();
     }
   }
   
@@ -139,7 +151,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.preRun(this);
     
-    if (!this.config.skipCoreRun) {
+    if (!this.config.skipStandardRun) {
       switch (this.state) {
         case AVO.STATE_START:
           this.run_start();
@@ -391,6 +403,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
     
+    //TODO: Move logic into the ComicStrip class.
+    
     if (comic.state !== AVO.COMIC_STRIP_STATE_TRANSITIONING &&
         comic.currentPanel >= comic.panels.length) {
       comic.onFinish.apply(this);
@@ -613,7 +627,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.prePaint();
     
-    if (!this.config.skipCorePaint) {
+    if (!this.config.skipStandardPaint) {
       switch (this.state) {
         case AVO.STATE_START:
           this.paint_start();
@@ -622,6 +636,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
           this.paint_end();
           break;
         case AVO.STATE_ACTION:
+        case AVO.STATE_DIALOGUE:
           this.paint_action();
           break;
         case AVO.STATE_COMIC:
@@ -851,6 +866,8 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   paint_comic() {
     if (!this.comicStrip) return;
     const comic = this.comicStrip;
+    
+    //TODO: Move logic into the ComicStrip class.
     
     this.context2d.beginPath();
     this.context2d.rect(0, 0, this.canvasWidth, this.canvasHeight);

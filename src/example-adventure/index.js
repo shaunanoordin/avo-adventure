@@ -257,7 +257,8 @@ export class ExampleAdventure extends Story {
     const avo = this.avo;
     
     //DEBUG INSTANT START
-    if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
+    //if (avo.config.debugMode) this.avo.changeState(AVO.STATE_ACTION, this.enterFirstRoom);
+    if (avo.config.debugMode) this.avo.changeState(AVO.STATE_DIALOGUE, this.enterFirstRoom);
     
     if (avo.pointer.state === AVO.INPUT_ACTIVE || 
         avo.keys[AVO.KEY_CODES.UP].state === AVO.INPUT_ACTIVE ||
