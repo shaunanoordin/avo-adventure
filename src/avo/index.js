@@ -8,7 +8,7 @@ AvO Adventure Game Engine
 
 import * as AVO from "./constants.js";  //Naming note: all caps.
 import { Story } from "./story.js";
-import { Physics } from "../avo/physics.js";
+import { Physics } from "./physics.js";
 import { Utility } from "./utility.js";
 import { StandardActions } from "./standard-actions.js";
 
@@ -128,10 +128,10 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
   
   //----------------------------------------------------------------
   
-  changeState(state, storyScript = null) {
+  changeState(state, callbackScript = null) {
     this.state = state;
-    if (storyScript && typeof storyScript === "function") {
-      storyScript();
+    if (callbackScript && typeof callbackScript === "function") {
+      callbackScript();
     }
   }
   
@@ -139,7 +139,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.preRun(this);
     
-    if (!this.config.skipCoreRun) {
+    if (!this.config.skipStandardRun) {
       switch (this.state) {
         case AVO.STATE_START:
           this.run_start();
@@ -438,8 +438,6 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
       //...with the terrain.
       //if (this.room) {
       if (actorA === this.playerActor && this.room) {
-        
-        
         /*const room = this.room;
         const actorLeftCol = Math.floor(actorA.left / room.tileWidth);
         const actorRightCol = Math.floor(actorA.right / room.tileWidth);
@@ -613,7 +611,7 @@ export class AvO {  //Naming note: small 'v' between capital 'A' and 'O'.
     //Run Story script
     this.story.prePaint();
     
-    if (!this.config.skipCorePaint) {
+    if (!this.config.skipStandardPaint) {
       switch (this.state) {
         case AVO.STATE_START:
           this.paint_start();
