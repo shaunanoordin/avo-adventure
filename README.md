@@ -6,6 +6,8 @@ skillfully fighting enemies to cleverly solving puzzles.
 
 Developed by [Shaun A. Noordin](http://shaunanoordin.com)
 
+TEST
+
 ## Development
 
 - Target audience: Legend of Zelda fans, like myself. People who like exploring
