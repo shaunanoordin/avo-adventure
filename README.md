@@ -1,5 +1,7 @@
 # AvO Adventure Game
 
+![Logo AvO Adventure](assets/Avo-Adventures_Logo.png)
+
 AvO is an Action RPG where each adventure is a short story in an anthology.
 Players are given options to finish each adventure in any way they want, from
 skillfully fighting enemies to cleverly solving puzzles.
