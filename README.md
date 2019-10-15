@@ -6,6 +6,8 @@ skillfully fighting enemies to cleverly solving puzzles.
 
 Developed by [Shaun A. Noordin](http://shaunanoordin.com)
 
+Superseded by [avo-adventure-mk2](https://github.com/shaunanoordin/avo-adventure-mk2) as of late 2019
+
 ## Development
 
 - Target audience: Legend of Zelda fans, like myself. People who like exploring
